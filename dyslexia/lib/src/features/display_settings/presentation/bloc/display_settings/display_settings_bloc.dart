@@ -12,6 +12,9 @@ class DisplaySettingsBloc
   DisplaySettingsBloc()
       : super(DisplaySettingsState(settings: DisplaySettingsModel.defaults())) {
     on<UpdateFontSizeEvent>(_updateFontSize);
+    on<UpdateLineSpacingEvent>(_updateLineSpacing);
+    on<UpdateLetterSpacingEvent>(_updateLetterSpacing);
+    on<UpdateWordSpacingEvent>(_updateWordSpacing);
     on<UpdateFontEvent>(_updateFont);
     on<UpdateColorThemeEvent>(_updateColorTheme);
     on<ApplyPresetEvent>(_applyPreset);
@@ -19,19 +22,31 @@ class DisplaySettingsBloc
 
   void _updateFontSize(
       UpdateFontSizeEvent event, Emitter<DisplaySettingsState> emit) {
-    emit(state.copyWith(
-        settings: state.settings.copyWith(fontSize: event.fontSize)));
+    emit(state.copyWith(settings: state.settings.copyWith(fontSize: event.fontSize)));
+  }
+
+  void _updateLineSpacing(
+      UpdateLineSpacingEvent event, Emitter<DisplaySettingsState> emit) {
+    emit(state.copyWith(settings: state.settings.copyWith(lineSpacing: event.lineSpacing)));
+  }
+
+  void _updateLetterSpacing(
+      UpdateLetterSpacingEvent event, Emitter<DisplaySettingsState> emit) {
+    emit(state.copyWith(settings: state.settings.copyWith(letterSpacing: event.letterSpacing)));
+  }
+
+  void _updateWordSpacing(
+      UpdateWordSpacingEvent event, Emitter<DisplaySettingsState> emit) {
+    emit(state.copyWith(settings: state.settings.copyWith(wordSpacing: event.wordSpacing)));
   }
 
   void _updateFont(UpdateFontEvent event, Emitter<DisplaySettingsState> emit) {
-    emit(state.copyWith(
-        settings: state.settings.copyWith(font: event.font)));
+    emit(state.copyWith(settings: state.settings.copyWith(font: event.font)));
   }
 
   void _updateColorTheme(
       UpdateColorThemeEvent event, Emitter<DisplaySettingsState> emit) {
-    emit(state.copyWith(
-        settings: state.settings.copyWith(colorTheme: event.colorTheme)));
+    emit(state.copyWith(settings: state.settings.copyWith(colorTheme: event.colorTheme)));
   }
 
   void _applyPreset(
@@ -43,19 +58,28 @@ class DisplaySettingsBloc
     return switch (preset) {
       DisplayPreset.defaultPreset => DisplaySettingsModel.defaults(),
       DisplayPreset.dyslexiaFriendly => const DisplaySettingsModel(
-          fontSize: 18.0,
+          fontSize: 20.0,
+          lineSpacing: 2.0,
+          letterSpacing: 0.5,
+          wordSpacing: 4.0,
           font: DyslexiaFont.openDyslexic,
-          colorTheme: AppColorTheme.creamOnBlue,
+          colorTheme: AppColorTheme.cream,
           preset: DisplayPreset.dyslexiaFriendly,
         ),
       DisplayPreset.highContrast => const DisplaySettingsModel(
-          fontSize: 20.0,
+          fontSize: 22.0,
+          lineSpacing: 2.0,
+          letterSpacing: 0.5,
+          wordSpacing: 4.0,
           font: DyslexiaFont.lexend,
-          colorTheme: AppColorTheme.yellowOnBlack,
+          colorTheme: AppColorTheme.dark,
           preset: DisplayPreset.highContrast,
         ),
       DisplayPreset.nightMode => const DisplaySettingsModel(
-          fontSize: 16.0,
+          fontSize: 18.0,
+          lineSpacing: 1.8,
+          letterSpacing: 0.5,
+          wordSpacing: 4.0,
           font: DyslexiaFont.lexend,
           colorTheme: AppColorTheme.dark,
           preset: DisplayPreset.nightMode,
@@ -66,8 +90,7 @@ class DisplaySettingsBloc
   @override
   DisplaySettingsState? fromJson(Map<String, dynamic> json) {
     try {
-      return DisplaySettingsState(
-          settings: DisplaySettingsModel.fromMap(json));
+      return DisplaySettingsState(settings: DisplaySettingsModel.fromMap(json));
     } catch (_) {
       return null;
     }

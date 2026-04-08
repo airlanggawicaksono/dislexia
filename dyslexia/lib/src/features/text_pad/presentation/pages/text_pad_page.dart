@@ -15,14 +15,23 @@ class TextPadPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<DisplaySettingsBloc, DisplaySettingsState>(
       builder: (context, state) {
-        final settings = state.settings;
+        final s = state.settings;
+        final bg = _bgColor(s.colorTheme);
+        final fg = _textColor(s.colorTheme);
+
         return Scaffold(
-          backgroundColor: _bgColor(settings.colorTheme),
+          backgroundColor: bg,
           appBar: AppBar(
-            title: Text(sourceName ?? 'Text Pad'),
+            backgroundColor: bg,
+            elevation: 0,
+            iconTheme: IconThemeData(color: fg),
+            title: Text(
+              sourceName ?? 'Text Pad',
+              style: TextStyle(color: fg, fontWeight: FontWeight.w600),
+            ),
             actions: [
               IconButton(
-                icon: const Icon(Icons.copy_rounded),
+                icon: Icon(Icons.copy_rounded, color: fg),
                 tooltip: 'Copy all',
                 onPressed: () {
                   Clipboard.setData(ClipboardData(text: text));
@@ -38,11 +47,12 @@ class TextPadPage extends StatelessWidget {
             child: SelectableText(
               text,
               style: TextStyle(
-                fontSize: settings.fontSize,
-                fontFamily: _fontFamily(settings.font),
-                color: _textColor(settings.colorTheme),
-                height: 1.6,
-                letterSpacing: 0.5,
+                fontSize: s.fontSize,
+                fontFamily: _fontFamily(s.font),
+                color: fg,
+                height: s.lineSpacing,
+                letterSpacing: s.letterSpacing,
+                wordSpacing: s.wordSpacing,
               ),
             ),
           ),
@@ -51,19 +61,22 @@ class TextPadPage extends StatelessWidget {
     );
   }
 
-  Color _bgColor(AppColorTheme theme) => switch (theme) {
-        AppColorTheme.light => Colors.white,
-        AppColorTheme.dark => const Color(0xFF1A1A1A),
-        AppColorTheme.yellowOnBlack => Colors.black,
-        AppColorTheme.creamOnBlue => const Color(0xFF1B3A6B),
-      };
+  static const _themeColors = {
+    AppColorTheme.white: (Color(0xFFFFFFFF), Color(0xFF1A1A1A)),
+    AppColorTheme.cream: (Color(0xFFFFF8EE), Color(0xFF1A1A1A)),
+    AppColorTheme.softYellow: (Color(0xFFFFFBCC), Color(0xFF1A1A1A)),
+    AppColorTheme.mintGreen: (Color(0xFFE0F5E9), Color(0xFF1A1A1A)),
+    AppColorTheme.lavender: (Color(0xFFEDE7F6), Color(0xFF1A1A1A)),
+    AppColorTheme.skyBlue: (Color(0xFFE3F2FD), Color(0xFF1A1A1A)),
+    AppColorTheme.peach: (Color(0xFFFFE8D6), Color(0xFF1A1A1A)),
+    AppColorTheme.dark: (Color(0xFF1E1E1E), Color(0xFFE8E8E8)),
+  };
 
-  Color _textColor(AppColorTheme theme) => switch (theme) {
-        AppColorTheme.light => Colors.black87,
-        AppColorTheme.dark => Colors.white70,
-        AppColorTheme.yellowOnBlack => Colors.yellow,
-        AppColorTheme.creamOnBlue => const Color(0xFFFFFDD0),
-      };
+  Color _bgColor(AppColorTheme theme) =>
+      _themeColors[theme]?.$1 ?? const Color(0xFFFFF8EE);
+
+  Color _textColor(AppColorTheme theme) =>
+      _themeColors[theme]?.$2 ?? const Color(0xFF1A1A1A);
 
   String _fontFamily(DyslexiaFont font) => switch (font) {
         DyslexiaFont.openDyslexic => 'OpenDyslexic',

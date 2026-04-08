@@ -1,1 +1,1 @@
-export '../../features/auth/data/models/adapter/user_adapter_model.dart';
+// Hive type adapters — register generated adapters here

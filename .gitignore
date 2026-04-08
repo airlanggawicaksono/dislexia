@@ -1,0 +1,67 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_w
+# IntelliJ / Android Studio
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# VS Code (uncomment if you don't want to track launch configs)
+#.vscode/
+
+# Flutter / Dart / Pub
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+build/
+/coverage/
+
+# Symbolication
+app.*.symbols
+
+# Obfuscation
+app.*.map.json
+
+# Android build outputs
+/dyslexia/android/app/debug
+/dyslexia/android/app/profile
+/dyslexia/android/app/release
+/dyslexia/android/.gradle/
+/dyslexia/android/local.properties
+/dyslexia/android/gradle/wrapper/gradle-wrapper.jar
+
+# iOS
+/dyslexia/ios/Pods/
+/dyslexia/ios/.generated/
+/dyslexia/ios/Flutter/Flutter.framework
+/dyslexia/ios/Flutter/flutter_assets/
+/dyslexia/ios/Flutter/flutter_export_environment.sh
+/dyslexia/ios/Flutter/Generated.xcconfig
+/dyslexia/ios/Runner/GeneratedPluginRegistrant.*
+
+# Sensitive — never commit these
+.env
+*.env.*
+**/google-services.json
+**/GoogleService-Info.plist
+dyslexia/android/key.properties
+d artifacts here
+/android/app/debug
+/android/app/profile
+/android/app/release
+/uicheck

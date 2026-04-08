@@ -11,7 +11,6 @@ void configureDepedencies() {
   LensDependency.init();
 
   getIt.registerLazySingleton(() => ThemeBloc());
-  getIt.registerLazySingleton(() => TranslateBloc());
   getIt.registerLazySingleton(() => AppRouteConf());
   getIt.registerLazySingleton(() => HiveLocalStorage());
 }
