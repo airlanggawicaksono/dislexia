@@ -1,5 +1,3 @@
-export '../../features/product/di/product_depedency.dart';
-export '../../features/auth/di/auth_depedency.dart';
 export '../../features/display_settings/di/display_settings_dependency.dart';
 export '../../features/upload/di/upload_dependency.dart';
 export '../../features/scan_paste/di/scan_dependency.dart';
