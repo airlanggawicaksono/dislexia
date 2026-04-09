@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../features/display_settings/domain/entities/display_settings_entity.dart';
 import '../../../../features/display_settings/presentation/bloc/display_settings/display_settings_bloc.dart';
+import '../../../../routes/app_route_path.dart';
 
 class TextPadPage extends StatelessWidget {
   final String text;
@@ -30,6 +32,12 @@ class TextPadPage extends StatelessWidget {
               style: TextStyle(color: fg, fontWeight: FontWeight.w600),
             ),
             actions: [
+              IconButton(
+                icon: Icon(Icons.settings_rounded, color: fg),
+                tooltip: 'Display settings',
+                onPressed: () =>
+                    context.pushNamed(AppRoute.displaySettings.name),
+              ),
               IconButton(
                 icon: Icon(Icons.copy_rounded, color: fg),
                 tooltip: 'Copy all',
