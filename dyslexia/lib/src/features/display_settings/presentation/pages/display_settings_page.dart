@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../data/models/display_settings_model.dart';
 import '../../domain/entities/display_settings_entity.dart';
 import '../bloc/display_settings/display_settings_bloc.dart';
 
@@ -32,6 +33,11 @@ class DisplaySettingsPage extends StatelessWidget {
           return ListView(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
             children: [
+              _Section(
+                title: 'LIVE PREVIEW',
+                child: _PreviewCard(settings: s),
+              ),
+              const SizedBox(height: 20),
               _Section(
                 title: 'BACKGROUND COLOR',
                 child: _ColorGrid(
@@ -113,6 +119,63 @@ class DisplaySettingsPage extends StatelessWidget {
         DisplayPreset.dyslexiaFriendly => 'OpenDyslexic · Cream · 20pt · 2.0x',
         DisplayPreset.highContrast => 'Lexend · Dark · 22pt',
         DisplayPreset.nightMode => 'Lexend · Dark · 18pt',
+      };
+}
+
+// ── Live preview ─────────────────────────────────────────────────────────────
+
+class _PreviewCard extends StatelessWidget {
+  final DisplaySettingsModel settings;
+
+  const _PreviewCard({required this.settings});
+
+  static const _themeColors = {
+    AppColorTheme.white: (Color(0xFFFFFFFF), Color(0xFF1A1A1A)),
+    AppColorTheme.cream: (Color(0xFFFFF8EE), Color(0xFF1A1A1A)),
+    AppColorTheme.softYellow: (Color(0xFFFFFBCC), Color(0xFF1A1A1A)),
+    AppColorTheme.mintGreen: (Color(0xFFE0F5E9), Color(0xFF1A1A1A)),
+    AppColorTheme.lavender: (Color(0xFFEDE7F6), Color(0xFF1A1A1A)),
+    AppColorTheme.skyBlue: (Color(0xFFE3F2FD), Color(0xFF1A1A1A)),
+    AppColorTheme.peach: (Color(0xFFFFE8D6), Color(0xFF1A1A1A)),
+    AppColorTheme.dark: (Color(0xFF1E1E1E), Color(0xFFE8E8E8)),
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final bg = _themeColors[settings.colorTheme]?.$1 ?? const Color(0xFFFFF8EE);
+    final fg = _themeColors[settings.colorTheme]?.$2 ?? const Color(0xFF1A1A1A);
+
+    return Container(
+      height: 120,
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.black12),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Center(
+        child: Text(
+          'The quick brown fox jumps over the lazy dog.\nReading should feel comfortable and natural.',
+          textAlign: TextAlign.center,
+          maxLines: 2,
+          style: TextStyle(
+            fontSize: settings.fontSize,
+            fontFamily: _fontFamily(settings.font),
+            color: fg,
+            height: settings.lineSpacing,
+            letterSpacing: settings.letterSpacing,
+            wordSpacing: settings.wordSpacing,
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _fontFamily(DyslexiaFont font) => switch (font) {
+        DyslexiaFont.openDyslexic => 'OpenDyslexic',
+        DyslexiaFont.lexend => 'Lexend',
+        DyslexiaFont.arial => 'Arial',
+        DyslexiaFont.verdana => 'Verdana',
       };
 }
 
@@ -326,7 +389,7 @@ class _PresetTile extends StatelessWidget {
   }
 }
 
-// ── Section wrapper ──────────────────────────────────────────────────────────
+// ── Section wrapper ─────────────────────────────────────────────────────────
 
 class _Section extends StatelessWidget {
   final String title;
