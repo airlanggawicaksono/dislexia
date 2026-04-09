@@ -14,6 +14,9 @@ class ScanRepositoryImpl implements ScanRepository {
       String imagePath) async {
     try {
       final result = await _datasource.scanFromCamera(imagePath);
+      if (result.text == null || result.text!.isEmpty) {
+        return Left(TextExtractionFailure());
+      }
       return Right(result);
     } catch (_) {
       return Left(OcrFailure());

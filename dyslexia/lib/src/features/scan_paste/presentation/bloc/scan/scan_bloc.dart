@@ -2,7 +2,6 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../../core/entities/document_entity.dart';
-import '../../../../../core/usecases/usecase.dart';
 import '../../../../../core/utils/failure_converter.dart';
 import '../../../domain/usecases/scan_text_usecase.dart';
 
