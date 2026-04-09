@@ -88,8 +88,10 @@ class TextPadPage extends StatelessWidget {
 
   String _fontFamily(DyslexiaFont font) => switch (font) {
         DyslexiaFont.openDyslexic => 'OpenDyslexic',
-        DyslexiaFont.lexend => 'Lexend',
-        DyslexiaFont.arial => 'Arial',
         DyslexiaFont.verdana => 'Verdana',
+        DyslexiaFont.jakartaSans => 'Jakarta Sans',
+        DyslexiaFont.arial => 'Arial',
+        DyslexiaFont.calibri => 'Calibri',
+        DyslexiaFont.lexend => 'Lexend',
       };
 }

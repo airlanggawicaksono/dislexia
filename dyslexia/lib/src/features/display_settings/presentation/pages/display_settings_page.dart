@@ -39,6 +39,14 @@ class DisplaySettingsPage extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               _Section(
+                title: 'FONT',
+                child: _FontPicker(
+                  selected: s.font,
+                  onSelect: (f) => bloc.add(UpdateFontEvent(f)),
+                ),
+              ),
+              const SizedBox(height: 20),
+              _Section(
                 title: 'BACKGROUND COLOR',
                 child: _ColorGrid(
                   selected: s.colorTheme,
@@ -173,9 +181,99 @@ class _PreviewCard extends StatelessWidget {
 
   String _fontFamily(DyslexiaFont font) => switch (font) {
         DyslexiaFont.openDyslexic => 'OpenDyslexic',
-        DyslexiaFont.lexend => 'Lexend',
-        DyslexiaFont.arial => 'Arial',
         DyslexiaFont.verdana => 'Verdana',
+        DyslexiaFont.jakartaSans => 'Jakarta Sans',
+        DyslexiaFont.arial => 'Arial',
+        DyslexiaFont.calibri => 'Calibri',
+        DyslexiaFont.lexend => 'Lexend',
+      };
+}
+
+// ── Font picker ─────────────────────────────────────────────────────────────
+
+class _FontPicker extends StatelessWidget {
+  final DyslexiaFont selected;
+  final ValueChanged<DyslexiaFont> onSelect;
+
+  const _FontPicker({required this.selected, required this.onSelect});
+
+  static const _fonts = [
+    (DyslexiaFont.openDyslexic, 'OpenDyslexic'),
+    (DyslexiaFont.verdana, 'Verdana'),
+    (DyslexiaFont.jakartaSans, 'Jakarta Sans'),
+    (DyslexiaFont.arial, 'Arial'),
+    (DyslexiaFont.calibri, 'Calibri'),
+    (DyslexiaFont.lexend, 'Lexend'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 64,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: _fonts.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 10),
+        itemBuilder: (context, i) {
+          final (font, label) = _fonts[i];
+          final isSelected = selected == font;
+          return GestureDetector(
+            onTap: () => onSelect(font),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Center(
+                  child: Container(
+                    width: 56,
+                    height: 47,
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? const Color(0xFF3D5A99)
+                          : const Color(0xFFEFEADF),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isSelected
+                            ? const Color(0xFF3D5A99)
+                            : Colors.transparent,
+                        width: isSelected ? 2.5 : 1,
+                      ),
+                    ),
+                    child: Center(
+                      child: Text(
+                        'Aa',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontFamily: _fontFamily(font),
+                          fontWeight: FontWeight.w600,
+                          color: isSelected ? Colors.white : Colors.black87,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  label,
+                  style: const TextStyle(fontSize: 9, color: Colors.black54),
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  String _fontFamily(DyslexiaFont font) => switch (font) {
+        DyslexiaFont.openDyslexic => 'OpenDyslexic',
+        DyslexiaFont.verdana => 'Verdana',
+        DyslexiaFont.jakartaSans => 'Jakarta Sans',
+        DyslexiaFont.arial => 'Arial',
+        DyslexiaFont.calibri => 'Calibri',
+        DyslexiaFont.lexend => 'Lexend',
       };
 }
 

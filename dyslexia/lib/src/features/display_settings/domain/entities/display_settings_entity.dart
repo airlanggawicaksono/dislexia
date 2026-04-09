@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-enum DyslexiaFont { openDyslexic, lexend, arial, verdana }
+enum DyslexiaFont { openDyslexic, verdana, jakartaSans, arial, calibri, lexend }
 
 enum AppColorTheme {
   white,
