@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/utils/font_utils.dart';
 import '../../../../features/display_settings/domain/entities/display_settings_entity.dart';
 import '../../../../features/display_settings/presentation/bloc/display_settings/display_settings_bloc.dart';
 
@@ -19,15 +20,19 @@ class TextPadPage extends StatelessWidget {
         final bg = _bgColor(s.colorTheme);
         final fg = _textColor(s.colorTheme);
 
+        const neutralBg = Color(0xFFF5F0E8);
+        const neutralFg = Colors.black87;
+
         return Scaffold(
           backgroundColor: bg,
           appBar: AppBar(
-            backgroundColor: bg,
+            backgroundColor: neutralBg,
             elevation: 0,
-            iconTheme: IconThemeData(color: fg),
+            iconTheme: const IconThemeData(color: neutralFg),
             title: Text(
               sourceName ?? 'Text Pad',
-              style: TextStyle(color: fg, fontWeight: FontWeight.w600),
+              style: const TextStyle(
+                  color: neutralFg, fontWeight: FontWeight.w600),
             ),
             actions: [
               IconButton(
@@ -46,13 +51,15 @@ class TextPadPage extends StatelessWidget {
             padding: const EdgeInsets.all(20),
             child: SelectableText(
               text,
-              style: TextStyle(
-                fontSize: s.fontSize,
-                fontFamily: _fontFamily(s.font),
-                color: fg,
-                height: s.lineSpacing,
-                letterSpacing: s.letterSpacing,
-                wordSpacing: s.wordSpacing,
+              style: applyDyslexiaFont(
+                font: s.font,
+                baseStyle: TextStyle(
+                  fontSize: s.fontSize,
+                  color: fg,
+                  height: s.lineSpacing,
+                  letterSpacing: s.letterSpacing,
+                  wordSpacing: s.wordSpacing,
+                ),
               ),
             ),
           ),
@@ -78,10 +85,4 @@ class TextPadPage extends StatelessWidget {
   Color _textColor(AppColorTheme theme) =>
       _themeColors[theme]?.$2 ?? const Color(0xFF1A1A1A);
 
-  String _fontFamily(DyslexiaFont font) => switch (font) {
-        DyslexiaFont.openDyslexic => 'OpenDyslexic',
-        DyslexiaFont.lexend => 'Lexend',
-        DyslexiaFont.arial => 'Arial',
-        DyslexiaFont.verdana => 'Verdana',
-      };
 }

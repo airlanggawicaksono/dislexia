@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../features/display_settings/presentation/pages/display_settings_page.dart';
@@ -23,7 +24,20 @@ class AppRouteConf {
       GoRoute(
         path: AppRoute.displaySettings.path,
         name: AppRoute.displaySettings.name,
-        builder: (_, __) => const DisplaySettingsPage(),
+        pageBuilder: (_, __) => CustomTransitionPage(
+          child: const DisplaySettingsPage(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            final tween = Tween(
+              begin: const Offset(0, 1),
+              end: Offset.zero,
+            ).chain(CurveTween(curve: Curves.easeOutCubic));
+            return SlideTransition(
+              position: animation.drive(tween),
+              child: child,
+            );
+          },
+          transitionDuration: const Duration(milliseconds: 350),
+        ),
       ),
       GoRoute(
         path: AppRoute.upload.path,
