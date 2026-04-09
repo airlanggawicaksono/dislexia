@@ -4,6 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../data/models/display_settings_model.dart';
 import '../../domain/entities/display_settings_entity.dart';
 import '../bloc/display_settings/display_settings_bloc.dart';
+import '../theme/display_colors.dart';
+import '../theme/display_fonts.dart';
 
 class DisplaySettingsPage extends StatelessWidget {
   const DisplaySettingsPage({super.key});
@@ -137,21 +139,10 @@ class _PreviewCard extends StatelessWidget {
 
   const _PreviewCard({required this.settings});
 
-  static const _themeColors = {
-    AppColorTheme.white: (Color(0xFFFFFFFF), Color(0xFF1A1A1A)),
-    AppColorTheme.cream: (Color(0xFFFFF8EE), Color(0xFF1A1A1A)),
-    AppColorTheme.softYellow: (Color(0xFFFFFBCC), Color(0xFF1A1A1A)),
-    AppColorTheme.mintGreen: (Color(0xFFE0F5E9), Color(0xFF1A1A1A)),
-    AppColorTheme.lavender: (Color(0xFFEDE7F6), Color(0xFF1A1A1A)),
-    AppColorTheme.skyBlue: (Color(0xFFE3F2FD), Color(0xFF1A1A1A)),
-    AppColorTheme.peach: (Color(0xFFFFE8D6), Color(0xFF1A1A1A)),
-    AppColorTheme.dark: (Color(0xFF1E1E1E), Color(0xFFE8E8E8)),
-  };
-
   @override
   Widget build(BuildContext context) {
-    final bg = _themeColors[settings.colorTheme]?.$1 ?? const Color(0xFFFFF8EE);
-    final fg = _themeColors[settings.colorTheme]?.$2 ?? const Color(0xFF1A1A1A);
+    final bg = bgColor(settings.colorTheme);
+    final fg = fgColor(settings.colorTheme);
 
     return Container(
       height: 120,
@@ -168,7 +159,7 @@ class _PreviewCard extends StatelessWidget {
           maxLines: 2,
           style: TextStyle(
             fontSize: settings.fontSize,
-            fontFamily: _fontFamily(settings.font),
+            fontFamily: fontFamily(settings.font),
             color: fg,
             height: settings.lineSpacing,
             letterSpacing: settings.letterSpacing,
@@ -178,15 +169,6 @@ class _PreviewCard extends StatelessWidget {
       ),
     );
   }
-
-  String _fontFamily(DyslexiaFont font) => switch (font) {
-        DyslexiaFont.openDyslexic => 'OpenDyslexic',
-        DyslexiaFont.verdana => 'Verdana',
-        DyslexiaFont.jakartaSans => 'Jakarta Sans',
-        DyslexiaFont.arial => 'Arial',
-        DyslexiaFont.calibri => 'Calibri',
-        DyslexiaFont.lexend => 'Lexend',
-      };
 }
 
 // ── Font picker ─────────────────────────────────────────────────────────────
@@ -243,7 +225,7 @@ class _FontPicker extends StatelessWidget {
                         'Aa',
                         style: TextStyle(
                           fontSize: 18,
-                          fontFamily: _fontFamily(font),
+                          fontFamily: fontFamily(font),
                           fontWeight: FontWeight.w600,
                           color: isSelected ? Colors.white : Colors.black87,
                         ),
@@ -266,15 +248,6 @@ class _FontPicker extends StatelessWidget {
       ),
     );
   }
-
-  String _fontFamily(DyslexiaFont font) => switch (font) {
-        DyslexiaFont.openDyslexic => 'OpenDyslexic',
-        DyslexiaFont.verdana => 'Verdana',
-        DyslexiaFont.jakartaSans => 'Jakarta Sans',
-        DyslexiaFont.arial => 'Arial',
-        DyslexiaFont.calibri => 'Calibri',
-        DyslexiaFont.lexend => 'Lexend',
-      };
 }
 
 // ── Colour grid ────────────────────────────────────────────────────────────
@@ -285,20 +258,9 @@ class _ColorGrid extends StatelessWidget {
 
   const _ColorGrid({required this.selected, required this.onSelect});
 
-  static const _colors = {
-    AppColorTheme.white: (Color(0xFFFFFFFF), 'White'),
-    AppColorTheme.cream: (Color(0xFFFFF8EE), 'Cream'),
-    AppColorTheme.softYellow: (Color(0xFFFFFBCC), 'Soft Yellow'),
-    AppColorTheme.mintGreen: (Color(0xFFE0F5E9), 'Mint Green'),
-    AppColorTheme.lavender: (Color(0xFFEDE7F6), 'Lavender'),
-    AppColorTheme.skyBlue: (Color(0xFFE3F2FD), 'Sky Blue'),
-    AppColorTheme.peach: (Color(0xFFFFE8D6), 'Peach'),
-    AppColorTheme.dark: (Color(0xFF1E1E1E), 'Dark Mode'),
-  };
-
   @override
   Widget build(BuildContext context) {
-    final entries = _colors.entries.toList();
+    final entries = AppColorTheme.values.toList();
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -310,8 +272,9 @@ class _ColorGrid extends StatelessWidget {
         childAspectRatio: 1,
       ),
       itemBuilder: (_, i) {
-        final theme = entries[i].key;
-        final (color, label) = entries[i].value;
+        final theme = entries[i];
+        final color = bgColor(theme);
+        final label = colorLabel(theme);
         final isSelected = selected == theme;
         return GestureDetector(
           onTap: () => onSelect(theme),

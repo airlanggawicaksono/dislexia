@@ -3,8 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../features/display_settings/domain/entities/display_settings_entity.dart';
-import '../../../../features/display_settings/presentation/bloc/display_settings/display_settings_bloc.dart';
+import '../../../display_settings/presentation/theme/display_colors.dart';
+import '../../../display_settings/presentation/theme/display_fonts.dart';
+import '../../../display_settings/presentation/bloc/display_settings/display_settings_bloc.dart';
 import '../../../../routes/app_route_path.dart';
 
 class TextPadPage extends StatelessWidget {
@@ -18,8 +19,8 @@ class TextPadPage extends StatelessWidget {
     return BlocBuilder<DisplaySettingsBloc, DisplaySettingsState>(
       builder: (context, state) {
         final s = state.settings;
-        final bg = _bgColor(s.colorTheme);
-        final fg = _textColor(s.colorTheme);
+        final bg = bgColor(s.colorTheme);
+        final fg = fgColor(s.colorTheme);
 
         return Scaffold(
           backgroundColor: bg,
@@ -56,7 +57,7 @@ class TextPadPage extends StatelessWidget {
               text,
               style: TextStyle(
                 fontSize: s.fontSize,
-                fontFamily: _fontFamily(s.font),
+                fontFamily: fontFamily(s.font),
                 color: fg,
                 height: s.lineSpacing,
                 letterSpacing: s.letterSpacing,
@@ -68,30 +69,4 @@ class TextPadPage extends StatelessWidget {
       },
     );
   }
-
-  static const _themeColors = {
-    AppColorTheme.white: (Color(0xFFFFFFFF), Color(0xFF1A1A1A)),
-    AppColorTheme.cream: (Color(0xFFFFF8EE), Color(0xFF1A1A1A)),
-    AppColorTheme.softYellow: (Color(0xFFFFFBCC), Color(0xFF1A1A1A)),
-    AppColorTheme.mintGreen: (Color(0xFFE0F5E9), Color(0xFF1A1A1A)),
-    AppColorTheme.lavender: (Color(0xFFEDE7F6), Color(0xFF1A1A1A)),
-    AppColorTheme.skyBlue: (Color(0xFFE3F2FD), Color(0xFF1A1A1A)),
-    AppColorTheme.peach: (Color(0xFFFFE8D6), Color(0xFF1A1A1A)),
-    AppColorTheme.dark: (Color(0xFF1E1E1E), Color(0xFFE8E8E8)),
-  };
-
-  Color _bgColor(AppColorTheme theme) =>
-      _themeColors[theme]?.$1 ?? const Color(0xFFFFF8EE);
-
-  Color _textColor(AppColorTheme theme) =>
-      _themeColors[theme]?.$2 ?? const Color(0xFF1A1A1A);
-
-  String _fontFamily(DyslexiaFont font) => switch (font) {
-        DyslexiaFont.openDyslexic => 'OpenDyslexic',
-        DyslexiaFont.verdana => 'Verdana',
-        DyslexiaFont.jakartaSans => 'Jakarta Sans',
-        DyslexiaFont.arial => 'Arial',
-        DyslexiaFont.calibri => 'Calibri',
-        DyslexiaFont.lexend => 'Lexend',
-      };
 }
