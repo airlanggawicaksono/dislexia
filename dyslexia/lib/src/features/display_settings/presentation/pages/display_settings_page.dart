@@ -46,8 +46,7 @@ class DisplaySettingsPage extends StatelessWidget {
                   children: [
                     _SpacingSlider(
                       leadingLabel: 'AA',
-                      trailingValue:
-                          '${s.fontSize.toStringAsFixed(0)}pt',
+                      trailingValue: '${s.fontSize.toStringAsFixed(0)}pt',
                       value: s.fontSize,
                       min: 12,
                       max: 32,
@@ -63,18 +62,15 @@ class DisplaySettingsPage extends StatelessWidget {
                     ),
                     _SpacingSlider(
                       leadingLabel: 'A',
-                      trailingValue:
-                          '${s.letterSpacing.toStringAsFixed(1)}pt',
+                      trailingValue: '${s.letterSpacing.toStringAsFixed(1)}pt',
                       value: s.letterSpacing,
                       min: 0.0,
                       max: 2.0,
-                      onChanged: (v) =>
-                          bloc.add(UpdateLetterSpacingEvent(v)),
+                      onChanged: (v) => bloc.add(UpdateLetterSpacingEvent(v)),
                     ),
                     _SpacingSlider(
                       leadingLabel: 'W',
-                      trailingValue:
-                          '${s.wordSpacing.toStringAsFixed(1)}pt',
+                      trailingValue: '${s.wordSpacing.toStringAsFixed(1)}pt',
                       value: s.wordSpacing,
                       min: 0.0,
                       max: 8.0,
@@ -161,21 +157,26 @@ class _ColorGrid extends StatelessWidget {
           child: Column(
             children: [
               Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: color,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: isSelected
-                          ? const Color(0xFF3D5A99)
-                          : Colors.black12,
-                      width: isSelected ? 2.5 : 1,
+                child: SizedBox(
+                  width: double.infinity,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: color,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: isSelected
+                            ? const Color(0xFF3D5A99)
+                            : Colors.black12,
+                        width: isSelected ? 2.5 : 1,
+                      ),
                     ),
+                    child: isSelected
+                        ? const Center(
+                            child: Icon(Icons.check_rounded,
+                                size: 20, color: Color(0xFF3D5A99)),
+                          )
+                        : null,
                   ),
-                  child: isSelected
-                      ? const Icon(Icons.check_rounded,
-                          size: 20, color: Color(0xFF3D5A99))
-                      : null,
                 ),
               ),
               const SizedBox(height: 4),
@@ -240,8 +241,7 @@ class _SpacingSlider extends StatelessWidget {
                 thumbColor: const Color(0xFF3D5A99),
                 inactiveTrackColor: Colors.black12,
                 trackHeight: 3,
-                thumbShape:
-                    const RoundSliderThumbShape(enabledThumbRadius: 8),
+                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
               ),
               child: Slider(
                 value: value.clamp(min, max),
@@ -311,8 +311,8 @@ class _PresetTile extends StatelessWidget {
                           fontWeight: FontWeight.w600, fontSize: 14)),
                   const SizedBox(height: 2),
                   Text(subtitle,
-                      style: const TextStyle(
-                          fontSize: 11, color: Colors.black45)),
+                      style:
+                          const TextStyle(fontSize: 11, color: Colors.black45)),
                 ],
               ),
             ),
