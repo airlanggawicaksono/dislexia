@@ -9,6 +9,14 @@ class LensInitialState extends LensState {}
 
 class LensLoadingState extends LensState {}
 
+class LensLiveState extends LensState {
+  final LensFrameEntity frame;
+  LensLiveState(this.frame);
+
+  @override
+  List<Object?> get props => [frame];
+}
+
 class LensSuccessState extends LensState {
   final DocumentEntity document;
   LensSuccessState(this.document);
