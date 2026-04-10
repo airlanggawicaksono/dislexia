@@ -7,6 +7,7 @@ import '../features/display_settings/presentation/pages/display_settings_page.da
 import '../features/landing/presentation/pages/landing_page.dart';
 import '../features/lens/presentation/bloc/lens/lens_bloc.dart';
 import '../features/lens/presentation/pages/lens_page.dart';
+import '../features/scan_paste/presentation/bloc/scan/scan_bloc.dart';
 import '../features/scan_paste/presentation/pages/scan_paste_page.dart';
 import '../features/text_pad/presentation/pages/text_pad_page.dart';
 import '../features/upload/presentation/pages/upload_page.dart';
@@ -50,7 +51,10 @@ class AppRouteConf {
       GoRoute(
         path: AppRoute.scanPaste.path,
         name: AppRoute.scanPaste.name,
-        builder: (_, __) => const ScanPastePage(),
+        builder: (_, __) => BlocProvider(
+          create: (_) => getIt<ScanBloc>(),
+          child: const ScanPastePage(),
+        ),
       ),
       GoRoute(
         path: AppRoute.lens.path,

@@ -1,19 +1,30 @@
+import 'dart:io';
+
+import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
+import 'package:uuid/uuid.dart';
+
 import '../../../../core/entities/document_entity.dart';
 
 abstract class ScanDatasource {
-  Future<DocumentEntity> scanFromCamera();
+  Future<DocumentEntity> scanFromCamera(String imagePath);
 }
 
 class ScanDatasourceImpl implements ScanDatasource {
-  // TODO: inject ImagePicker or CameraController
-  // TODO: inject TextRecognizer (google_mlkit_text_recognition)
-
   @override
-  Future<DocumentEntity> scanFromCamera() async {
-    // Step 1: Launch camera via ImagePicker.pickImage(source: ImageSource.camera)
-    // Step 2: Pass image file to TextRecognizer.processImage(InputImage.fromFile(...))
-    // Step 3: Collect RecognizedText.text
-    // Step 4: Return DocumentEntity(id: uuid, text: recognized, sourceName: 'Camera Scan')
-    throw UnimplementedError('Add camera + google_mlkit_text_recognition');
+  Future<DocumentEntity> scanFromCamera(String imagePath) async {
+    final inputImage = InputImage.fromFile(File(imagePath));
+    final textRecognizer = TextRecognizer();
+
+    try {
+      final recognizedText = await textRecognizer.processImage(inputImage);
+
+      return DocumentEntity(
+        id: const Uuid().v4(),
+        text: recognizedText.text,
+        sourceName: 'Camera Scan',
+      );
+    } finally {
+      textRecognizer.close();
+    }
   }
 }

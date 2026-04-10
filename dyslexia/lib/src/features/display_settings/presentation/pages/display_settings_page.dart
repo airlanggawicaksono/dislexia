@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/utils/font_utils.dart';
 import '../../domain/entities/display_settings_entity.dart';
 import '../bloc/display_settings/display_settings_bloc.dart';
+import '../theme/display_colors.dart';
 
 class DisplaySettingsPage extends StatelessWidget {
   const DisplaySettingsPage({super.key});
@@ -33,7 +34,36 @@ class DisplaySettingsPage extends StatelessWidget {
           return ListView(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
             children: [
-              // ── Font Picker ───────────────────────────────────────────────
+              _SectionLabel(title: 'LIVE PREVIEW'),
+              Container(
+                height: 120,
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: bgColor(s.colorTheme),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.black12),
+                ),
+                child: Center(
+                  child: Text(
+                    'The quick brown fox jumps over the lazy dog. '
+                    'Reading should feel comfortable and natural for everyone.',
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    style: applyDyslexiaFont(
+                      font: s.font,
+                      baseStyle: TextStyle(
+                        fontSize: s.fontSize,
+                        height: s.lineSpacing,
+                        letterSpacing: s.letterSpacing,
+                        wordSpacing: s.wordSpacing,
+                        color: fgColor(s.colorTheme),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
               _SectionLabel(title: 'FONT'),
               SizedBox(
                 height: 86,
@@ -49,43 +79,12 @@ class DisplaySettingsPage extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 24),
-
-              // ── Background Color ──────────────────────────────────────────
               _SectionLabel(title: 'BACKGROUND COLOR'),
               _ColorGrid(
                 selected: s.colorTheme,
                 onSelect: (t) => bloc.add(UpdateColorThemeEvent(t)),
               ),
               const SizedBox(height: 24),
-
-              // ── Live Preview ──────────────────────────────────────────────
-              _SectionLabel(title: 'LIVE PREVIEW'),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: _bgColor(s.colorTheme),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.black12),
-                ),
-                child: Text(
-                  'The quick brown fox jumps over the lazy dog. '
-                  'Reading should feel comfortable and natural for everyone.',
-                  style: applyDyslexiaFont(
-                    font: s.font,
-                    baseStyle: TextStyle(
-                      fontSize: s.fontSize,
-                      height: s.lineSpacing,
-                      letterSpacing: s.letterSpacing,
-                      wordSpacing: s.wordSpacing,
-                      color: _textColor(s.colorTheme),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // ── Typography ────────────────────────────────────────────────
               _SectionLabel(title: 'TYPOGRAPHY'),
               _LabeledSlider(
                 label: 'Font Size',
@@ -124,8 +123,6 @@ class DisplaySettingsPage extends StatelessWidget {
                 leadingLabel: 'W',
               ),
               const SizedBox(height: 24),
-
-              // ── Quick Presets ─────────────────────────────────────────────
               _SectionLabel(title: 'QUICK PRESETS'),
               ...DisplayPreset.values.map((p) => _PresetTile(
                     label: _presetLabel(p),
@@ -141,23 +138,6 @@ class DisplaySettingsPage extends StatelessWidget {
     );
   }
 
-  static const _themeColors = {
-    AppColorTheme.white: (Color(0xFFFFFFFF), Color(0xFF1A1A1A)),
-    AppColorTheme.cream: (Color(0xFFFFF8EE), Color(0xFF1A1A1A)),
-    AppColorTheme.softYellow: (Color(0xFFFFFBCC), Color(0xFF1A1A1A)),
-    AppColorTheme.mintGreen: (Color(0xFFE0F5E9), Color(0xFF1A1A1A)),
-    AppColorTheme.lavender: (Color(0xFFEDE7F6), Color(0xFF1A1A1A)),
-    AppColorTheme.skyBlue: (Color(0xFFE3F2FD), Color(0xFF1A1A1A)),
-    AppColorTheme.peach: (Color(0xFFFFE8D6), Color(0xFF1A1A1A)),
-    AppColorTheme.dark: (Color(0xFF1E1E1E), Color(0xFFE8E8E8)),
-  };
-
-  Color _bgColor(AppColorTheme theme) =>
-      _themeColors[theme]?.$1 ?? const Color(0xFFFFF8EE);
-
-  Color _textColor(AppColorTheme theme) =>
-      _themeColors[theme]?.$2 ?? const Color(0xFF1A1A1A);
-
   String _presetLabel(DisplayPreset p) => switch (p) {
         DisplayPreset.defaultPreset => 'Default',
         DisplayPreset.dyslexiaFriendly => 'Dyslexia Friendly',
@@ -172,8 +152,6 @@ class DisplaySettingsPage extends StatelessWidget {
         DisplayPreset.nightMode => 'Jakarta Sans · Dark · 18pt',
       };
 }
-
-// ── Section label ────────────────────────────────────────────────────────────
 
 class _SectionLabel extends StatelessWidget {
   final String title;
@@ -195,8 +173,6 @@ class _SectionLabel extends StatelessWidget {
     );
   }
 }
-
-// ── Font card ────────────────────────────────────────────────────────────────
 
 class _FontCard extends StatelessWidget {
   final DyslexiaFont font;
@@ -265,28 +241,15 @@ class _FontCard extends StatelessWidget {
   }
 }
 
-// ── Colour grid ────────────────────────────────────────────────────────────
-
 class _ColorGrid extends StatelessWidget {
   final AppColorTheme selected;
   final ValueChanged<AppColorTheme> onSelect;
 
   const _ColorGrid({required this.selected, required this.onSelect});
 
-  static const _colors = {
-    AppColorTheme.white: (Color(0xFFFFFFFF), 'White'),
-    AppColorTheme.cream: (Color(0xFFFFF8EE), 'Cream'),
-    AppColorTheme.softYellow: (Color(0xFFFFFBCC), 'Soft Yellow'),
-    AppColorTheme.mintGreen: (Color(0xFFE0F5E9), 'Mint Green'),
-    AppColorTheme.lavender: (Color(0xFFEDE7F6), 'Lavender'),
-    AppColorTheme.skyBlue: (Color(0xFFE3F2FD), 'Sky Blue'),
-    AppColorTheme.peach: (Color(0xFFFFE8D6), 'Peach'),
-    AppColorTheme.dark: (Color(0xFF1E1E1E), 'Dark Mode'),
-  };
-
   @override
   Widget build(BuildContext context) {
-    final entries = _colors.entries.toList();
+    final entries = AppColorTheme.values.toList();
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -298,8 +261,9 @@ class _ColorGrid extends StatelessWidget {
         childAspectRatio: 0.85,
       ),
       itemBuilder: (_, i) {
-        final theme = entries[i].key;
-        final (color, label) = entries[i].value;
+        final theme = entries[i];
+        final color = bgColor(theme);
+        final label = colorLabel(theme);
         final isSelected = selected == theme;
         return GestureDetector(
           onTap: () => onSelect(theme),
@@ -313,9 +277,8 @@ class _ColorGrid extends StatelessWidget {
                     color: color,
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                      color: isSelected
-                          ? const Color(0xFF3D5A99)
-                          : Colors.black12,
+                      color:
+                          isSelected ? const Color(0xFF3D5A99) : Colors.black12,
                       width: isSelected ? 2.5 : 1,
                     ),
                   ),
@@ -325,7 +288,8 @@ class _ColorGrid extends StatelessWidget {
                             width: 24,
                             height: 24,
                             decoration: BoxDecoration(
-                              color: const Color(0xFF3D5A99).withValues(alpha: 0.15),
+                              color: const Color(0xFF3D5A99)
+                                  .withValues(alpha: 0.15),
                               shape: BoxShape.circle,
                             ),
                             child: const Icon(
@@ -353,8 +317,6 @@ class _ColorGrid extends StatelessWidget {
     );
   }
 }
-
-// ── Labeled slider row ───────────────────────────────────────────────────────
 
 class _LabeledSlider extends StatelessWidget {
   final String label;
@@ -446,8 +408,6 @@ class _LabeledSlider extends StatelessWidget {
   }
 }
 
-// ── Preset tile ─────────────────────────────────────────────────────────────
-
 class _PresetTile extends StatelessWidget {
   final String label;
   final String subtitle;
@@ -489,8 +449,8 @@ class _PresetTile extends StatelessWidget {
                           fontWeight: FontWeight.w600, fontSize: 14)),
                   const SizedBox(height: 2),
                   Text(subtitle,
-                      style: const TextStyle(
-                          fontSize: 11, color: Colors.black45)),
+                      style:
+                          const TextStyle(fontSize: 11, color: Colors.black45)),
                 ],
               ),
             ),
