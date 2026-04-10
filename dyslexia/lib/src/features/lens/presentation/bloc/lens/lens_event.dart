@@ -6,3 +6,11 @@ abstract class LensEvent extends Equatable {
 }
 
 class CaptureTextEvent extends LensEvent {}
+
+class AnalyzeFrameEvent extends LensEvent {
+  final AnalysisImage image;
+  AnalyzeFrameEvent(this.image);
+
+  @override
+  List<Object?> get props => [image];
+}

@@ -1,6 +1,7 @@
 import '../../../configs/injector/injector_conf.dart';
 import '../data/datasources/lens_datasource.dart';
 import '../data/repositories/lens_repository_impl.dart';
+import '../domain/usecases/analyze_frame_usecase.dart';
 import '../domain/usecases/capture_text_usecase.dart';
 import '../presentation/bloc/lens/lens_bloc.dart';
 
@@ -9,11 +10,18 @@ class LensDependency {
 
   static void init() {
     getIt.registerFactory(
-      () => LensBloc(getIt<CaptureTextUseCase>()),
+      () => LensBloc(
+        getIt<CaptureTextUseCase>(),
+        getIt<AnalyzeFrameUseCase>(),
+      ),
     );
 
     getIt.registerLazySingleton(
       () => CaptureTextUseCase(getIt<LensRepositoryImpl>()),
+    );
+
+    getIt.registerLazySingleton(
+      () => AnalyzeFrameUseCase(getIt<LensRepositoryImpl>()),
     );
 
     getIt.registerLazySingleton(
