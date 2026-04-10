@@ -5,4 +5,10 @@ abstract class ScanEvent extends Equatable {
   List<Object?> get props => [];
 }
 
-class StartScanEvent extends ScanEvent {}
+class StartScanEvent extends ScanEvent {
+  final String imagePath;
+  StartScanEvent(this.imagePath);
+
+  @override
+  List<Object?> get props => [imagePath];
+}

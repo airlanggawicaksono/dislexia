@@ -10,9 +10,10 @@ class ScanRepositoryImpl implements ScanRepository {
   ScanRepositoryImpl(this._datasource);
 
   @override
-  Future<Either<Failure, DocumentEntity>> scanFromCamera() async {
+  Future<Either<Failure, DocumentEntity>> scanFromCamera(
+      String imagePath) async {
     try {
-      final result = await _datasource.scanFromCamera();
+      final result = await _datasource.scanFromCamera(imagePath);
       return Right(result);
     } catch (_) {
       return Left(OcrFailure());
