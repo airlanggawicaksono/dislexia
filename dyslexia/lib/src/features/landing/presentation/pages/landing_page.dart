@@ -24,8 +24,10 @@ class LandingPage extends StatelessWidget {
               Align(
                 alignment: Alignment.centerRight,
                 child: IconButton(
-                  icon: const Icon(Icons.settings_rounded, color: Colors.black54),
-                  onPressed: () => context.pushNamed(AppRoute.displaySettings.name),
+                  icon:
+                      const Icon(Icons.settings_rounded, color: Colors.black54),
+                  onPressed: () =>
+                      context.pushNamed(AppRoute.displaySettings.name),
                 ),
               ),
               const Spacer(),
@@ -55,7 +57,8 @@ class LandingPage extends StatelessWidget {
               const SizedBox(height: 10),
               const Text(
                 'Paste text, upload a file, or scan a\ndocument with your camera',
-                style: TextStyle(fontSize: 14, color: Colors.black45, height: 1.5),
+                style:
+                    TextStyle(fontSize: 14, color: Colors.black45, height: 1.5),
                 textAlign: TextAlign.center,
               ),
               const Spacer(),
@@ -75,12 +78,6 @@ class LandingPage extends StatelessWidget {
                 icon: Icons.camera_alt_rounded,
                 label: 'Scan with Camera',
                 onTap: () => context.pushNamed(AppRoute.scanPaste.name),
-              ),
-              const SizedBox(height: 10),
-              _ActionTile(
-                icon: Icons.center_focus_strong_rounded,
-                label: 'Lens',
-                onTap: () => context.pushNamed(AppRoute.lens.name),
               ),
               const SizedBox(height: 32),
             ],

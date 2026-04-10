@@ -19,7 +19,7 @@ class ScanBloc extends Bloc<ScanEvent, ScanState> {
   Future<void> _onStartScan(
       StartScanEvent event, Emitter<ScanState> emit) async {
     emit(ScanLoadingState());
-    final result = await _scanText.call(NoParams());
+    final result = await _scanText.call(ScanParams(event.imagePath));
     result.fold(
       (l) => emit(ScanFailureState(mapFailureToMessage(l))),
       (r) => emit(ScanSuccessState(r)),

@@ -1,0 +1,16 @@
+# Suppress warnings for ML Kit text recognition language-specific classes
+-dontwarn com.google.mlkit.vision.text.chinese.ChineseTextRecognizerOptions$Builder
+-dontwarn com.google.mlkit.vision.text.chinese.ChineseTextRecognizerOptions
+-dontwarn com.google.mlkit.vision.text.devanagari.DevanagariTextRecognizerOptions$Builder
+-dontwarn com.google.mlkit.vision.text.devanagari.DevanagariTextRecognizerOptions
+-dontwarn com.google.mlkit.vision.text.japanese.JapaneseTextRecognizerOptions$Builder
+-dontwarn com.google.mlkit.vision.text.japanese.JapaneseTextRecognizerOptions
+-dontwarn com.google.mlkit.vision.text.korean.KoreanTextRecognizerOptions$Builder
+-dontwarn com.google.mlkit.vision.text.korean.KoreanTextRecognizerOptions
+
+# Suppress warnings for snakeyaml java.beans classes
+-dontwarn java.beans.BeanInfo
+-dontwarn java.beans.FeatureDescriptor
+-dontwarn java.beans.IntrospectionException
+-dontwarn java.beans.Introspector
+-dontwarn java.beans.PropertyDescriptor

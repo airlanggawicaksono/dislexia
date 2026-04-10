@@ -37,9 +37,12 @@ class DisplaySettingsModel extends DisplaySettingsEntity {
         lineSpacing: (map['lineSpacing'] as num?)?.toDouble() ?? 1.5,
         letterSpacing: (map['letterSpacing'] as num?)?.toDouble() ?? 0.5,
         wordSpacing: (map['wordSpacing'] as num?)?.toDouble() ?? 4.0,
-        font: DyslexiaFont.values[(map['font'] as int? ?? 0).clamp(0, DyslexiaFont.values.length - 1)],
-        colorTheme: AppColorTheme.values[map['colorTheme'] as int? ?? 1],
-        preset: DisplayPreset.values[map['preset'] as int? ?? 0],
+        font: DyslexiaFont.values[(map['font'] as int? ?? 0)
+            .clamp(0, DyslexiaFont.values.length - 1)],
+        colorTheme: AppColorTheme.values[(map['colorTheme'] as int? ?? 1)
+            .clamp(0, AppColorTheme.values.length - 1)],
+        preset: DisplayPreset.values[(map['preset'] as int? ?? 0)
+            .clamp(0, DisplayPreset.values.length - 1)],
       );
 
   DisplaySettingsModel copyWith({
