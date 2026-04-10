@@ -79,6 +79,12 @@ class LandingPage extends StatelessWidget {
                 label: 'Scan with Camera',
                 onTap: () => context.pushNamed(AppRoute.scanPaste.name),
               ),
+              const SizedBox(height: 10),
+              _ActionTile(
+                icon: Icons.center_focus_strong_rounded,
+                label: 'Lens',
+                onTap: () => context.pushNamed(AppRoute.lens.name),
+              ),
               const SizedBox(height: 32),
             ],
           ),
