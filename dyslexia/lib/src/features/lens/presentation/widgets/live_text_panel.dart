@@ -28,19 +28,16 @@ class LiveTextPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.35,
-      ),
       decoration: BoxDecoration(
         color: _bg.withValues(alpha: 0.95),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
         boxShadow: const [
-          BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, -2)),
+          BoxShadow(
+              color: Colors.black26, blurRadius: 8, offset: Offset(0, -2)),
         ],
       ),
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Center(

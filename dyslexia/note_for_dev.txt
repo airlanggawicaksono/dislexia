@@ -1,0 +1,9 @@
+Tolong ganti dengan file font :
+- Arial        → ganti Arimo.ttf dengan font Arial yang asli
+- Helvetica    → ganti Inter.ttf dengan font Helvetica yang asli
+- Calibri      → ganti Lato.ttf dengan font Calibri yang asli
+- Comic Sans   → ganti ComicNeue.ttf dengan font Comic Sans MS yang asli
+- Verdana      → ganti Cabin.ttf dengan font Verdana yang asli
+- Trebuchet MS → ganti TitilliumWeb.ttf dengan font Trebuchet MS yang asli
+Setelah font baru ditaruh di assets/fonts/, update pubspec.yaml (bagian fonts:)
+dan font_utils.dart (ubah fontFamily-nya ke nama family yang baru).

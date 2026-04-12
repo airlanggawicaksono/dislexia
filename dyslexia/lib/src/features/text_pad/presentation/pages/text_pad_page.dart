@@ -22,19 +22,16 @@ class TextPadPage extends StatelessWidget {
         final bg = _bgColor(s.colorTheme);
         final fg = _textColor(s.colorTheme);
 
-        const neutralBg = Color(0xFFF5F0E8);
-        const neutralFg = Colors.black87;
-
         return Scaffold(
           backgroundColor: bg,
           appBar: AppBar(
-            backgroundColor: neutralBg,
+            backgroundColor: bg,
+            surfaceTintColor: Colors.transparent,
             elevation: 0,
-            iconTheme: const IconThemeData(color: neutralFg),
+            iconTheme: IconThemeData(color: fg),
             title: Text(
               sourceName ?? 'Text Pad',
-              style: const TextStyle(
-                  color: neutralFg, fontWeight: FontWeight.w600),
+              style: TextStyle(color: fg, fontWeight: FontWeight.w600),
             ),
             actions: [
               IconButton(

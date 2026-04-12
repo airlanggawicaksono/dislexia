@@ -1,13 +1,13 @@
-import 'package:camerawesome/camerawesome_plugin.dart';
 import 'package:fpdart/fpdart.dart';
 
 import '../../../../core/errors/failures.dart';
 import '../entities/lens_frame_entity.dart';
+import '../entities/lens_scan_payload_entity.dart';
 import '../repositories/lens_repository.dart';
 
 class AnalyzeFrameParams {
-  final AnalysisImage image;
-  const AnalyzeFrameParams(this.image);
+  final LensScanPayloadEntity payload;
+  const AnalyzeFrameParams(this.payload);
 }
 
 class AnalyzeFrameUseCase {
@@ -15,5 +15,5 @@ class AnalyzeFrameUseCase {
   AnalyzeFrameUseCase(this._repository);
 
   Future<Either<Failure, LensFrameEntity>> call(AnalyzeFrameParams params) =>
-      _repository.analyzeFrame(params.image);
+      _repository.analyzeFrame(params.payload);
 }

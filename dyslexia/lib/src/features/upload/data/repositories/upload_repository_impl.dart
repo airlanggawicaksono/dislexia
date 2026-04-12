@@ -3,7 +3,7 @@ import 'package:fpdart/fpdart.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/entities/document_entity.dart';
 import '../../domain/repositories/upload_repository.dart';
-import '../datasources/upload_datasource.dart';
+import '../datasources/upload_datasource_impl.dart';
 
 class UploadRepositoryImpl implements UploadRepository {
   final UploadDatasourceImpl _datasource;

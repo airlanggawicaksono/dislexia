@@ -12,8 +12,6 @@ dependencies:
     sdk: flutter
 
   cupertino_icons: ^1.0.8
-  # yolo
-  ultralytics_yolo: ^0.1.26
 
   # State management
   flutter_bloc: ^9.0.0
@@ -51,10 +49,12 @@ dependencies:
 
   # Feature: Upload / Scan / Lens
   file_picker: ^8.1.2
-  google_mlkit_text_recognition: ^0.13.0
-  camera: ^0.11.0+2
+  google_mlkit_text_recognition: ^0.14.0
   image_picker: ^1.1.2
   camerawesome: ^2.0.0
+  flutter_scalable_ocr: ^2.2.1
+  syncfusion_flutter_pdf: ^28.1.33
+  archive: ^3.6.1
 
 dev_dependencies:
   flutter_test:
@@ -77,3 +77,15 @@ flutter:
           weight: 700
         - asset: assets/fonts/OpenDyslexic-Italic.otf
           style: italic
+
+    - family: SassoonPrimary
+      fonts:
+        - asset: assets/fonts/Sassoon Primary Regular.otf
+
+    - family: Tahoma
+      fonts:
+        - asset: assets/fonts/tahoma.ttf
+
+    - family: WeezerFont
+      fonts:
+        - asset: assets/fonts/weezerfont.ttf

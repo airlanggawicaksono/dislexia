@@ -9,6 +9,21 @@ import '../theme/display_colors.dart';
 class DisplaySettingsPage extends StatelessWidget {
   const DisplaySettingsPage({super.key});
 
+  static const _fontOptions = <DyslexiaFont>[
+    DyslexiaFont.openDyslexic,
+    DyslexiaFont.lexend,
+    DyslexiaFont.plusJakartaSans,
+    DyslexiaFont.sassoonPrimary,
+    DyslexiaFont.tahoma,
+    DyslexiaFont.weezerFont,
+    DyslexiaFont.verdana,
+    DyslexiaFont.trebuchetMS,
+    DyslexiaFont.helvetica,
+    DyslexiaFont.arial,
+    DyslexiaFont.comicSansMS,
+    DyslexiaFont.calibri,
+  ];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -34,9 +49,24 @@ class DisplaySettingsPage extends StatelessWidget {
           return ListView(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
             children: [
+              _SectionLabel(title: 'FONT'),
+              SizedBox(
+                height: 98,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  children: _fontOptions
+                      .map((f) => _FontCard(
+                            font: f,
+                            selected: s.font == f,
+                            onTap: () => bloc.add(UpdateFontEvent(f)),
+                          ))
+                      .toList(),
+                ),
+              ),
+              const SizedBox(height: 24),
               _SectionLabel(title: 'LIVE PREVIEW'),
               Container(
-                height: 120,
+                height: 128,
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -49,7 +79,7 @@ class DisplaySettingsPage extends StatelessWidget {
                     'The quick brown fox jumps over the lazy dog. '
                     'Reading should feel comfortable and natural for everyone.',
                     textAlign: TextAlign.center,
-                    maxLines: 2,
+                    maxLines: 3,
                     style: applyDyslexiaFont(
                       font: s.font,
                       baseStyle: TextStyle(
@@ -61,21 +91,6 @@ class DisplaySettingsPage extends StatelessWidget {
                       ),
                     ),
                   ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              _SectionLabel(title: 'FONT'),
-              SizedBox(
-                height: 86,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  children: DyslexiaFont.values
-                      .map((f) => _FontCard(
-                            font: f,
-                            selected: s.font == f,
-                            onTap: () => bloc.add(UpdateFontEvent(f)),
-                          ))
-                      .toList(),
                 ),
               ),
               const SizedBox(height: 24),
@@ -146,10 +161,10 @@ class DisplaySettingsPage extends StatelessWidget {
       };
 
   String _presetSubtitle(DisplayPreset p) => switch (p) {
-        DisplayPreset.defaultPreset => 'OpenDyslexic · Cream · 18pt',
-        DisplayPreset.dyslexiaFriendly => 'OpenDyslexic · Cream · 20pt · 2.0x',
-        DisplayPreset.highContrast => 'Jakarta Sans · Dark · 22pt',
-        DisplayPreset.nightMode => 'Jakarta Sans · Dark · 18pt',
+        DisplayPreset.defaultPreset => 'OpenDyslexic - Cream - 18pt',
+        DisplayPreset.dyslexiaFriendly => 'OpenDyslexic - Cream - 20pt - 2.0x',
+        DisplayPreset.highContrast => 'Plus Jakarta Sans - Dark - 22pt',
+        DisplayPreset.nightMode => 'Plus Jakarta Sans - Dark - 18pt',
       };
 }
 
@@ -187,8 +202,16 @@ class _FontCard extends StatelessWidget {
 
   static const _labels = {
     DyslexiaFont.openDyslexic: 'OpenDyslexic',
-    DyslexiaFont.jakartaSans: 'Jakarta Sans',
+    DyslexiaFont.plusJakartaSans: 'Plus Jakarta Sans',
+    DyslexiaFont.lexend: 'Lexend',
+    DyslexiaFont.sassoonPrimary: 'Sassoon Primary',
+    DyslexiaFont.tahoma: 'Tahoma',
+    DyslexiaFont.weezerFont: 'WeezerFont',
+    DyslexiaFont.verdana: 'Verdana',
+    DyslexiaFont.trebuchetMS: 'Trebuchet MS',
+    DyslexiaFont.helvetica: 'Helvetica',
     DyslexiaFont.arial: 'Arial',
+    DyslexiaFont.comicSansMS: 'Comic Sans MS',
     DyslexiaFont.calibri: 'Calibri',
   };
 
@@ -198,7 +221,7 @@ class _FontCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 72,
+        width: 112,
         margin: const EdgeInsets.only(right: 10),
         padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(

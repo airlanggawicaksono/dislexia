@@ -1,9 +1,9 @@
-import 'package:camerawesome/camerawesome_plugin.dart';
 import 'package:fpdart/fpdart.dart';
 
 import '../../../../core/entities/document_entity.dart';
 import '../../../../core/errors/failures.dart';
 import '../../domain/entities/lens_frame_entity.dart';
+import '../../domain/entities/lens_scan_payload_entity.dart';
 import '../../domain/repositories/lens_repository.dart';
 import '../datasources/lens_datasource.dart';
 
@@ -21,9 +21,11 @@ class LensRepositoryImpl implements LensRepository {
   }
 
   @override
-  Future<Either<Failure, LensFrameEntity>> analyzeFrame(AnalysisImage img) async {
+  Future<Either<Failure, LensFrameEntity>> analyzeFrame(
+    LensScanPayloadEntity payload,
+  ) async {
     try {
-      return Right(await _datasource.analyzeFrame(img));
+      return Right(await _datasource.analyzeFrame(payload));
     } catch (_) {
       return Left(OcrFailure());
     }
