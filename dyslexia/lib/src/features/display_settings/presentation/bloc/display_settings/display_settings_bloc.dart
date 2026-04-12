@@ -22,22 +22,26 @@ class DisplaySettingsBloc
 
   void _updateFontSize(
       UpdateFontSizeEvent event, Emitter<DisplaySettingsState> emit) {
-    emit(state.copyWith(settings: state.settings.copyWith(fontSize: event.fontSize)));
+    emit(state.copyWith(
+        settings: state.settings.copyWith(fontSize: event.fontSize)));
   }
 
   void _updateLineSpacing(
       UpdateLineSpacingEvent event, Emitter<DisplaySettingsState> emit) {
-    emit(state.copyWith(settings: state.settings.copyWith(lineSpacing: event.lineSpacing)));
+    emit(state.copyWith(
+        settings: state.settings.copyWith(lineSpacing: event.lineSpacing)));
   }
 
   void _updateLetterSpacing(
       UpdateLetterSpacingEvent event, Emitter<DisplaySettingsState> emit) {
-    emit(state.copyWith(settings: state.settings.copyWith(letterSpacing: event.letterSpacing)));
+    emit(state.copyWith(
+        settings: state.settings.copyWith(letterSpacing: event.letterSpacing)));
   }
 
   void _updateWordSpacing(
       UpdateWordSpacingEvent event, Emitter<DisplaySettingsState> emit) {
-    emit(state.copyWith(settings: state.settings.copyWith(wordSpacing: event.wordSpacing)));
+    emit(state.copyWith(
+        settings: state.settings.copyWith(wordSpacing: event.wordSpacing)));
   }
 
   void _updateFont(UpdateFontEvent event, Emitter<DisplaySettingsState> emit) {
@@ -46,7 +50,8 @@ class DisplaySettingsBloc
 
   void _updateColorTheme(
       UpdateColorThemeEvent event, Emitter<DisplaySettingsState> emit) {
-    emit(state.copyWith(settings: state.settings.copyWith(colorTheme: event.colorTheme)));
+    emit(state.copyWith(
+        settings: state.settings.copyWith(colorTheme: event.colorTheme)));
   }
 
   void _applyPreset(
@@ -71,7 +76,7 @@ class DisplaySettingsBloc
           lineSpacing: 2.0,
           letterSpacing: 0.5,
           wordSpacing: 4.0,
-          font: DyslexiaFont.jakartaSans,
+          font: DyslexiaFont.plusJakartaSans,
           colorTheme: AppColorTheme.dark,
           preset: DisplayPreset.highContrast,
         ),
@@ -80,7 +85,7 @@ class DisplaySettingsBloc
           lineSpacing: 1.8,
           letterSpacing: 0.5,
           wordSpacing: 4.0,
-          font: DyslexiaFont.jakartaSans,
+          font: DyslexiaFont.plusJakartaSans,
           colorTheme: AppColorTheme.dark,
           preset: DisplayPreset.nightMode,
         ),

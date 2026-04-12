@@ -8,9 +8,13 @@ abstract class LensEvent extends Equatable {
 class CaptureTextEvent extends LensEvent {}
 
 class AnalyzeFrameEvent extends LensEvent {
-  final AnalysisImage image;
-  AnalyzeFrameEvent(this.image);
+  final String scannedText;
+  final List<dynamic> rawElements;
+  AnalyzeFrameEvent(
+    this.scannedText, {
+    this.rawElements = const [],
+  });
 
   @override
-  List<Object?> get props => [image];
+  List<Object?> get props => [scannedText, rawElements.length];
 }

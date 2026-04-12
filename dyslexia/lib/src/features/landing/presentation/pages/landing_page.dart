@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../routes/app_route_path.dart';
@@ -10,6 +11,22 @@ class LandingPage extends StatelessWidget {
   static const _tileColor = Color(0xFFEFEADF);
   static const _iconBgColor = Color(0xFFE2DDD4);
   static const _iconColor = Color(0xFF3D5A99);
+
+  Future<void> _pasteFromClipboard(BuildContext context) async {
+    final data = await Clipboard.getData(Clipboard.kTextPlain);
+    final text = data?.text?.trim() ?? '';
+    if (!context.mounted) return;
+    if (text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nothing found in clipboard')),
+      );
+      return;
+    }
+    context.pushNamed(
+      AppRoute.textPad.name,
+      extra: {'text': text, 'sourceName': 'Clipboard'},
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -65,7 +82,7 @@ class LandingPage extends StatelessWidget {
               _ActionTile(
                 icon: Icons.content_paste_rounded,
                 label: 'Paste from Clipboard',
-                onTap: () => context.pushNamed(AppRoute.scanPaste.name),
+                onTap: () => _pasteFromClipboard(context),
               ),
               const SizedBox(height: 10),
               _ActionTile(
