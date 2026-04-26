@@ -1,10 +1,17 @@
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/utils/font_utils.dart';
+import '../../../../core/widgets/adaptive/adaptive.dart';
 import '../../domain/entities/display_settings_entity.dart';
 import '../bloc/display_settings/display_settings_bloc.dart';
 import '../theme/display_colors.dart';
+
+bool get _isCupertino =>
+    defaultTargetPlatform == TargetPlatform.iOS ||
+    defaultTargetPlatform == TargetPlatform.macOS;
 
 class DisplaySettingsPage extends StatelessWidget {
   const DisplaySettingsPage({super.key});
@@ -26,22 +33,10 @@ class DisplaySettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return AdaptiveScaffold(
       backgroundColor: const Color(0xFFF5F0E8),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFFF5F0E8),
-        elevation: 0,
-        centerTitle: false,
-        title: const Text(
-          'Display Settings',
-          style: TextStyle(
-            color: Colors.black87,
-            fontWeight: FontWeight.bold,
-            fontSize: 22,
-          ),
-        ),
-        iconTheme: const IconThemeData(color: Colors.black87),
-      ),
+      title: 'Display Settings',
+      titleColor: Colors.black87,
       body: BlocBuilder<DisplaySettingsBloc, DisplaySettingsState>(
         builder: (context, state) {
           final s = state.settings;
@@ -315,10 +310,12 @@ class _ColorGrid extends StatelessWidget {
                                   .withValues(alpha: 0.15),
                               shape: BoxShape.circle,
                             ),
-                            child: const Icon(
-                              Icons.check_rounded,
+                            child: Icon(
+                              _isCupertino
+                                  ? CupertinoIcons.checkmark
+                                  : Icons.check_rounded,
                               size: 16,
-                              color: Color(0xFF3D5A99),
+                              color: const Color(0xFF3D5A99),
                             ),
                           ),
                         )
@@ -406,21 +403,12 @@ class _LabeledSlider extends StatelessWidget {
                       ),
               ),
               Expanded(
-                child: SliderTheme(
-                  data: SliderTheme.of(context).copyWith(
-                    activeTrackColor: const Color(0xFF3D5A99),
-                    thumbColor: const Color(0xFF3D5A99),
-                    inactiveTrackColor: Colors.black12,
-                    trackHeight: 3,
-                    thumbShape:
-                        const RoundSliderThumbShape(enabledThumbRadius: 8),
-                  ),
-                  child: Slider(
-                    value: value.clamp(min, max),
-                    min: min,
-                    max: max,
-                    onChanged: onChanged,
-                  ),
+                child: AdaptiveSlider(
+                  value: value,
+                  min: min,
+                  max: max,
+                  onChanged: onChanged,
+                  activeColor: const Color(0xFF3D5A99),
                 ),
               ),
             ],
@@ -478,8 +466,13 @@ class _PresetTile extends StatelessWidget {
               ),
             ),
             if (selected)
-              const Icon(Icons.check_circle_rounded,
-                  color: Color(0xFF3D5A99), size: 20),
+              Icon(
+                _isCupertino
+                    ? CupertinoIcons.checkmark_circle_fill
+                    : Icons.check_circle_rounded,
+                color: const Color(0xFF3D5A99),
+                size: 20,
+              ),
           ],
         ),
       ),

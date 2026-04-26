@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_scalable_ocr/flutter_scalable_ocr.dart';
 
 import '../../../../core/themes/feature_neutral_theme.dart';
+import '../../../../core/widgets/adaptive/adaptive.dart';
 import '../../../display_settings/presentation/bloc/display_settings/display_settings_bloc.dart';
 import '../bloc/lens/lens_bloc.dart';
 import '../widgets/live_text_panel.dart';
@@ -22,22 +23,10 @@ class _LensPageState extends State<LensPage> {
     return BlocBuilder<DisplaySettingsBloc, DisplaySettingsState>(
       builder: (context, displayState) {
         final s = displayState.settings;
-        return Scaffold(
+        return AdaptiveScaffold(
           backgroundColor: FeatureNeutralTheme.background,
-          appBar: AppBar(
-            backgroundColor: FeatureNeutralTheme.background,
-            surfaceTintColor: Colors.transparent,
-            elevation: 0,
-            iconTheme:
-                const IconThemeData(color: FeatureNeutralTheme.textPrimary),
-            title: const Text(
-              'Lens',
-              style: TextStyle(
-                color: FeatureNeutralTheme.textPrimary,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
+          title: 'Lens',
+          titleColor: FeatureNeutralTheme.textPrimary,
           body: LayoutBuilder(
             builder: (context, constraints) {
               final cameraHeight = constraints.maxHeight * 2 / 3;

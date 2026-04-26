@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../../core/themes/feature_neutral_theme.dart';
+import '../../../../core/widgets/adaptive/adaptive.dart';
 import '../../../../routes/app_route_path.dart';
 import '../bloc/scan/scan_bloc.dart';
 
@@ -31,7 +32,6 @@ class _ScanPastePageState extends State<ScanPastePage> {
     if (!mounted) return;
 
     if (photo == null) {
-      // user cancelled — go back
       context.pop();
       return;
     }
@@ -41,21 +41,10 @@ class _ScanPastePageState extends State<ScanPastePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return AdaptiveScaffold(
       backgroundColor: FeatureNeutralTheme.background,
-      appBar: AppBar(
-        backgroundColor: FeatureNeutralTheme.background,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: FeatureNeutralTheme.textPrimary),
-        title: const Text(
-          'Scan with Camera',
-          style: TextStyle(
-            color: FeatureNeutralTheme.textPrimary,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
+      title: 'Scan with Camera',
+      titleColor: FeatureNeutralTheme.textPrimary,
       body: BlocListener<ScanBloc, ScanState>(
         listener: (context, state) {
           if (state is ScanSuccessState) {
@@ -67,8 +56,7 @@ class _ScanPastePageState extends State<ScanPastePage> {
               },
             );
           } else if (state is ScanFailureState) {
-            ScaffoldMessenger.of(context)
-                .showSnackBar(SnackBar(content: Text(state.message)));
+            showAdaptiveFeedback(context, state.message);
             context.pop();
           }
         },
@@ -78,29 +66,28 @@ class _ScanPastePageState extends State<ScanPastePage> {
               return Center(
                 child: Container(
                   margin: const EdgeInsets.all(20),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 24, vertical: 20),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
                   decoration: FeatureNeutralTheme.panelDecoration(),
                   child: const Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      CircularProgressIndicator(
+                      AdaptiveProgressIndicator(
                           color: FeatureNeutralTheme.accent),
                       SizedBox(height: 14),
                       Text(
                         'Reading text...',
-                        style: TextStyle(
-                            color: FeatureNeutralTheme.textSecondary),
+                        style:
+                            TextStyle(color: FeatureNeutralTheme.textSecondary),
                       ),
                     ],
                   ),
                 ),
               );
             }
-            // Initial state — camera is opening, show a neutral loader
             return const Center(
-              child: CircularProgressIndicator(
-                  color: FeatureNeutralTheme.accent),
+              child:
+                  AdaptiveProgressIndicator(color: FeatureNeutralTheme.accent),
             );
           },
         ),

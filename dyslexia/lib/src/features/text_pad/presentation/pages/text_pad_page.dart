@@ -1,12 +1,19 @@
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/utils/font_utils.dart';
+import '../../../../core/widgets/adaptive/adaptive.dart';
 import '../../../../features/display_settings/domain/entities/display_settings_entity.dart';
 import '../../../../features/display_settings/presentation/bloc/display_settings/display_settings_bloc.dart';
 import '../../../../routes/app_route_path.dart';
+
+bool get _isCupertino =>
+    defaultTargetPlatform == TargetPlatform.iOS ||
+    defaultTargetPlatform == TargetPlatform.macOS;
 
 class TextPadPage extends StatelessWidget {
   final String text;
@@ -22,36 +29,35 @@ class TextPadPage extends StatelessWidget {
         final bg = _bgColor(s.colorTheme);
         final fg = _textColor(s.colorTheme);
 
-        return Scaffold(
+        return AdaptiveScaffold(
           backgroundColor: bg,
-          appBar: AppBar(
-            backgroundColor: bg,
-            surfaceTintColor: Colors.transparent,
-            elevation: 0,
-            iconTheme: IconThemeData(color: fg),
-            title: Text(
-              sourceName ?? 'Text Pad',
-              style: TextStyle(color: fg, fontWeight: FontWeight.w600),
+          title: sourceName ?? 'Text Pad',
+          titleColor: fg,
+          iconColor: fg,
+          actions: [
+            AdaptiveIconButton(
+              icon: Icon(
+                _isCupertino
+                    ? CupertinoIcons.settings
+                    : Icons.settings_rounded,
+                color: fg,
+              ),
+              tooltip: 'Display settings',
+              onPressed: () =>
+                  context.pushNamed(AppRoute.displaySettings.name),
             ),
-            actions: [
-              IconButton(
-                icon: Icon(Icons.settings_rounded, color: fg),
-                tooltip: 'Display settings',
-                onPressed: () =>
-                    context.pushNamed(AppRoute.displaySettings.name),
+            AdaptiveIconButton(
+              icon: Icon(
+                _isCupertino ? CupertinoIcons.doc_on_doc : Icons.copy_rounded,
+                color: fg,
               ),
-              IconButton(
-                icon: Icon(Icons.copy_rounded, color: fg),
-                tooltip: 'Copy all',
-                onPressed: () {
-                  Clipboard.setData(ClipboardData(text: text));
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Copied to clipboard')),
-                  );
-                },
-              ),
-            ],
-          ),
+              tooltip: 'Copy all',
+              onPressed: () {
+                Clipboard.setData(ClipboardData(text: text));
+                showAdaptiveFeedback(context, 'Copied to clipboard');
+              },
+            ),
+          ],
           body: SingleChildScrollView(
             padding: const EdgeInsets.all(20),
             child: SelectableText(

@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/themes/feature_neutral_theme.dart';
+import '../../../../core/widgets/adaptive/adaptive.dart';
 import '../../../../routes/app_route_path.dart';
 import '../bloc/upload/upload_bloc.dart';
 
@@ -11,21 +12,10 @@ class UploadPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return AdaptiveScaffold(
       backgroundColor: FeatureNeutralTheme.background,
-      appBar: AppBar(
-        backgroundColor: FeatureNeutralTheme.background,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: FeatureNeutralTheme.textPrimary),
-        title: const Text(
-          'Upload File',
-          style: TextStyle(
-            color: FeatureNeutralTheme.textPrimary,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
+      title: 'Upload File',
+      titleColor: FeatureNeutralTheme.textPrimary,
       body: BlocConsumer<UploadBloc, UploadState>(
         listener: (context, state) {
           if (state is UploadSuccessState) {
@@ -37,8 +27,7 @@ class UploadPage extends StatelessWidget {
               },
             );
           } else if (state is UploadFailureState) {
-            ScaffoldMessenger.of(context)
-                .showSnackBar(SnackBar(content: Text(state.message)));
+            showAdaptiveFeedback(context, state.message);
           }
         },
         builder: (context, state) {
@@ -55,7 +44,7 @@ class UploadPage extends StatelessWidget {
                       ? const Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            CircularProgressIndicator(
+                            AdaptiveProgressIndicator(
                               color: FeatureNeutralTheme.accent,
                             ),
                             SizedBox(height: 14),
@@ -92,10 +81,10 @@ class UploadPage extends StatelessWidget {
                               textAlign: TextAlign.center,
                             ),
                             const SizedBox(height: 20),
-                            ElevatedButton.icon(
-                              style: FeatureNeutralTheme.primaryButtonStyle(),
+                            AdaptiveButton(
                               icon: const Icon(Icons.folder_open_rounded),
                               label: const Text('Choose File'),
+                              color: FeatureNeutralTheme.accent,
                               onPressed: () => context
                                   .read<UploadBloc>()
                                   .add(PickAndExtractEvent()),
