@@ -30,66 +30,48 @@
               "layout": "none",
               "children": [
                 {
-                  "type": "path",
-                  "id": "bMTq9",
-                  "x": 0,
-                  "y": 0,
+                  "type": "rectangle",
+                  "cornerRadius": 6,
+                  "id": "eupjo",
+                  "x": 6,
+                  "y": 12,
                   "name": "bookLD",
-                  "geometry": "M28 40q-8-12-13-6-3 2-3-2l0-16q0-4 3-5 5-7 13 5z",
-                  "viewBox": [
-                    0,
-                    0,
-                    56,
-                    56
-                  ],
                   "fill": "#5B9EFF",
-                  "width": 56,
-                  "height": 56,
-                  "stroke": {
-                    "thickness": 0
-                  }
+                  "width": 21,
+                  "height": 32
                 },
                 {
-                  "type": "path",
-                  "id": "ZxiW5",
-                  "x": 0,
-                  "y": 0,
+                  "type": "rectangle",
+                  "cornerRadius": 6,
+                  "id": "nRoHX",
+                  "x": 29,
+                  "y": 12,
                   "name": "bookRD",
-                  "geometry": "M28 40q8-12 13-6 3 2 3-2l0-16q0-4-3-5-5-7-13 5z",
-                  "viewBox": [
-                    0,
-                    0,
-                    56,
-                    56
-                  ],
                   "fill": "#7CB9FF",
-                  "width": 56,
-                  "height": 56,
-                  "stroke": {
-                    "thickness": 0
-                  }
+                  "width": 21,
+                  "height": 32
+                },
+                {
+                  "type": "rectangle",
+                  "cornerRadius": 2,
+                  "id": "1aP6C",
+                  "x": 26,
+                  "y": 14,
+                  "name": "spineD",
+                  "fill": "#FFFFFF",
+                  "width": 4,
+                  "height": 28
                 },
                 {
                   "type": "polygon",
                   "polygonCount": 5,
-                  "id": "MTORR",
+                  "id": "IllIH",
                   "x": 42,
                   "y": 2,
                   "name": "starD",
                   "fill": "#FFD43B",
                   "width": 14,
                   "height": 14
-                },
-                {
-                  "type": "rectangle",
-                  "cornerRadius": 1,
-                  "id": "JKZqS",
-                  "x": 27,
-                  "y": 15,
-                  "name": "spineD2",
-                  "fill": "#FFFFFF",
-                  "width": 2,
-                  "height": 26
                 }
               ]
             },
@@ -156,66 +138,48 @@
               "layout": "none",
               "children": [
                 {
-                  "type": "path",
-                  "id": "6qhr3",
-                  "x": 0,
-                  "y": 0,
+                  "type": "rectangle",
+                  "cornerRadius": 6,
+                  "id": "s4VJN",
+                  "x": 6,
+                  "y": 12,
                   "name": "bookLL",
-                  "geometry": "M28 40q-8-12-13-6-3 2-3-2l0-16q0-4 3-5 5-7 13 5z",
-                  "viewBox": [
-                    0,
-                    0,
-                    56,
-                    56
-                  ],
                   "fill": "#2B6ACC",
-                  "width": 56,
-                  "height": 56,
-                  "stroke": {
-                    "thickness": 0
-                  }
+                  "width": 21,
+                  "height": 32
                 },
                 {
-                  "type": "path",
-                  "id": "ryt6m",
-                  "x": 0,
-                  "y": 0,
+                  "type": "rectangle",
+                  "cornerRadius": 6,
+                  "id": "9MAsh",
+                  "x": 29,
+                  "y": 12,
                   "name": "bookRL",
-                  "geometry": "M28 40q8-12 13-6 3 2 3-2l0-16q0-4-3-5-5-7-13 5z",
-                  "viewBox": [
-                    0,
-                    0,
-                    56,
-                    56
-                  ],
                   "fill": "#3D82E0",
-                  "width": 56,
-                  "height": 56,
-                  "stroke": {
-                    "thickness": 0
-                  }
+                  "width": 21,
+                  "height": 32
+                },
+                {
+                  "type": "rectangle",
+                  "cornerRadius": 2,
+                  "id": "PvqOR",
+                  "x": 26,
+                  "y": 14,
+                  "name": "spineL",
+                  "fill": "#1A0A4A",
+                  "width": 4,
+                  "height": 28
                 },
                 {
                   "type": "polygon",
                   "polygonCount": 5,
-                  "id": "pOB6d",
+                  "id": "D0YHO",
                   "x": 42,
                   "y": 2,
                   "name": "starL",
                   "fill": "#E8A000",
                   "width": 14,
                   "height": 14
-                },
-                {
-                  "type": "rectangle",
-                  "cornerRadius": 1,
-                  "id": "tH8PI",
-                  "x": 27,
-                  "y": 15,
-                  "name": "spineL2",
-                  "fill": "#1A0A4A",
-                  "width": 2,
-                  "height": 26
                 }
               ]
             },
@@ -589,17 +553,18 @@
                   "id": "mHnv5",
                   "name": "accentLineD",
                   "fill": "#E84393",
-                  "width": 60,
+                  "width": 100,
                   "height": 3
                 },
                 {
                   "type": "text",
                   "id": "ozpBS",
                   "name": "tagCD",
-                  "fill": "#CC99BB",
+                  "fill": "#E84393",
                   "content": "dyslexia support",
                   "fontFamily": "Inter",
                   "fontSize": 10,
+                  "fontWeight": "normal",
                   "letterSpacing": 1
                 }
               ]
@@ -634,7 +599,7 @@
               "name": "badgeCL_fixed",
               "width": 60,
               "height": 60,
-              "fill": "#B02070",
+              "fill": "#E84393",
               "cornerRadius": 18,
               "justifyContent": "center",
               "alignItems": "center",
@@ -673,18 +638,19 @@
                   "cornerRadius": 2,
                   "id": "9T8Zb",
                   "name": "accentLineL",
-                  "fill": "#B02070",
-                  "width": 60,
+                  "fill": "#E84393",
+                  "width": 100,
                   "height": 3
                 },
                 {
                   "type": "text",
                   "id": "aIjHv",
                   "name": "tagCL",
-                  "fill": "#7A4A6A",
+                  "fill": "#E84393",
                   "content": "dyslexia support",
                   "fontFamily": "Inter",
                   "fontSize": 10,
+                  "fontWeight": "normal",
                   "letterSpacing": 1
                 }
               ]
@@ -723,54 +689,110 @@
               "children": [
                 {
                   "type": "rectangle",
-                  "cornerRadius": 3,
-                  "id": "7Aw5w",
-                  "x": 12,
-                  "y": 8,
-                  "name": "bLineD",
-                  "fill": "#55EFC4",
-                  "width": 6,
-                  "height": 40
+                  "cornerRadius": 16,
+                  "id": "SUpha",
+                  "x": 8,
+                  "y": 12,
+                  "name": "owlD_Body",
+                  "fill": "#A29BFE",
+                  "width": 40,
+                  "height": 32
                 },
                 {
-                  "type": "ellipse",
-                  "id": "irUXT",
-                  "x": 12,
-                  "y": 24,
-                  "name": "bCircD",
-                  "width": 24,
-                  "height": 24,
-                  "stroke": {
-                    "align": "center",
-                    "thickness": 6,
-                    "fill": "#55EFC4"
-                  }
+                  "type": "path",
+                  "id": "JeZL4",
+                  "x": 8,
+                  "y": 6,
+                  "name": "owlD_EarL",
+                  "geometry": "M0 10q0-10 10 0z",
+                  "viewBox": [
+                    0,
+                    0,
+                    10,
+                    10
+                  ],
+                  "fill": "#A29BFE",
+                  "width": 10,
+                  "height": 10
                 },
                 {
-                  "type": "rectangle",
-                  "cornerRadius": 3,
-                  "id": "MdpjN",
+                  "type": "path",
+                  "id": "4EUsI",
                   "x": 38,
-                  "y": 8,
-                  "name": "dLineD",
-                  "opacity": 0.9,
-                  "fill": "#74B9FF",
-                  "width": 6,
-                  "height": 40
+                  "y": 6,
+                  "name": "owlD_EarR",
+                  "geometry": "M0 10q10-10 10 0z",
+                  "viewBox": [
+                    0,
+                    0,
+                    10,
+                    10
+                  ],
+                  "fill": "#A29BFE",
+                  "width": 10,
+                  "height": 10
                 },
                 {
                   "type": "ellipse",
-                  "id": "qpQ2f",
-                  "x": 20,
-                  "y": 24,
-                  "name": "dCircD",
-                  "opacity": 0.9,
-                  "width": 24,
-                  "height": 24,
+                  "id": "s2OZ0",
+                  "x": 12,
+                  "y": 16,
+                  "name": "owlD_EyeL",
+                  "fill": "#FFFFFF",
+                  "width": 14,
+                  "height": 14
+                },
+                {
+                  "type": "ellipse",
+                  "id": "OqlOH",
+                  "x": 30,
+                  "y": 16,
+                  "name": "owlD_EyeR",
+                  "fill": "#FFFFFF",
+                  "width": 14,
+                  "height": 14
+                },
+                {
+                  "type": "ellipse",
+                  "id": "BvSUm",
+                  "x": 16,
+                  "y": 20,
+                  "name": "owlD_PupL",
+                  "fill": "#1D263B",
+                  "width": 6,
+                  "height": 6
+                },
+                {
+                  "type": "ellipse",
+                  "id": "ls5rL",
+                  "x": 34,
+                  "y": 20,
+                  "name": "owlD_PupR",
+                  "fill": "#1D263B",
+                  "width": 6,
+                  "height": 6
+                },
+                {
+                  "type": "path",
+                  "id": "yYFk4",
+                  "x": 24,
+                  "y": 28,
+                  "name": "owlD_Beak",
+                  "geometry": "M0 0l8 0-4 6z",
+                  "viewBox": [
+                    0,
+                    0,
+                    8,
+                    6
+                  ],
+                  "fill": "#FFD166",
+                  "width": 8,
+                  "height": 6,
                   "stroke": {
-                    "align": "center",
-                    "thickness": 6,
-                    "fill": "#74B9FF"
+                    "thickness": 2,
+                    "join": "round",
+                    "cap": "round",
+                    "fill": "#FFD166"
                   }
                 }
               ]
@@ -797,7 +819,7 @@
                   "id": "SExhg",
                   "name": "tagDD",
                   "fill": "#74B9FF",
-                  "content": "baca dengan nyaman",
+                  "content": "read comfortably",
                   "fontFamily": "Inter",
                   "fontSize": 10,
                   "fontWeight": "500",
@@ -839,54 +861,110 @@
               "children": [
                 {
                   "type": "rectangle",
-                  "cornerRadius": 3,
-                  "id": "1lc5v",
-                  "x": 12,
-                  "y": 8,
-                  "name": "bLineL",
-                  "fill": "#00B894",
-                  "width": 6,
-                  "height": 40
+                  "cornerRadius": 16,
+                  "id": "YZ4dj",
+                  "x": 8,
+                  "y": 12,
+                  "name": "owlL_Body",
+                  "fill": "#6C5CE7",
+                  "width": 40,
+                  "height": 32
                 },
                 {
-                  "type": "ellipse",
-                  "id": "g0rFT",
-                  "x": 12,
-                  "y": 24,
-                  "name": "bCircL",
-                  "width": 24,
-                  "height": 24,
-                  "stroke": {
-                    "align": "center",
-                    "thickness": 6,
-                    "fill": "#00B894"
-                  }
+                  "type": "path",
+                  "id": "Qx3U2",
+                  "x": 8,
+                  "y": 6,
+                  "name": "owlL_EarL",
+                  "geometry": "M0 10q0-10 10 0z",
+                  "viewBox": [
+                    0,
+                    0,
+                    10,
+                    10
+                  ],
+                  "fill": "#6C5CE7",
+                  "width": 10,
+                  "height": 10
                 },
                 {
-                  "type": "rectangle",
-                  "cornerRadius": 3,
-                  "id": "QAy9p",
+                  "type": "path",
+                  "id": "G5Tl0",
                   "x": 38,
-                  "y": 8,
-                  "name": "dLineL",
-                  "opacity": 0.85,
-                  "fill": "#0984E3",
-                  "width": 6,
-                  "height": 40
+                  "y": 6,
+                  "name": "owlL_EarR",
+                  "geometry": "M0 10q10-10 10 0z",
+                  "viewBox": [
+                    0,
+                    0,
+                    10,
+                    10
+                  ],
+                  "fill": "#6C5CE7",
+                  "width": 10,
+                  "height": 10
                 },
                 {
                   "type": "ellipse",
-                  "id": "AMeeH",
-                  "x": 20,
-                  "y": 24,
-                  "name": "dCircL",
-                  "opacity": 0.85,
-                  "width": 24,
-                  "height": 24,
+                  "id": "kL3i5",
+                  "x": 12,
+                  "y": 16,
+                  "name": "owlL_EyeL",
+                  "fill": "#FFFFFF",
+                  "width": 14,
+                  "height": 14
+                },
+                {
+                  "type": "ellipse",
+                  "id": "NkDeW",
+                  "x": 30,
+                  "y": 16,
+                  "name": "owlL_EyeR",
+                  "fill": "#FFFFFF",
+                  "width": 14,
+                  "height": 14
+                },
+                {
+                  "type": "ellipse",
+                  "id": "nhDnm",
+                  "x": 16,
+                  "y": 20,
+                  "name": "owlL_PupL",
+                  "fill": "#1A0A4A",
+                  "width": 6,
+                  "height": 6
+                },
+                {
+                  "type": "ellipse",
+                  "id": "eEyEM",
+                  "x": 34,
+                  "y": 20,
+                  "name": "owlL_PupR",
+                  "fill": "#1A0A4A",
+                  "width": 6,
+                  "height": 6
+                },
+                {
+                  "type": "path",
+                  "id": "yFqK4",
+                  "x": 24,
+                  "y": 28,
+                  "name": "owlL_Beak",
+                  "geometry": "M0 0l8 0-4 6z",
+                  "viewBox": [
+                    0,
+                    0,
+                    8,
+                    6
+                  ],
+                  "fill": "#FFD166",
+                  "width": 8,
+                  "height": 6,
                   "stroke": {
-                    "align": "center",
-                    "thickness": 6,
-                    "fill": "#0984E3"
+                    "thickness": 2,
+                    "join": "round",
+                    "cap": "round",
+                    "fill": "#FFD166"
                   }
                 }
               ]
@@ -913,7 +991,7 @@
                   "id": "AQzCA",
                   "name": "tagDL2",
                   "fill": "#0984E3",
-                  "content": "baca dengan nyaman",
+                  "content": "read comfortably",
                   "fontFamily": "Inter",
                   "fontSize": 10,
                   "fontWeight": "500",
