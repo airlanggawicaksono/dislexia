@@ -1,0 +1,27 @@
+# Production overrides for docker-compose.yml
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up
+
+services:
+  fastapi-app:
+    # Remove volume mounts for production (no hot reload)
+    volumes: []
+    # Production command with configurable workers from .env
+    command: >
+      sh -c "uvicorn app.main:app
+      --host ${APP_HOST:-0.0.0.0}
+      --port ${APP_PORT:-8000}
+      --workers ${APP_WORKERS:-4}"
+    environment:
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      JWT_ALGORITHM: ${JWT_ALGORITHM}
+      JWT_ACCESS_TOKEN_EXPIRE_MINUTES: ${JWT_ACCESS_TOKEN_EXPIRE_MINUTES}
+      ENVIRONMENT: ${ENVIRONMENT:-production}
+    restart: always
+
+  postgres-db:
+    restart: always
