@@ -1,0 +1,106 @@
+name: Flutter Build
+
+on:
+  push:
+    paths:
+      - 'dyslexia/**'
+  pull_request:
+    paths:
+      - 'dyslexia/**'
+  workflow_dispatch:
+
+concurrency:
+  group: flutter-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'oracle'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Install dependencies
+        working-directory: ./dyslexia
+        run: flutter pub get
+
+      - name: Build all Android APKs
+        working-directory: ./dyslexia
+        run: flutter build apk --release --split-per-abi
+
+      - name: Find Android APK files
+        working-directory: ./dyslexia
+        run: find ./build/app/outputs/flutter-apk -name "*.apk" -type f
+
+      - name: Upload Android APKs
+        uses: actions/upload-artifact@v4
+        with:
+          name: dyslexia-android-apks
+          path: ./dyslexia/build/app/outputs/flutter-apk/
+          retention-days: 7
+
+      - name: Upload to GitHub Release
+        if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch'
+        uses: softprops/action-gh-release@v3
+        with:
+          files: |
+            ./dyslexia/build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
+            ./dyslexia/build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+            ./dyslexia/build/app/outputs/flutter-apk/app-x86_64-release.apk
+          tag_name: flutter-apk-latest
+          name: Dislexia App Build
+          overwrite_files: true
+
+  ios:
+    runs-on: macos-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Install dependencies
+        working-directory: ./dyslexia
+        run: flutter pub get
+
+      - name: Build iOS
+        working-directory: ./dyslexia
+        run: flutter build ios --debug --no-codesign
+
+      - name: Zip iOS build
+        working-directory: ./dyslexia
+        run: cd ./build/ios && zip -r Runner.app.zip iphoneos/Runner.app
+
+      - name: Upload iOS build
+        uses: actions/upload-artifact@v4
+        with:
+          name: dyslexia-ios-build
+          path: ./dyslexia/build/ios/Runner.app.zip
+          retention-days: 7
+
+      - name: Upload to GitHub Release
+        if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch'
+        uses: softprops/action-gh-release@v3
+        with:
+          files: ./dyslexia/build/ios/Runner.app.zip
+          tag_name: flutter-apk-latest
+          name: Latest Flutter iOS Build
+          overwrite_files: true
