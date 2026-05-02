@@ -6,9 +6,6 @@ on:
       - 'dyslexia/**'
     branches:
       - main
-  pull_request:
-    paths:
-      - 'dyslexia/**'
   workflow_dispatch:
 
 concurrency:
