@@ -58,7 +58,7 @@ jobs:
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
-          password: ${{ secrets.VPS_PASSWORD }}
+          key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
             docker stop dyslexic_web 2>/dev/null || true
