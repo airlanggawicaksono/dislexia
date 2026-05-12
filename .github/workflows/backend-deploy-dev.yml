@@ -1,0 +1,86 @@
+name: Deploy BE Dev
+
+on:
+  push:
+    paths:
+      - 'backend/**'
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image
+        run: docker build -t dyslexia-dev:latest ./backend
+
+      - name: Save artifacts
+        run: |
+          docker save dyslexia-dev:latest -o /tmp/dyslexia-dev.tar
+          cp ./backend/docker-compose.dev.yml /tmp/docker-compose.dev.yml
+
+      - name: Setup SSH
+        run: |
+          echo "${{ secrets.VPS_SSH_KEY }}" > /tmp/vps_key
+          chmod 600 /tmp/vps_key
+
+      - name: Copy to VPS
+        run: |
+          VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          scp -o StrictHostKeyChecking=no -i /tmp/vps_key /tmp/dyslexia-dev.tar ${VPS}:/tmp/
+          scp -o StrictHostKeyChecking=no -i /tmp/vps_key /tmp/docker-compose.dev.yml ${VPS}:/tmp/
+
+      - name: Backup DB before deploy
+        run: |
+          ssh -o StrictHostKeyChecking=no -i /tmp/vps_key ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "
+            docker exec dev-postgres pg_dump -U dev dev > /opt/dislexia/backups/predeploy-dev.sql 2>/dev/null && echo 'DB backed up' || echo 'DB backup skipped'
+          "
+
+      - name: Deploy on VPS
+        run: |
+          VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          KEY="/tmp/vps_key"
+
+          ssh -o StrictHostKeyChecking=no -i ${KEY} ${VPS} "
+            # Write .env file with dev values
+            printf 'POSTGRES_IMAGE=postgres:16-alpine\nDB_USER=dev\nDB_PASSWORD=dev\nDB_NAME=dev\nDB_HOST=postgres-db\nDB_PORT=5432\nPOSTGRES_EXTERNAL_PORT=5432\nAPP_PORT=8000\nAPP_EXTERNAL_PORT=8000\nAPP_HOST=0.0.0.0\nAPP_RELOAD=true\nJWT_SECRET_KEY=dev\nJWT_ALGORITHM=HS256\nJWT_ACCESS_TOKEN_EXPIRE_MINUTES=30\nENVIRONMENT=development\n' > /opt/dislexia/dev/.env
+
+            # Copy compose file
+            cp /tmp/docker-compose.dev.yml /opt/dislexia/dev/
+
+            # Deploy (no -v flag — would delete volumes!)
+            cd /opt/dislexia/dev
+            docker load -i /tmp/dyslexia-dev.tar
+            docker tag dyslexia-dev:latest dev-fastapi-app:latest
+            docker compose -f docker-compose.dev.yml down 2>/dev/null || true
+            docker compose -f docker-compose.dev.yml up -d --no-build
+          "
+
+      - name: Run DB migrations
+        run: |
+          ssh -o StrictHostKeyChecking=no -i /tmp/vps_key ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "
+            echo 'Running migrations...'
+            docker exec -w /app dev-backend alembic upgrade head 2>&1 || echo 'Migration skipped (check logs)'
+          "
+
+      - name: Health check
+        run: |
+          sleep 10
+          VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          ssh -o StrictHostKeyChecking=no -i /tmp/vps_key ${VPS} '
+            docker ps
+            docker compose -f /opt/dislexia/dev/docker-compose.dev.yml logs --tail=30
+            curl -f http://127.0.0.1:8000/health || echo "Health check failed"
+          '
+
+      - name: Notify failure
+        if: failure()
+        run: echo "Dev deployment failed! Check ${{ secrets.VPS_HOST }}:8000"

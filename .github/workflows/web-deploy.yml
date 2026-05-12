@@ -1,66 +1,74 @@
-name: Web Deploy
+name: Deploy Web
 
 on:
   push:
     paths:
       - 'dyslexia-web/**'
     branches:
-      - main
+      - prod
   workflow_dispatch:
-
-concurrency:
-  group: web-deploy-${{ github.ref }}
-  cancel-in-progress: true
-
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
-    permissions:
-      contents: read
-      packages: write
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Log in to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=sha
-            type=raw,value=latest
+      - name: Build image
+        run: |
+          docker build -t dyslexia-web:latest ./dyslexia-web
 
-      - name: Build and push
-        uses: docker/build-push-action@v6
-        with:
-          context: ./dyslexia-web
-          dockerfile: ./dyslexia-web/Dockerfile
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+      - name: Save image as tar
+        run: |
+          docker save dyslexia-web:latest -o /tmp/dyslexia-web.tar
+          ls -la /tmp/dyslexia-web.tar
 
-      - name: Deploy to VPS
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          script: |
-            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-            docker stop dyslexic_web 2>/dev/null || true
-            docker rm dyslexic_web 2>/dev/null || true
-            docker run -d --name dyslexic_web --restart unless-stopped -p 80:80 ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+      - name: Copy image to VPS via SCP
+        run: |
+          echo "${{ secrets.VPS_SSH_KEY }}" > /tmp/vps_key
+          chmod 600 /tmp/vps_key
+          scp -o StrictHostKeyChecking=no -i /tmp/vps_key /tmp/dyslexia-web.tar ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/tmp/dyslexia-web.tar
+
+      - name: Deploy on VPS
+        run: |
+          ssh -o StrictHostKeyChecking=no -i /tmp/vps_key ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "
+            set -e
+
+            echo '=== Deploying web on VPS ==='
+
+            echo '=== Load image ==='
+            docker load -i /tmp/dyslexia-web.tar
+
+            echo '=== Stop old container ==='
+            docker stop dyslexia-web 2>/dev/null || true
+            docker rm dyslexia-web 2>/dev/null || true
+
+            echo '=== Start container ==='
+            docker run -d --name dyslexia-web --restart unless-stopped -p 8080:80 dyslexia-web:latest
+
+            echo '=== Cleanup ==='
+            rm -f /tmp/dyslexia-web.tar
+            docker image prune -f
+
+            echo '=== Done ==='
+            docker ps | grep dyslexia-web
+          "
+
+      - name: Health check
+        run: |
+          ssh -o StrictHostKeyChecking=no -i /tmp/vps_key ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "
+            set -e
+            sleep 5
+            curl -f http://127.0.0.1:8080/ || exit 1
+            echo '=== Web deployed successfully ==='
+          "
+
+      - name: Notify failure
+        if: failure()
+        run: |
+          echo "Deployment failed! Check VPS at ${{ secrets.VPS_HOST }}"

@@ -1,0 +1,68 @@
+# Standalone dev compose file - do NOT use with docker-compose.yml
+# Usage: docker compose -f docker-compose.dev.yml up
+
+services:
+  fastapi-app:
+    image: dev-fastapi-app:latest
+    container_name: dev-backend
+    volumes: []
+    ports:
+      - "8000:8000"
+    environment:
+      APP_PORT: "8000"
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      DB_HOST: postgres-db
+      DB_PORT: "5432"
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      JWT_ALGORITHM: HS256
+      JWT_ACCESS_TOKEN_EXPIRE_MINUTES: 30
+      ENVIRONMENT: development
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+    command: >
+      sh -c "uvicorn app.main:app
+      --host 0.0.0.0
+      --port 8000
+      --reload"
+    networks:
+      - dislexia_network
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import requests; requests.get('http://localhost:8000/health')\" || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  postgres-db:
+    image: postgres:16-alpine
+    container_name: dev-postgres
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - postgres-dev-data:/var/lib/postgresql
+    ports:
+      - "5434:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h localhost -p 5432"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - dislexia_network
+    restart: always
+
+networks:
+  dislexia_network:
+    name: dev_dislexia_network
+    driver: bridge
+
+volumes:
+  postgres-dev-data:
+    name: dev_postgres-dev-data
+    driver: local
