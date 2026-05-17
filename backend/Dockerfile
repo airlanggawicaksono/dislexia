@@ -4,24 +4,26 @@ FROM python:3.12-slim as builder
 
 WORKDIR /app
 
-# Install build dependencies
-RUN apt-get update && apt-get install -y \
+# Install build dependencies for pip packages
+RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
-    postgresql-client \
+    libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements and install Python dependencies
 COPY requirements.txt .
-RUN pip install --no-cache-dir --user -r requirements.txt
+RUN pip install --no-cache-dir --no-compile --user -r requirements.txt && \
+    find /root/.local -name "*.pyc" -delete
 
 # Stage 2: Runtime - Final lightweight image
 FROM python:3.12-slim
 
 WORKDIR /app
 
-# Install runtime dependencies only
-RUN apt-get update && apt-get install -y \
-    postgresql-client \
+# Install runtime system libs only (no CLI tools)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq5 \
+    ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 # Create non-root user for security

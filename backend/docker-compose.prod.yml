@@ -1,27 +1,68 @@
-# Production overrides for docker-compose.yml
-# Usage: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up
+# Standalone production compose file - do NOT use with docker-compose.yml
+# Usage: docker compose -f docker-compose.prod.yml up
 
 services:
   fastapi-app:
-    # Remove volume mounts for production (no hot reload)
+    image: ${DOCKER_IMAGE:-dyslexia-be:latest}
+    container_name: prod-backend
     volumes: []
-    # Production command with configurable workers from .env
     command: >
       sh -c "uvicorn app.main:app
       --host ${APP_HOST:-0.0.0.0}
       --port ${APP_PORT:-8000}
       --workers ${APP_WORKERS:-4}"
+    ports:
+      - "${APP_EXTERNAL_PORT:-8001}:${APP_PORT:-8000}"
     environment:
+      APP_PORT: ${APP_PORT}
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
       DB_NAME: ${DB_NAME}
-      DB_HOST: ${DB_HOST}
+      DB_HOST: ${DB_HOST:-postgres-db}
       DB_PORT: ${DB_PORT}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY}
       JWT_ALGORITHM: ${JWT_ALGORITHM}
       JWT_ACCESS_TOKEN_EXPIRE_MINUTES: ${JWT_ACCESS_TOKEN_EXPIRE_MINUTES}
       ENVIRONMENT: ${ENVIRONMENT:-production}
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+    networks:
+      - dislexia_network
     restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import requests; requests.get('http://localhost:${APP_PORT:-8000}/health')\" || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   postgres-db:
+    image: ${POSTGRES_IMAGE:-postgres:alpine3.23}
+    container_name: prod-postgres
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    ports:
+      - "${POSTGRES_EXTERNAL_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - dislexia_network
     restart: always
+
+volumes:
+  postgres_data:
+    name: prod_postgres_data
+    driver: local
+
+networks:
+  dislexia_network:
+    name: prod_dislexia_network
+    driver: bridge
