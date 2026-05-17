@@ -1,0 +1,17 @@
+{
+  "name": "Dislexia",
+  "variables": [
+    {
+      "name": "base_url",
+      "value": "https://dev.dyslexic.app",
+      "type": "text",
+      "enabled": true,
+      "secret": false
+    }
+  ],
+  "info": {
+    "type": "bruno-environment",
+    "exportedAt": "2026-05-17T16:28:41.099Z",
+    "exportedUsing": "Bruno/v3.3.0"
+  }
+}
