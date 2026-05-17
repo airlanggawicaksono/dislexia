@@ -1,0 +1,26 @@
+meta {
+  name: Summarize Text
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{base_url}}/api/v1/{{access_hash}}/summarize/process
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "text": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat."
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.feature: eq summarize
+}
