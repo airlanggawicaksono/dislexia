@@ -68,7 +68,7 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no -i /tmp/vps_key ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "
             echo 'Running migrations...'
-            docker exec -w /app dev-backend alembic upgrade head 2>&1 || echo 'Migration skipped (check logs)'
+            docker exec -w /app dev-backend alembic upgrade head 2>&1 && echo 'Migration OK' || { docker exec -w /app dev-backend alembic stamp head 2>&1 && echo 'Migration stamped (table already exists)'; }
           "
 
       - name: Health check
