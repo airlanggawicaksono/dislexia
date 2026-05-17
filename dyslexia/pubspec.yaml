@@ -62,17 +62,6 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   hive_generator: ^2.0.1
   build_runner: ^2.4.13
-  flutter_launcher_icons: ^0.14.3
-
-flutter_launcher_icons:
-  android: true
-  ios: true
-  image_path_android: "assets/icon-foreground.png"
-  image_path_ios: "assets/icon.png"
-  adaptive_icon_background: "#F5F8FF"
-  adaptive_icon_foreground: "assets/icon-foreground.png"
-  min_sdk_android: 21
-  remove_alpha_ios: true
 
 flutter:
   uses-material-design: true
