@@ -41,6 +41,11 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
+    # LLM API Keys
+    OPENAI_API_KEY: Optional[str] = None
+    TOGETHER_API_KEY: Optional[str] = None
+    ANTHROPIC_API_KEY: Optional[str] = None
+
     @property
     def database_url(self) -> str:
         """

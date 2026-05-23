@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.config.database import get_db
-from app.dto.feature.base import (
+from backend.app.dto.feature.HistoryMan.base import (
     FeatureRequestDTO,
     FeatureResponseDTO,
     HistoryListResponseDTO,
@@ -11,9 +11,7 @@ router = APIRouter(prefix="/api/v1/{access_hash}/summarize", tags=["Summarize"])
 
 
 @router.post("/process", response_model=FeatureResponseDTO)
-async def summarize_text(
-    request: FeatureRequestDTO, access_hash: str, db: AsyncSession = Depends(get_db)
-):
+async def summarize_text(request: FeatureRequestDTO, access_hash: str, db: AsyncSession = Depends(get_db)):
     """
     Summarize text input
     TODO: Nganu

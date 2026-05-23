@@ -1,23 +1,19 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 from app.routers import auth
-from app.routers import summarize, professionalize
+from app.routers.features import summarize, professionalize, define
 from app.config.database import close_db, init_db
+from app.policies.exceptions import LLMUnavailableError
 
 # Import all models so they register with Base.metadata
-from app.models import user  # noqa: F401
+from app.models import user, chat_session  # noqa: F401
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """
-    Lifespan context manager for startup/shutdown events
-    """
-    # Startup: create tables
     await init_db()
     yield
-
-    # Shutdown
     await close_db()
 
 
@@ -31,10 +27,17 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+
+@app.exception_handler(LLMUnavailableError)
+async def llm_unavailable_handler(request: Request, exc: LLMUnavailableError):
+    return JSONResponse(status_code=503, content={"detail": str(exc)})
+
+
 # Include routers
 app.include_router(auth.router)
 app.include_router(summarize.router)
 app.include_router(professionalize.router)
+app.include_router(define.router)
 
 
 @app.get("/", tags=["Health"])
