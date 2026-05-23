@@ -7,8 +7,6 @@ from app.config.settings import settings
 
 
 class JWTManager:
-    """JWT token generation and validation"""
-
     def __init__(
         self,
         secret_key: Optional[str] = None,
@@ -21,36 +19,23 @@ class JWTManager:
             access_token_expire_minutes or settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES
         )
 
-    def create_access_token(
-        self, user_id: UUID, username: str, expires_delta: Optional[timedelta] = None
-    ) -> str:
-        """Create JWT access token"""
-        if expires_delta:
-            expire = datetime.now(timezone.utc) + expires_delta
-        else:
-            expire = datetime.now(timezone.utc) + timedelta(
-                minutes=self.access_token_expire_minutes
-            )
-
+    def create_access_token(self, user_id: UUID, expires_delta: Optional[timedelta] = None) -> str:
+        expire = datetime.now(timezone.utc) + (
+            expires_delta or timedelta(minutes=self.access_token_expire_minutes)
+        )
         to_encode = {
             "sub": str(user_id),
-            "username": username,
             "exp": expire,
             "iat": datetime.now(timezone.utc),
             "type": "access",
         }
-
-        encoded_jwt = jwt.encode(to_encode, self.secret_key, algorithm=self.algorithm)
-        return encoded_jwt
+        return jwt.encode(to_encode, self.secret_key, algorithm=self.algorithm)
 
     def verify_token(self, token: str) -> Optional[Dict[str, Any]]:
-        """Verify and decode JWT token"""
         try:
-            payload = jwt.decode(token, self.secret_key, algorithms=[self.algorithm])
-            return payload
+            return jwt.decode(token, self.secret_key, algorithms=[self.algorithm])
         except InvalidTokenError:
             return None
 
     def get_token_expiration(self) -> int:
-        """Get token expiration time in seconds"""
         return self.access_token_expire_minutes * 60

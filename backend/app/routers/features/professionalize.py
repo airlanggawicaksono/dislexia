@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config.database import get_db
@@ -23,7 +24,19 @@ async def process(
     db: AsyncSession = Depends(get_db),
     user: UserResponseDTO = Depends(get_current_user),
 ):
-    return await FeatureService.process(FeatureType.PROFESSIONALIZE, _PROMPT, request.text, user.user_id, db)
+    return await FeatureService.process(FeatureType.PROFESSIONALIZE, _PROMPT, request.text, user.user_id, db, request.session_id)
+
+
+@router.post("/process-stream")
+async def process_stream(
+    request: FeatureRequestDTO,
+    db: AsyncSession = Depends(get_db),
+    user: UserResponseDTO = Depends(get_current_user),
+):
+    async def sse():
+        async for chunk in FeatureService.process_stream(FeatureType.PROFESSIONALIZE, _PROMPT, request.text, user.user_id, db, request.session_id):
+            yield f"data: {chunk.model_dump_json()}\n\n"
+    return StreamingResponse(sse(), media_type="text/event-stream")
 
 
 @router.get("/history", response_model=FeatureHistoryListDTO)

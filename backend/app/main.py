@@ -1,8 +1,8 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
-from app.routers import auth
-from app.routers.features import summarize, professionalize, define
+from app.routers import auth, admin
+from app.routers.features import summarize, professionalize, define, me
 from app.config.database import close_db, init_db
 from app.policies.exceptions import LLMUnavailableError
 
@@ -38,6 +38,8 @@ app.include_router(auth.router)
 app.include_router(summarize.router)
 app.include_router(professionalize.router)
 app.include_router(define.router)
+app.include_router(me.router)
+app.include_router(admin.router)
 
 
 @app.get("/", tags=["Health"])

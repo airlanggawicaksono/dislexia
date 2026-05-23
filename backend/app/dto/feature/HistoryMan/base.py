@@ -37,6 +37,7 @@ class FeatureRequestDTO(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     text: str = Field(..., description="Input text to process")
+    session_id: Optional[UUID] = Field(None, description="Existing session to continue. Omit to start new session.")
 
 
 class FeatureResponseDTO(BaseModel):
@@ -46,4 +47,5 @@ class FeatureResponseDTO(BaseModel):
 
     result: str = Field(..., description="Processed text result")
     feature: str = Field(..., description="Feature name")
+    session_id: UUID = Field(..., description="Session ID for continuing this conversation")
     history_id: Optional[UUID] = Field(None, description="History record ID")

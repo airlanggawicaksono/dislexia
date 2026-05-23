@@ -1,9 +1,12 @@
 from datetime import datetime, timezone
+from typing import Optional
 from uuid import UUID
-from sqlalchemy import select
+from fastapi import HTTPException, status
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.chat_session import ChatSession, FeatureHistory
+from app.models.user import User
 from app.dto.feature.chat.enums import FeatureType, ChatRoleType
 from app.dto.feature.chat.base import (
     ChatSessionDTO,
@@ -78,6 +81,53 @@ class ChatHistoryService:
         )
         items = [to_history_item_dto(h) for h in result.scalars().all()]
         return FeatureHistoryListDTO(items=items, total=len(items), feature=feature)
+
+    @staticmethod
+    async def get_history_filtered(
+        user_id: UUID, feature: Optional[FeatureType], db: AsyncSession
+    ) -> FeatureHistoryListDTO:
+        conditions = [FeatureHistory.user_id == user_id]
+        if feature:
+            conditions.append(FeatureHistory.feature == feature.value)
+        result = await db.execute(
+            select(FeatureHistory).where(*conditions).order_by(FeatureHistory.created_at.desc())
+        )
+        items = [to_history_item_dto(h) for h in result.scalars().all()]
+        return FeatureHistoryListDTO(items=items, total=len(items), feature=feature)
+
+    @staticmethod
+    async def get_history_item_owned(history_id: UUID, user_id: UUID, db: AsyncSession) -> FeatureHistoryItemDTO:
+        result = await db.execute(select(FeatureHistory).where(FeatureHistory.id == history_id))
+        item = result.scalar_one_or_none()
+        if not item:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="History item not found")
+        if item.user_id != user_id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+        return to_history_item_dto(item)
+
+    @staticmethod
+    async def get_history_admin(
+        account_hash: Optional[str], feature: Optional[FeatureType], db: AsyncSession
+    ) -> FeatureHistoryListDTO:
+        query = select(FeatureHistory)
+        if account_hash:
+            query = (
+                query.join(User, FeatureHistory.user_id == User.user_id)
+                     .where(func.md5(User.account_number) == account_hash)
+            )
+        if feature:
+            query = query.where(FeatureHistory.feature == feature.value)
+        result = await db.execute(query.order_by(FeatureHistory.created_at.desc()))
+        items = [to_history_item_dto(h) for h in result.scalars().all()]
+        return FeatureHistoryListDTO(items=items, total=len(items), feature=feature)
+
+    @staticmethod
+    async def get_history_item_admin(history_id: UUID, db: AsyncSession) -> FeatureHistoryItemDTO:
+        result = await db.execute(select(FeatureHistory).where(FeatureHistory.id == history_id))
+        item = result.scalar_one_or_none()
+        if not item:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="History item not found")
+        return to_history_item_dto(item)
 
     @staticmethod
     async def clear_history(session_id: UUID, db: AsyncSession) -> ChatSessionDTO:

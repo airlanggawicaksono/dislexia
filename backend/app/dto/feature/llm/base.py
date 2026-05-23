@@ -25,13 +25,21 @@ class LLMUsageDTO(BaseModel):
     total_tokens: int
 
 
+class LLMHistoryMessageDTO(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    role: str
+    content: str
+
+
 class LLMRequestDTO(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     provider: LLMProvider = Field(LLMProvider.OPENAI)
     model: Optional[str] = Field(None, description="Override default model for provider")
-    prompt: str = Field(..., description="User prompt")
+    prompt: str = Field(..., description="Current user message")
     system_prompt: Optional[str] = Field(None)
+    history: list[LLMHistoryMessageDTO] = Field(default_factory=list, description="Prior conversation turns")
     generation_config: LLMGenerationConfigDTO = Field(default_factory=LLMGenerationConfigDTO)
 
 

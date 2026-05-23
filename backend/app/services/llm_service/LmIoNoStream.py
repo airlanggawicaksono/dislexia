@@ -1,5 +1,5 @@
 from typing import Any, Optional
-from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 
 from app.services.llm_service.base import LmFactories
 from app.dto.feature.llm.base import (
@@ -9,10 +9,13 @@ from app.dto.feature.llm.base import (
     LLMUsageDTO,
 )
 
+_ROLE_MAP = {"user": HumanMessage, "assistant": AIMessage, "system": SystemMessage}
+
 
 def _build_messages(request: LLMRequestDTO) -> list:
     system = [SystemMessage(content=request.system_prompt)] if request.system_prompt else []
-    return [*system, HumanMessage(content=request.prompt)]
+    history = [_ROLE_MAP[m.role](content=m.content) for m in request.history]
+    return [*system, *history, HumanMessage(content=request.prompt)]
 
 
 def _apply_config(llm: Any, config: LLMGenerationConfigDTO) -> Any:

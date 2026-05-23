@@ -53,4 +53,4 @@ class FeatureHistoryListDTO(BaseModel):
 
     items: list[FeatureHistoryItemDTO]
     total: int
-    feature: FeatureType
+    feature: Optional[FeatureType] = None
