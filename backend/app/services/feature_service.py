@@ -7,8 +7,8 @@ from app.services.llm_service import LmIoNoStream, LmIoStream
 from app.policies.retry import LLMRetryPolicy
 from app.dto.feature.chat.enums import FeatureType, ChatRoleType
 from app.dto.feature.chat.base import ChatSessionDTO, FeatureHistoryListDTO
-from app.dto.feature.llm.base import LLMRequestDTO, LLMChunkDTO, LLMHistoryMessageDTO
-from app.dto.feature.HistoryMan.base import FeatureResponseDTO
+from app.dto.feature.llm import LLMRequestDTO, LLMChunkDTO, LLMHistoryMessageDTO
+from app.dto.feature.process import FeatureResponseDTO
 
 
 async def _resolve_session(

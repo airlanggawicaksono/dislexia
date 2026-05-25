@@ -1,6 +1,6 @@
 from typing import Optional, Any
 from app.config.settings import settings
-from app.dto.feature.llm.base import LLMProvider
+from app.dto.feature.llm import LLMProvider
 
 # sengaja sy buat stateless [wicak]
 

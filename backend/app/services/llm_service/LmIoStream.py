@@ -2,11 +2,7 @@ from typing import Any, AsyncGenerator
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 
 from app.services.llm_service.base import LmFactories
-from app.dto.feature.llm.base import (
-    LLMRequestDTO,
-    LLMChunkDTO,
-    LLMGenerationConfigDTO,
-)
+from app.dto.feature.llm import LLMRequestDTO, LLMChunkDTO, LLMGenerationConfigDTO
 
 _ROLE_MAP = {"user": HumanMessage, "assistant": AIMessage, "system": SystemMessage}
 

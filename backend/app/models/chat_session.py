@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime
 from uuid import UUID, uuid4
 from sqlalchemy import String, DateTime, ForeignKey, Index, Text, func
 from sqlalchemy.orm import Mapped, mapped_column

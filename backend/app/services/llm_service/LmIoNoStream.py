@@ -2,12 +2,7 @@ from typing import Any, Optional
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 
 from app.services.llm_service.base import LmFactories
-from app.dto.feature.llm.base import (
-    LLMRequestDTO,
-    LLMResponseDTO,
-    LLMGenerationConfigDTO,
-    LLMUsageDTO,
-)
+from app.dto.feature.llm import LLMRequestDTO, LLMResponseDTO, LLMGenerationConfigDTO, LLMUsageDTO
 
 _ROLE_MAP = {"user": HumanMessage, "assistant": AIMessage, "system": SystemMessage}
 

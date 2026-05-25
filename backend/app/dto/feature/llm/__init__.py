@@ -1,17 +1,13 @@
-from app.dto.feature.llm.base import (
-    LLMProvider,
-    LLMGenerationConfigDTO,
-    LLMUsageDTO,
-    LLMRequestDTO,
-    LLMResponseDTO,
-    LLMChunkDTO,
-)
+from app.dto.feature.llm.enums import LLMProvider
+from app.dto.feature.llm.request import LLMGenerationConfigDTO, LLMHistoryMessageDTO, LLMRequestDTO
+from app.dto.feature.llm.response import LLMUsageDTO, LLMResponseDTO, LLMChunkDTO
 
 __all__ = [
     "LLMProvider",
     "LLMGenerationConfigDTO",
-    "LLMUsageDTO",
+    "LLMHistoryMessageDTO",
     "LLMRequestDTO",
+    "LLMUsageDTO",
     "LLMResponseDTO",
     "LLMChunkDTO",
 ]

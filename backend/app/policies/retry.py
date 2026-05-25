@@ -1,5 +1,5 @@
 from tenacity import AsyncRetrying, stop_after_attempt, wait_exponential, RetryError
-from app.policies.exceptions import LLMUnavailableError
+from app.exceptions import LLMUnavailableError
 
 
 class LLMRetryPolicy:
