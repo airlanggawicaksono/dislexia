@@ -1,0 +1,30 @@
+meta {
+  name: Define - Process Stream
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{base_url}}/api/v1/me/define/process-stream
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+headers {
+  Content-Type: application/json
+  Accept: text/event-stream
+}
+
+body:json {
+  {
+    "text": "ephemeral"
+  }
+}
+
+assert {
+  res.status: eq 200
+}

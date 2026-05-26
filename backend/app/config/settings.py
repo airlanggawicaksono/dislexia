@@ -36,15 +36,25 @@ class Settings(BaseSettings):
     DB_POOL_SIZE: int = 10
     DB_MAX_OVERFLOW: int = 20
 
+    # Seed admin (auto-created on first boot if missing)
+    SEED_ADMIN_USERNAME: str = "admin"
+    SEED_ADMIN_PASSWORD: str = "12345678"
+
     # JWT Configuration
     JWT_SECRET_KEY: str = "your-secret-key-change-this-in-production"
     JWT_ALGORITHM: str = "HS256"
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
-    # LLM API Keys
+    # LLM defaults
+    LLM_PROVIDER: str = "together"
+
+    # LLM API Keys + models
     OPENAI_API_KEY: Optional[str] = None
+    OPENAI_MODEL: Optional[str] = None
     TOGETHER_API_KEY: Optional[str] = None
+    TOGETHER_MODEL: Optional[str] = None
     ANTHROPIC_API_KEY: Optional[str] = None
+    ANTHROPIC_MODEL: Optional[str] = None
 
     @property
     def database_url(self) -> str:

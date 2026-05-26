@@ -7,6 +7,7 @@ class GenerateResponseDTO(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     account_number: str = Field(..., description="16-digit account number — save this, it's your only key")
+    display_name: str = Field(..., description="Auto-generated adjective-animal nickname (e.g. 'amusing-bee')")
     access_token: str
     token_type: str = "bearer"
     expires_in: int

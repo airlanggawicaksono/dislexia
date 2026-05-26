@@ -1,8 +1,8 @@
 """Reusable OpenAPI/Swagger response specs.
 
 Compose into route decorators via `responses={**AUTH_RESPONSES, ...}` so error
-contracts stay defined in one place and Swagger docs match what the handlers
-and exception handlers actually emit.
+contracts stay defined in one place and Swagger docs match the status codes
+HTTPException subclasses in app.exceptions actually emit.
 """
 
 AUTH_RESPONSES = {

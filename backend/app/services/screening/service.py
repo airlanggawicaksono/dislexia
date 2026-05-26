@@ -34,7 +34,7 @@ class ScreeningService:
         llm_req = LLMRequestDTO(prompt="[begin]", system_prompt=system_prompt, history=[])
         llm_res = await LLMRetryPolicy.execute(LmIoNoStream.invoke, llm_req)
 
-        await ChatHistoryService.append_message(session.session_id, ChatRoleType.ASSISTANT, llm_res.content, db)
+        await ChatHistoryService.append_message(session.session_id, user_id, ChatRoleType.ASSISTANT, llm_res.content, db)
         item = await ChatHistoryService.save_feature_history(
             session_id=session.session_id,
             user_id=user_id,
@@ -52,7 +52,7 @@ class ScreeningService:
 
     @staticmethod
     async def reply(text: str, session_id: UUID, user_id: UUID, db: AsyncSession) -> ScreeningResponseDTO:
-        session = await ChatHistoryService.get_session(session_id, db)
+        session = await ChatHistoryService.get_session(session_id, user_id, db)
         idx = _next_question_index(session)
         is_complete = idx >= len(QUESTIONS)
 

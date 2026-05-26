@@ -1,6 +1,7 @@
 from typing import Any, AsyncGenerator
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 
+from app.exceptions import LLMEmptyResponseError
 from app.services.llm_service.base import LmFactories
 from app.dto.feature.llm import LLMRequestDTO, LLMChunkDTO, LLMGenerationConfigDTO
 
@@ -22,9 +23,13 @@ class LmIoStream:
     async def stream(request: LLMRequestDTO) -> AsyncGenerator[LLMChunkDTO, None]:
         factory = LmFactories(provider=request.provider, model=request.model)
         llm = _apply_config(factory.get_llm(), request.generation_config)
+        total = 0
         async for chunk in llm.astream(_build_messages(request)):
-            yield LLMChunkDTO(
-                content=chunk.content,
-                provider=request.provider,
-                model=factory.model,
+            piece = chunk.content if isinstance(chunk.content, str) else ""
+            total += len(piece)
+            yield LLMChunkDTO(content=piece, provider=request.provider, model=factory.model)
+        if total == 0:
+            raise LLMEmptyResponseError(
+                f"Provider '{request.provider.value}' streamed zero content. "
+                f"Likely cause: invalid model id '{factory.model}', content filter, or quota."
             )

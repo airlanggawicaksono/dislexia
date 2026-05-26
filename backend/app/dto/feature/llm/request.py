@@ -1,6 +1,7 @@
 from typing import Optional
 from pydantic import BaseModel, Field, ConfigDict
 
+from app.config.settings import settings
 from app.dto.feature.llm.enums import LLMProvider
 
 
@@ -22,7 +23,7 @@ class LLMHistoryMessageDTO(BaseModel):
 class LLMRequestDTO(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
-    provider: LLMProvider = Field(LLMProvider.OPENAI)
+    provider: LLMProvider = Field(default_factory=lambda: LLMProvider(settings.LLM_PROVIDER))
     model: Optional[str] = Field(None, description="Override default model for provider")
     prompt: str = Field(..., description="Current user message")
     system_prompt: Optional[str] = Field(None)

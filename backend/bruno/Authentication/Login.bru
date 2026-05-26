@@ -1,7 +1,7 @@
 meta {
   name: Login
   type: http
-  seq: 4
+  seq: 2
 }
 
 post {
@@ -16,17 +16,22 @@ headers {
 
 body:json {
   {
-    "access_code": "{{access_code}}"
+    "account_number": "{{account_number}}"
   }
 }
 
 script:post-response {
   const body = res.getBody();
-  bru.setVar("access_token", body.access_token);
+  bru.setEnvVar("token", body.access_token);
 }
 
 assert {
   res.status: eq 200
   res.body.access_token: isDefined
   res.body.token_type: eq bearer
+}
+
+docs {
+  Logs in with the 16-digit account_number stored in env. Re-uses Generate's saved value.
+  Auto-refreshes the {{token}} env var on success.
 }

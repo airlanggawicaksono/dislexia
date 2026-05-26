@@ -5,9 +5,17 @@ from app.config.database import get_db
 from app.services.user_service import UserService
 from app.dto.auth.auth import GenerateResponseDTO, LoginRequestDTO
 from app.dto.auth.userdata import TokenResponseDTO
-from app.exceptions import AUTH_RESPONSES
+from app.openapi import AUTH_RESPONSES
 
-router = APIRouter(prefix="/api/v1/auth", tags=["Authentication"])
+TAG = {
+    "name": "Authentication",
+    "description": (
+        "Mullvad-style account auth. No email, no password. "
+        "Generate a 16-digit account number, log in with it, receive a JWT."
+    ),
+}
+
+router = APIRouter(prefix="/api/v1/auth", tags=[TAG["name"]])
 
 
 def get_user_service(db: AsyncSession = Depends(get_db)) -> UserService:

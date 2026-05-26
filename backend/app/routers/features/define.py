@@ -5,17 +5,24 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config.database import get_db
 from app.dependencies import get_current_user
 from app.services.feature_service import FeatureService
+from app.services.prompts import DYSLEXIA_OUTPUT_RULES
 from app.dto.feature.chat.enums import FeatureType
 from app.dto.feature.chat.base import FeatureHistoryListDTO
 from app.dto.feature.process import FeatureRequestDTO, FeatureResponseDTO
 from app.dto.auth.userdata import UserResponseDTO
-from app.exceptions import LLM_RESPONSES, SSE_RESPONSE
+from app.openapi import LLM_RESPONSES, SSE_RESPONSE
 
-router = APIRouter(prefix="/api/v1/me/define", tags=["Define"])
+TAG = {
+    "name": "Define",
+    "description": "Define a word or concept using simple vocabulary and short sentences.",
+}
+
+router = APIRouter(prefix="/api/v1/me/define", tags=[TAG["name"]])
 
 _PROMPT = (
     "You are a dictionary assistant for people with dyslexia. "
-    "Provide a clear, simple definition of the given word or concept using short sentences and plain vocabulary."
+    "Provide a clear, simple definition of the given word or concept using short sentences and plain vocabulary.\n\n"
+    f"{DYSLEXIA_OUTPUT_RULES}"
 )
 
 

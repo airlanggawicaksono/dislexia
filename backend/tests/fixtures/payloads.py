@@ -84,6 +84,47 @@ SCREENING_REPLY_VALID = [
 ]
 
 
+# ─── admin.AdminLoginRequestDTO ───────────────────────────────────────────────
+ADMIN_LOGIN_INVALID = [
+    ({}, "missing-both"),
+    ({"username": "admin"}, "missing-password"),
+    ({"password": "12345678"}, "missing-username"),
+    ({"username": "", "password": "12345678"}, "empty-username"),
+    ({"username": "ab", "password": "12345678"}, "username-too-short"),
+    ({"username": "x" * 65, "password": "12345678"}, "username-too-long"),
+    ({"username": "admin", "password": ""}, "empty-password"),
+    ({"username": "admin", "password": "short"}, "password-too-short"),
+    ({"username": "admin", "password": "x" * 129}, "password-too-long"),
+    ({"username": None, "password": "12345678"}, "null-username"),
+    ({"username": "admin", "password": None}, "null-password"),
+]
+
+ADMIN_LOGIN_VALID = [
+    ({"username": "admin", "password": "12345678"}, "seed-defaults"),
+    ({"username": "swift-otter", "password": "Rotate-Me-Now-9001"}, "petname-and-strong-pw"),
+    ({"username": "  admin  ", "password": "  12345678  "}, "padded-stripped"),
+]
+
+
+# ─── admin.AdminChangePasswordRequestDTO ──────────────────────────────────────
+ADMIN_CHANGE_PASSWORD_INVALID = [
+    ({}, "missing-both"),
+    ({"current_password": "old"}, "missing-new"),
+    ({"new_password": "newpassword123"}, "missing-current"),
+    ({"current_password": "", "new_password": "newpassword123"}, "empty-current"),
+    ({"current_password": "old", "new_password": ""}, "empty-new"),
+    ({"current_password": "old", "new_password": "short"}, "new-too-short"),
+    ({"current_password": "old", "new_password": "x" * 129}, "new-too-long"),
+    ({"current_password": None, "new_password": "newpassword123"}, "null-current"),
+    ({"current_password": "old", "new_password": None}, "null-new"),
+]
+
+ADMIN_CHANGE_PASSWORD_VALID = [
+    ({"current_password": "12345678", "new_password": "Rotate-Me-Now"}, "minimal-valid"),
+    ({"current_password": "a", "new_password": "anothergoodpw"}, "min-current-len"),
+]
+
+
 # ─── Header / auth-level partial cases ────────────────────────────────────────
 AUTH_HEADER_INVALID = [
     ({}, "missing-authorization"),

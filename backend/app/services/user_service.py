@@ -13,6 +13,7 @@ def _to_user_dto(user: User) -> UserResponseDTO:
     return UserResponseDTO(
         user_id=user.user_id,
         account_number=user.account_number,
+        display_name=user.display_name,
         created_at=user.created_at,
         last_login=user.last_login,
         is_active=user.is_active,
@@ -30,9 +31,10 @@ class UserService:
         await self.db.commit()
         await self.db.refresh(user)
 
-        token = self.jwt_manager.create_access_token(user_id=user.user_id)
+        token = self.jwt_manager.create_access_token(subject_id=user.user_id, role="user")
         return GenerateResponseDTO(
             account_number=user.account_number,
+            display_name=user.display_name,
             access_token=token,
             expires_in=self.jwt_manager.get_token_expiration(),
         )
@@ -51,15 +53,15 @@ class UserService:
         await self.db.commit()
 
         return TokenResponseDTO(
-            access_token=self.jwt_manager.create_access_token(user_id=user.user_id),
+            access_token=self.jwt_manager.create_access_token(subject_id=user.user_id, role="user"),
             expires_in=self.jwt_manager.get_token_expiration(),
             user=_to_user_dto(user),
         )
 
     async def verify_token(self, token: str) -> UserResponseDTO:
         payload = self.jwt_manager.verify_token(token)
-        if not payload:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired token")
+        if not payload or payload.get("role") != "user":
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or non-user token")
 
         result = await self.db.execute(select(User).where(User.user_id == UUID(payload["sub"])))
         user = result.scalar_one_or_none()

@@ -9,9 +9,14 @@ from app.dto.auth.userdata import UserResponseDTO
 from app.dto.feature.chat.enums import FeatureType
 from app.dto.feature.chat.base import FeatureHistoryItemDTO, FeatureHistoryListDTO
 from app.services.chat_history_service import ChatHistoryService
-from app.exceptions import AUTH_RESPONSES, NOT_FOUND_RESPONSE
+from app.openapi import AUTH_RESPONSES, NOT_FOUND_RESPONSE
 
-router = APIRouter(prefix="/api/v1/me", tags=["Me"])
+TAG = {
+    "name": "Me",
+    "description": "Per-user history endpoints. Requires JWT.",
+}
+
+router = APIRouter(prefix="/api/v1/me", tags=[TAG["name"]])
 
 
 @router.get(

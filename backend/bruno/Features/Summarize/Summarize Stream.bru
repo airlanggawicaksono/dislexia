@@ -1,0 +1,30 @@
+meta {
+  name: Summarize - Process Stream
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{base_url}}/api/v1/me/summarize/process-stream
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+headers {
+  Content-Type: application/json
+  Accept: text/event-stream
+}
+
+body:json {
+  {
+    "text": "Climate change is altering ecosystems faster than many species can adapt, threatening biodiversity worldwide."
+  }
+}
+
+assert {
+  res.status: eq 200
+}

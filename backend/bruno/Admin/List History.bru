@@ -1,0 +1,32 @@
+meta {
+  name: Admin - List History
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{base_url}}/api/v1/admin/history
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{admin_token}}
+}
+
+params:query {
+  ~user:
+  ~feature: summarize
+}
+
+assert {
+  res.status: eq 200
+  res.body.items: isArray
+}
+
+docs {
+  Admin: list history across all users.
+  Optional `user` query param = MD5 hash of target user's account_number.
+  Optional `feature` query param = filter by feature.
+  Both omitted = everything.
+}

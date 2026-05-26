@@ -1,10 +1,10 @@
 from datetime import datetime, timezone
 from typing import Optional
 from uuid import UUID
-from fastapi import HTTPException, status
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.exceptions import NotFoundError, ForbiddenError
 from app.models.chat_session import ChatSession, FeatureHistory
 from app.models.user import User
 from app.dto.feature.chat.enums import FeatureType, ChatRoleType
@@ -21,6 +21,16 @@ def _now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+async def _load_owned_session(session_id: UUID, user_id: UUID, db: AsyncSession) -> ChatSession:
+    result = await db.execute(select(ChatSession).where(ChatSession.session_id == session_id))
+    session = result.scalar_one_or_none()
+    if session is None:
+        raise NotFoundError("Session not found")
+    if session.user_id != user_id:
+        raise ForbiddenError("Session belongs to another user")
+    return session
+
+
 class ChatHistoryService:
     @staticmethod
     async def create_session(user_id: UUID, feature: FeatureType, db: AsyncSession) -> ChatSessionDTO:
@@ -31,14 +41,15 @@ class ChatHistoryService:
         return to_session_dto(session)
 
     @staticmethod
-    async def get_session(session_id: UUID, db: AsyncSession) -> ChatSessionDTO:
-        result = await db.execute(select(ChatSession).where(ChatSession.session_id == session_id))
-        return to_session_dto(result.scalar_one())
+    async def get_session(session_id: UUID, user_id: UUID, db: AsyncSession) -> ChatSessionDTO:
+        session = await _load_owned_session(session_id, user_id, db)
+        return to_session_dto(session)
 
     @staticmethod
-    async def append_message(session_id: UUID, role: ChatRoleType, content: str, db: AsyncSession) -> ChatSessionDTO:
-        result = await db.execute(select(ChatSession).where(ChatSession.session_id == session_id))
-        session = result.scalar_one()
+    async def append_message(
+        session_id: UUID, user_id: UUID, role: ChatRoleType, content: str, db: AsyncSession
+    ) -> ChatSessionDTO:
+        session = await _load_owned_session(session_id, user_id, db)
         message = {"role": role.value, "content": content, "timestamp": _now().isoformat()}
         session.history = [*session.history, message]
         session.updated_at = _now()
@@ -99,10 +110,10 @@ class ChatHistoryService:
     async def get_history_item_owned(history_id: UUID, user_id: UUID, db: AsyncSession) -> FeatureHistoryItemDTO:
         result = await db.execute(select(FeatureHistory).where(FeatureHistory.id == history_id))
         item = result.scalar_one_or_none()
-        if not item:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="History item not found")
+        if item is None:
+            raise NotFoundError("History item not found")
         if item.user_id != user_id:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+            raise ForbiddenError("History item belongs to another user")
         return to_history_item_dto(item)
 
     @staticmethod
@@ -125,14 +136,13 @@ class ChatHistoryService:
     async def get_history_item_admin(history_id: UUID, db: AsyncSession) -> FeatureHistoryItemDTO:
         result = await db.execute(select(FeatureHistory).where(FeatureHistory.id == history_id))
         item = result.scalar_one_or_none()
-        if not item:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="History item not found")
+        if item is None:
+            raise NotFoundError("History item not found")
         return to_history_item_dto(item)
 
     @staticmethod
-    async def clear_history(session_id: UUID, db: AsyncSession) -> ChatSessionDTO:
-        result = await db.execute(select(ChatSession).where(ChatSession.session_id == session_id))
-        session = result.scalar_one()
+    async def clear_history(session_id: UUID, user_id: UUID, db: AsyncSession) -> ChatSessionDTO:
+        session = await _load_owned_session(session_id, user_id, db)
         session.history = []
         session.updated_at = _now()
         await db.commit()

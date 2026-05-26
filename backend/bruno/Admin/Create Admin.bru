@@ -1,0 +1,33 @@
+meta {
+  name: Admin - Create New Admin
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{base_url}}/api/v1/admin/admins
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{admin_token}}
+}
+
+script:post-response {
+  const body = res.getBody();
+  if (body.username) bru.setEnvVar("new_admin_username", body.username);
+  if (body.temporary_password) bru.setEnvVar("new_admin_temp_password", body.temporary_password);
+}
+
+assert {
+  res.status: eq 201
+  res.body.username: isDefined
+  res.body.temporary_password: isDefined
+}
+
+docs {
+  Provision a new admin. Server generates random petname username + 16-char temp password.
+  Both returned ONCE in this response — auto-captured into env for the next requests.
+  New admin must change password on first login.
+}

@@ -5,17 +5,26 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config.database import get_db
 from app.dependencies import get_current_user
 from app.services.feature_service import FeatureService
+from app.services.prompts import DYSLEXIA_OUTPUT_RULES
 from app.dto.feature.chat.enums import FeatureType
 from app.dto.feature.chat.base import FeatureHistoryListDTO
 from app.dto.feature.process import FeatureRequestDTO, FeatureResponseDTO
 from app.dto.auth.userdata import UserResponseDTO
-from app.exceptions import LLM_RESPONSES, SSE_RESPONSE
+from app.openapi import LLM_RESPONSES, SSE_RESPONSE
 
-router = APIRouter(prefix="/api/v1/me/summarize", tags=["Summarize"])
+TAG = {
+    "name": "Summarize",
+    "description": "Summarize long text into clear, accessible bullet points for dyslexic readers.",
+}
+
+router = APIRouter(prefix="/api/v1/me/summarize", tags=[TAG["name"]])
 
 _PROMPT = (
     "You are a reading assistant for people with dyslexia. "
-    "Summarize the provided text into clear, concise bullet points using simple, accessible language."
+    "Summarize the provided text into clear, concise prose using simple, accessible language. "
+    "Do not use bullet points, numbered lists, or any list formatting. "
+    "Write flowing sentences and short paragraphs only.\n\n"
+    f"{DYSLEXIA_OUTPUT_RULES}"
 )
 
 

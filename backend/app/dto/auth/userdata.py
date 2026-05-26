@@ -9,6 +9,7 @@ class UserResponseDTO(BaseModel):
 
     user_id: UUID
     account_number: str
+    display_name: str
     created_at: datetime
     last_login: Optional[datetime] = None
     is_active: bool

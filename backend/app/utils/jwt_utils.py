@@ -3,6 +3,7 @@ from typing import Optional, Dict, Any
 from uuid import UUID
 import jwt
 from jwt.exceptions import InvalidTokenError
+
 from app.config.settings import settings
 
 
@@ -19,12 +20,18 @@ class JWTManager:
             access_token_expire_minutes or settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES
         )
 
-    def create_access_token(self, user_id: UUID, expires_delta: Optional[timedelta] = None) -> str:
+    def create_access_token(
+        self,
+        subject_id: UUID,
+        role: str = "user",
+        expires_delta: Optional[timedelta] = None,
+    ) -> str:
         expire = datetime.now(timezone.utc) + (
             expires_delta or timedelta(minutes=self.access_token_expire_minutes)
         )
         to_encode = {
-            "sub": str(user_id),
+            "sub": str(subject_id),
+            "role": role,
             "exp": expire,
             "iat": datetime.now(timezone.utc),
             "type": "access",

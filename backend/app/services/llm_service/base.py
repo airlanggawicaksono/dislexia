@@ -1,25 +1,33 @@
 from typing import Optional, Any
+
 from app.config.settings import settings
 from app.dto.feature.llm import LLMProvider
 
-# sengaja sy buat stateless [wicak]
+
+_FALLBACK_MODELS: dict[LLMProvider, str] = {
+    LLMProvider.OPENAI: "gpt-4o-mini",
+    LLMProvider.TOGETHER: "meta-llama/Llama-3.3-70B-Instruct-Turbo",
+    LLMProvider.ANTHROPIC: "claude-haiku-4-5-20251001",
+}
+
+
+def _env_model_for(provider: LLMProvider) -> Optional[str]:
+    return {
+        LLMProvider.OPENAI: settings.OPENAI_MODEL,
+        LLMProvider.TOGETHER: settings.TOGETHER_MODEL,
+        LLMProvider.ANTHROPIC: settings.ANTHROPIC_MODEL,
+    }[provider]
 
 
 class LmFactories:
-    _DEFAULT_MODELS: dict[LLMProvider, str] = {
-        LLMProvider.OPENAI: "gpt-4.1-2025-04-14",
-        LLMProvider.TOGETHER: "meta-llama/Llama-3-8b-chat-hf",
-        LLMProvider.ANTHROPIC: "claude-haiku-4-5-20251001",
-    }
-
     _BUILDERS: dict[LLMProvider, str] = {
         LLMProvider.OPENAI: "_build_openai",
         LLMProvider.TOGETHER: "_build_together",
         LLMProvider.ANTHROPIC: "_build_anthropic",
     }
 
-    def __init__(self, provider: LLMProvider = LLMProvider.OPENAI, model: Optional[str] = None):
-        self._provider = provider
+    def __init__(self, provider: Optional[LLMProvider] = None, model: Optional[str] = None):
+        self._provider = provider or LLMProvider(settings.LLM_PROVIDER)
         self._model = model
 
     @property
@@ -32,7 +40,7 @@ class LmFactories:
 
     @property
     def model(self) -> str:
-        return self._model or self._DEFAULT_MODELS[self._provider]
+        return self._model or _env_model_for(self._provider) or _FALLBACK_MODELS[self._provider]
 
     @model.setter
     def model(self, value: str) -> None:
@@ -40,17 +48,14 @@ class LmFactories:
 
     def _build_openai(self) -> Any:
         from langchain_openai import ChatOpenAI
-
         return ChatOpenAI(api_key=settings.OPENAI_API_KEY, model=self.model)
 
     def _build_together(self) -> Any:
         from langchain_together import ChatTogether
-
         return ChatTogether(api_key=settings.TOGETHER_API_KEY, model=self.model)
 
     def _build_anthropic(self) -> Any:
         from langchain_anthropic import ChatAnthropic
-
         return ChatAnthropic(api_key=settings.ANTHROPIC_API_KEY, model=self.model)
 
     def get_llm(self) -> Any:

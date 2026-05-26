@@ -1,15 +1,21 @@
 meta {
-  name: Get Summarize History
+  name: Summarize - History
   type: http
-  seq: 6
+  seq: 3
 }
 
 get {
-  url: {{base_url}}/api/v1/{{access_hash}}/summarize/history
+  url: {{base_url}}/api/v1/me/summarize/history
   body: none
-  auth: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
 }
 
 assert {
   res.status: eq 200
+  res.body.feature: eq summarize
+  res.body.items: isArray
 }

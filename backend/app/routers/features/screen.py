@@ -9,9 +9,17 @@ from app.dto.feature.chat.enums import FeatureType
 from app.dto.feature.screening import ScreeningResponseDTO, ScreeningReplyRequestDTO
 from app.services.screening import ScreeningService
 from app.services.feature_service import FeatureService
-from app.exceptions import LLM_RESPONSES
+from app.openapi import LLM_RESPONSES
 
-router = APIRouter(prefix="/api/v1/me/screen", tags=["Screening"])
+TAG = {
+    "name": "Screening",
+    "description": (
+        "Multi-turn dyslexia screening based on the Adult Reading History Questionnaire (ARHQ). "
+        "Server controls the 23-question sequence; the LLM rephrases each one warmly."
+    ),
+}
+
+router = APIRouter(prefix="/api/v1/me/screen", tags=[TAG["name"]])
 
 
 @router.post(

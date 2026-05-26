@@ -1,0 +1,30 @@
+meta {
+  name: Professionalize - Process Stream
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{base_url}}/api/v1/me/professionalize/process-stream
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+headers {
+  Content-Type: application/json
+  Accept: text/event-stream
+}
+
+body:json {
+  {
+    "text": "hey just wanted to follow up on the thing we talked about last time lmk if youre still down"
+  }
+}
+
+assert {
+  res.status: eq 200
+}

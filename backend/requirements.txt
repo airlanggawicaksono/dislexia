@@ -8,6 +8,9 @@ python-multipart>=0.0.6
 # JWT Authentication
 pyjwt>=2.8.0
 
+# Password hashing
+bcrypt>=4.0.0
+
 # Database (PostgreSQL - Async)
 sqlalchemy>=2.0.0
 asyncpg>=0.29.0

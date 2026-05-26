@@ -5,17 +5,26 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config.database import get_db
 from app.dependencies import get_current_user
 from app.services.feature_service import FeatureService
+from app.services.prompts import DYSLEXIA_OUTPUT_RULES
 from app.dto.feature.chat.enums import FeatureType
 from app.dto.feature.chat.base import FeatureHistoryListDTO
 from app.dto.feature.process import FeatureRequestDTO, FeatureResponseDTO
 from app.dto.auth.userdata import UserResponseDTO
-from app.exceptions import LLM_RESPONSES, SSE_RESPONSE
+from app.openapi import LLM_RESPONSES, SSE_RESPONSE
 
-router = APIRouter(prefix="/api/v1/me/professionalize", tags=["Professionalize"])
+TAG = {
+    "name": "Professionalize",
+    "description": "Rewrite casual text in a formal, professional tone while preserving meaning.",
+}
+
+router = APIRouter(prefix="/api/v1/me/professionalize", tags=[TAG["name"]])
 
 _PROMPT = (
     "You are a professional writing assistant. "
-    "Rewrite the provided text in a formal, professional tone while preserving the original meaning."
+    "Rewrite the provided text in a formal, professional tone while preserving the original meaning. "
+    "Do not use em-dashes anywhere in your output, in any language. "
+    "Use periods, commas, or semicolons instead.\n\n"
+    f"{DYSLEXIA_OUTPUT_RULES}"
 )
 
 

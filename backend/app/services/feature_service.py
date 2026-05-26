@@ -14,11 +14,9 @@ from app.dto.feature.process import FeatureResponseDTO
 async def _resolve_session(
     session_id: Optional[UUID], user_id: UUID, feature: FeatureType, db: AsyncSession
 ) -> ChatSessionDTO:
-    return (
-        await ChatHistoryService.get_session(session_id, db)
-        if session_id
-        else await ChatHistoryService.create_session(user_id, feature, db)
-    )
+    if session_id is None:
+        return await ChatHistoryService.create_session(user_id, feature, db)
+    return await ChatHistoryService.get_session(session_id, user_id, db)
 
 
 def _to_llm_history(session: ChatSessionDTO) -> list[LLMHistoryMessageDTO]:
@@ -37,12 +35,12 @@ class FeatureService:
     ) -> FeatureResponseDTO:
         session = await _resolve_session(session_id, user_id, feature, db)
         history = _to_llm_history(session)
-        await ChatHistoryService.append_message(session.session_id, ChatRoleType.USER, text, db)
+        await ChatHistoryService.append_message(session.session_id, user_id, ChatRoleType.USER, text, db)
 
         llm_req = LLMRequestDTO(prompt=text, system_prompt=system_prompt, history=history)
         llm_res = await LLMRetryPolicy.execute(LmIoNoStream.invoke, llm_req)
 
-        await ChatHistoryService.append_message(session.session_id, ChatRoleType.ASSISTANT, llm_res.content, db)
+        await ChatHistoryService.append_message(session.session_id, user_id, ChatRoleType.ASSISTANT, llm_res.content, db)
         item = await ChatHistoryService.save_feature_history(
             session_id=session.session_id,
             user_id=user_id,
@@ -69,7 +67,7 @@ class FeatureService:
     ) -> AsyncGenerator[LLMChunkDTO, None]:
         session = await _resolve_session(session_id, user_id, feature, db)
         history = _to_llm_history(session)
-        await ChatHistoryService.append_message(session.session_id, ChatRoleType.USER, text, db)
+        await ChatHistoryService.append_message(session.session_id, user_id, ChatRoleType.USER, text, db)
 
         llm_req = LLMRequestDTO(prompt=text, system_prompt=system_prompt, history=history)
         collected = []
@@ -78,7 +76,7 @@ class FeatureService:
             yield chunk
 
         full_content = "".join(collected)
-        await ChatHistoryService.append_message(session.session_id, ChatRoleType.ASSISTANT, full_content, db)
+        await ChatHistoryService.append_message(session.session_id, user_id, ChatRoleType.ASSISTANT, full_content, db)
         await ChatHistoryService.save_feature_history(
             session_id=session.session_id,
             user_id=user_id,

@@ -1,4 +1,4 @@
-"""mullvad auth — replace email/username/access_code with account_number
+"""mullvad auth — replace email/username/access_code with account_number + display_name
 
 Revision ID: b2c3d4e5f6a7
 Revises: a1b2c3d4e5f6
@@ -7,8 +7,11 @@ Create Date: 2026-05-23
 """
 
 from typing import Sequence, Union
+
+import petname
 from alembic import op
 import sqlalchemy as sa
+
 
 revision: str = "b2c3d4e5f6a7"
 down_revision: Union[str, Sequence[str], None] = "a1b2c3d4e5f6"
@@ -23,12 +26,27 @@ def upgrade() -> None:
     op.drop_column("users", "email")
     op.drop_column("users", "username")
     op.drop_column("users", "access_code")
+
     op.add_column("users", sa.Column("account_number", sa.String(16), nullable=False, server_default="0000000000000000"))
     op.create_index("ix_users_account_number", "users", ["account_number"], unique=True)
     op.alter_column("users", "account_number", server_default=None)
 
+    op.add_column("users", sa.Column("display_name", sa.String(64), nullable=True))
+    conn = op.get_bind()
+    rows = conn.execute(sa.text("SELECT user_id FROM users WHERE display_name IS NULL")).fetchall()
+    for row in rows:
+        conn.execute(
+            sa.text("UPDATE users SET display_name = :name WHERE user_id = :uid"),
+            {"name": petname.Generate(2, "-"), "uid": row.user_id},
+        )
+    op.alter_column("users", "display_name", nullable=False)
+    op.create_index("ix_users_display_name", "users", ["display_name"])
+
 
 def downgrade() -> None:
+    op.drop_index("ix_users_display_name", table_name="users")
+    op.drop_column("users", "display_name")
+
     op.drop_index("ix_users_account_number", table_name="users")
     op.drop_column("users", "account_number")
     op.add_column("users", sa.Column("email", sa.String(255), nullable=False, server_default=""))
