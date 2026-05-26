@@ -10,15 +10,7 @@ class AppFont {
 }
 
 extension AppFontSize on TextStyle {
-  TextStyle get s12 {
-    return copyWith(fontSize: 12.sp);
-  }
-
-  TextStyle get s14 {
-    return copyWith(fontSize: 14.sp);
-  }
-
-  TextStyle get s16 {
-    return copyWith(fontSize: 16.sp);
-  }
+  TextStyle get s12 => copyWith(fontSize: 12);
+  TextStyle get s14 => copyWith(fontSize: 14);
+  TextStyle get s16 => copyWith(fontSize: 16);
 }

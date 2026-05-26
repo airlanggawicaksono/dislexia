@@ -1,4 +1,5 @@
 import '../../../configs/injector/injector_conf.dart';
+import '../data/datasources/pdf_extractor_service.dart';
 import '../data/datasources/upload_datasource_impl.dart';
 import '../data/repositories/upload_repository_impl.dart';
 import '../domain/usecases/pick_and_extract_usecase.dart';
@@ -23,5 +24,7 @@ class UploadDependency {
     getIt.registerLazySingleton(
       () => UploadDatasourceImpl(),
     );
+
+    getIt.registerLazySingleton(() => PdfExtractorService());
   }
 }
