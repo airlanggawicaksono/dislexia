@@ -45,6 +45,11 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
+    # Swagger / Docs Protection
+    SWAGGER_DOCS_ENABLED: bool = True
+    SWAGGER_USERNAME: str = "admin"
+    SWAGGER_PASSWORD: str = "changeme"
+
     # LLM defaults
     LLM_PROVIDER: str = "together"
 

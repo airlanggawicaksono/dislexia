@@ -51,7 +51,8 @@ jobs:
 
           ssh -o StrictHostKeyChecking=no -i ${KEY} ${VPS} "
             # Write .env file with dev values
-            printf 'POSTGRES_IMAGE=postgres:16-alpine\nDB_USER=dev\nDB_PASSWORD=dev\nDB_NAME=dev\nDB_HOST=postgres-db\nDB_PORT=5432\nPOSTGRES_EXTERNAL_PORT=5432\nAPP_PORT=8000\nAPP_EXTERNAL_PORT=8000\nAPP_HOST=0.0.0.0\nAPP_RELOAD=true\nJWT_SECRET_KEY=dev\nJWT_ALGORITHM=HS256\nJWT_ACCESS_TOKEN_EXPIRE_MINUTES=30\nENVIRONMENT=development\n' > /opt/dislexia/dev/.env
+            # SWAGGER_DOCS_ENABLED=true — docs are intentionally kept on in dev
+            printf 'POSTGRES_IMAGE=postgres:16-alpine\nDB_USER=dev\nDB_PASSWORD=dev\nDB_NAME=dev\nDB_HOST=postgres-db\nDB_PORT=5432\nPOSTGRES_EXTERNAL_PORT=5432\nAPP_PORT=8000\nAPP_EXTERNAL_PORT=8000\nAPP_HOST=0.0.0.0\nAPP_RELOAD=true\nJWT_SECRET_KEY=dev\nJWT_ALGORITHM=HS256\nJWT_ACCESS_TOKEN_EXPIRE_MINUTES=30\nENVIRONMENT=development\nSWAGGER_DOCS_ENABLED=true\nSWAGGER_USERNAME=admin1231\nSWAGGER_PASSWORD=1dsn612u1jsy5u3\n' > /opt/dislexia/dev/.env
 
             # Copy compose file
             cp /tmp/docker-compose.dev.yml /opt/dislexia/dev/

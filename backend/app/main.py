@@ -1,13 +1,39 @@
-from fastapi import FastAPI
+import secrets as _secrets
 from contextlib import asynccontextmanager
 
+from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi.openapi.docs import get_redoc_html, get_swagger_ui_html
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
+
 from app.config.database import async_session_maker, close_db, init_db
+from app.config.settings import settings
 from app.scripts.seed_admin import ensure_seed_admin
 from app.routers import auth, admin, admin_auth
 from app.routers.features import summarize, professionalize, define, me, screen
 
 # Register models with Base.metadata
 from app.models import user, chat_session, admin as admin_model  # noqa: F401
+
+_http_basic = HTTPBasic()
+
+
+def _verify_docs_credentials(
+    credentials: HTTPBasicCredentials = Depends(_http_basic),
+) -> str:
+    """HTTP Basic Auth guard for Swagger / ReDoc endpoints."""
+    ok_user = _secrets.compare_digest(
+        credentials.username.encode(), settings.SWAGGER_USERNAME.encode()
+    )
+    ok_pass = _secrets.compare_digest(
+        credentials.password.encode(), settings.SWAGGER_PASSWORD.encode()
+    )
+    if not (ok_user and ok_pass):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid credentials",
+            headers={"WWW-Authenticate": "Basic"},
+        )
+    return credentials.username
 
 
 HEALTH_TAG = {
@@ -56,12 +82,35 @@ app = FastAPI(
     title="Dislexia API",
     description=description,
     version="1.0.0",
-    docs_url="/docs",
-    redoc_url="/redoc",
+    # docs_url / redoc_url disabled here — custom password-protected routes below
+    docs_url=None,
+    redoc_url=None,
     openapi_url="/openapi.json",
     openapi_tags=tags_metadata,
     lifespan=lifespan,
 )
+
+if settings.SWAGGER_DOCS_ENABLED:
+
+    @app.get("/docs", include_in_schema=False)
+    async def swagger_ui(
+        _username: str = Depends(_verify_docs_credentials),
+    ):
+        """Swagger UI — protected by HTTP Basic Auth."""
+        return get_swagger_ui_html(
+            openapi_url="/openapi.json",
+            title=f"{app.title} – Swagger UI",
+        )
+
+    @app.get("/redoc", include_in_schema=False)
+    async def redoc_ui(
+        _username: str = Depends(_verify_docs_credentials),
+    ):
+        """ReDoc UI — protected by HTTP Basic Auth."""
+        return get_redoc_html(
+            openapi_url="/openapi.json",
+            title=f"{app.title} – ReDoc",
+        )
 
 app.include_router(auth.router)
 app.include_router(summarize.router)

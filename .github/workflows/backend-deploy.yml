@@ -51,7 +51,7 @@ jobs:
           
           ssh -o StrictHostKeyChecking=no -i ${KEY} ${VPS} "
             # Write .env file
-            printf 'POSTGRES_IMAGE=postgres:alpine3.23\nDB_USER=%s\nDB_PASSWORD=%s\nDB_NAME=%s\nDB_HOST=postgres-db\nDB_PORT=5432\nPOSTGRES_EXTERNAL_PORT=5432\nAPP_PORT=8000\nAPP_EXTERNAL_PORT=8001\nAPP_HOST=0.0.0.0\nJWT_SECRET_KEY=%s\nJWT_ALGORITHM=HS256\nJWT_ACCESS_TOKEN_EXPIRE_MINUTES=30\nENVIRONMENT=production\nDOCKER_IMAGE=dyslexia-be:latest\n' '${{ secrets.DB_USER }}' '${{ secrets.DB_PASSWORD }}' '${{ secrets.DB_NAME }}' '${{ secrets.JWT_SECRET_KEY }}' > /opt/dislexia/prod/.env
+            printf 'POSTGRES_IMAGE=postgres:alpine3.23\nDB_USER=%s\nDB_PASSWORD=%s\nDB_NAME=%s\nDB_HOST=postgres-db\nDB_PORT=5432\nPOSTGRES_EXTERNAL_PORT=5432\nAPP_PORT=8000\nAPP_EXTERNAL_PORT=8001\nAPP_HOST=0.0.0.0\nJWT_SECRET_KEY=%s\nJWT_ALGORITHM=HS256\nJWT_ACCESS_TOKEN_EXPIRE_MINUTES=30\nENVIRONMENT=production\nDOCKER_IMAGE=dyslexia-be:latest\nSWAGGER_DOCS_ENABLED=true\nSWAGGER_USERNAME=%s\nSWAGGER_PASSWORD=%s\n' '${{ secrets.DB_USER }}' '${{ secrets.DB_PASSWORD }}' '${{ secrets.DB_NAME }}' '${{ secrets.JWT_SECRET_KEY }}' '${{ secrets.SWAGGER_USERNAME }}' '${{ secrets.SWAGGER_PASSWORD }}' > /opt/dislexia/prod/.env
 
             # Copy compose file
             cp /tmp/docker-compose.prod.yml /opt/dislexia/prod/

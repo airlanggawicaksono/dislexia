@@ -24,6 +24,9 @@ services:
       JWT_ALGORITHM: ${JWT_ALGORITHM}
       JWT_ACCESS_TOKEN_EXPIRE_MINUTES: ${JWT_ACCESS_TOKEN_EXPIRE_MINUTES}
       ENVIRONMENT: ${ENVIRONMENT:-production}
+      SWAGGER_DOCS_ENABLED: ${SWAGGER_DOCS_ENABLED:-true}
+      SWAGGER_USERNAME: ${SWAGGER_USERNAME}
+      SWAGGER_PASSWORD: ${SWAGGER_PASSWORD}
     depends_on:
       postgres-db:
         condition: service_healthy
