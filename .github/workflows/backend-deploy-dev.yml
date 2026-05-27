@@ -11,6 +11,7 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    environment: development
 
     steps:
       - name: Checkout
@@ -21,6 +22,50 @@ jobs:
 
       - name: Build image
         run: docker build -t dyslexia-dev:latest ./backend
+
+      - name: Generate .env
+        # Variables (${{ vars.* }}) are non-sensitive and inlined directly.
+        # Secrets (${{ secrets.* }}) are loaded as env vars first, then written
+        # with printf "%s" to prevent bash from interpreting special chars (e.g. $ in bcrypt hashes).
+        env:
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
+          SEED_ADMIN_USERNAME: ${{ secrets.SEED_ADMIN_USERNAME }}
+          SEED_ADMIN_PASSWORD: ${{ secrets.SEED_ADMIN_PASSWORD }}
+          SWAGGER_USERNAME: ${{ secrets.SWAGGER_USERNAME }}
+          SWAGGER_PASSWORD: ${{ secrets.SWAGGER_PASSWORD }}
+          TOGETHER_API_KEY: ${{ secrets.TOGETHER_API_KEY }}
+        run: |
+          {
+            echo "POSTGRES_IMAGE=postgres:16-alpine"
+            echo "ENVIRONMENT=${{ vars.ENVIRONMENT }}"
+            echo "APP_HOST=${{ vars.APP_HOST }}"
+            echo "APP_PORT=${{ vars.APP_PORT }}"
+            echo "APP_EXTERNAL_PORT=${{ vars.APP_PORT }}"
+            echo "APP_WORKERS=${{ vars.APP_WORKERS }}"
+            echo "APP_RELOAD=${{ vars.APP_RELOAD }}"
+            echo "DB_HOST=postgres-db"
+            echo "DB_PORT=${{ vars.DB_PORT }}"
+            echo "POSTGRES_EXTERNAL_PORT=${{ vars.DB_PORT }}"
+            echo "DB_ECHO=${{ vars.DB_ECHO }}"
+            echo "DB_POOL_SIZE=${{ vars.DB_POOL_SIZE }}"
+            echo "DB_MAX_OVERFLOW=${{ vars.DB_MAX_OVERFLOW }}"
+            echo "JWT_ALGORITHM=${{ vars.JWT_ALGORITHM }}"
+            echo "JWT_ACCESS_TOKEN_EXPIRE_MINUTES=${{ vars.JWT_ACCESS_TOKEN_EXPIRE_MINUTES }}"
+            echo "SWAGGER_DOCS_ENABLED=${{ vars.SWAGGER_DOCS_ENABLED }}"
+            echo "LLM_PROVIDER=${{ vars.LLM_PROVIDER }}"
+            printf "DB_USER=%s\n"             "$DB_USER"
+            printf "DB_PASSWORD=%s\n"         "$DB_PASSWORD"
+            printf "DB_NAME=%s\n"             "$DB_NAME"
+            printf "JWT_SECRET_KEY=%s\n"      "$JWT_SECRET_KEY"
+            printf "SEED_ADMIN_USERNAME=%s\n" "$SEED_ADMIN_USERNAME"
+            printf "SEED_ADMIN_PASSWORD=%s\n" "$SEED_ADMIN_PASSWORD"
+            printf "SWAGGER_USERNAME=%s\n"    "$SWAGGER_USERNAME"
+            printf "SWAGGER_PASSWORD=%s\n"    "$SWAGGER_PASSWORD"
+            printf "TOGETHER_API_KEY=%s\n"    "$TOGETHER_API_KEY"
+          } > /tmp/dev.env
 
       - name: Save artifacts
         run: |
@@ -35,8 +80,9 @@ jobs:
       - name: Copy to VPS
         run: |
           VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
-          scp -o StrictHostKeyChecking=no -i /tmp/vps_key /tmp/dyslexia-dev.tar ${VPS}:/tmp/
+          scp -o StrictHostKeyChecking=no -i /tmp/vps_key /tmp/dyslexia-dev.tar      ${VPS}:/tmp/
           scp -o StrictHostKeyChecking=no -i /tmp/vps_key /tmp/docker-compose.dev.yml ${VPS}:/tmp/
+          scp -o StrictHostKeyChecking=no -i /tmp/vps_key /tmp/dev.env                ${VPS}:/tmp/
 
       - name: Backup DB before deploy
         run: |
@@ -50,11 +96,8 @@ jobs:
           KEY="/tmp/vps_key"
 
           ssh -o StrictHostKeyChecking=no -i ${KEY} ${VPS} "
-            # Write .env file with dev values
-            # SWAGGER_DOCS_ENABLED=true — docs are intentionally kept on in dev
-            printf 'POSTGRES_IMAGE=postgres:16-alpine\nDB_USER=dev\nDB_PASSWORD=dev\nDB_NAME=dev\nDB_HOST=postgres-db\nDB_PORT=5432\nPOSTGRES_EXTERNAL_PORT=5432\nAPP_PORT=8000\nAPP_EXTERNAL_PORT=8000\nAPP_HOST=0.0.0.0\nAPP_RELOAD=true\nJWT_SECRET_KEY=dev\nJWT_ALGORITHM=HS256\nJWT_ACCESS_TOKEN_EXPIRE_MINUTES=30\nENVIRONMENT=development\nSWAGGER_DOCS_ENABLED=true\nSWAGGER_USERNAME=admin1231\nSWAGGER_PASSWORD=1dsn612u1jsy5u3\n' > /opt/dislexia/dev/.env
-
-            # Copy compose file
+            # Drop .env and compose file into place
+            cp /tmp/dev.env /opt/dislexia/dev/.env
             cp /tmp/docker-compose.dev.yml /opt/dislexia/dev/
 
             # Deploy (no -v flag — would delete volumes!)
