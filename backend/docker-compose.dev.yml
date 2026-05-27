@@ -1,6 +1,6 @@
 # Standalone dev compose file - do NOT use with docker-compose.yml
 # Usage: docker compose -f docker-compose.dev.yml up
-# All values are read from the sibling .env file — no hardcoded values here.
+# All values come from .env via ${VAR} substitution — no hardcoded values.
 
 services:
   fastapi-app:

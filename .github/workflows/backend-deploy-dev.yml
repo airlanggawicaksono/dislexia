@@ -62,15 +62,20 @@ jobs:
             echo "ANTHROPIC_MODEL=claude-haiku-4-5-20251001"
             echo "OPENAI_API_KEY="
             echo "ANTHROPIC_API_KEY="
-            printf "DB_USER=%s\n"             "$DB_USER"
-            printf "DB_PASSWORD=%s\n"         "$DB_PASSWORD"
-            printf "DB_NAME=%s\n"             "$DB_NAME"
-            printf "JWT_SECRET_KEY=%s\n"      "$JWT_SECRET_KEY"
-            printf "SEED_ADMIN_USERNAME=%s\n" "$SEED_ADMIN_USERNAME"
-            printf "SEED_ADMIN_PASSWORD=%s\n" "$SEED_ADMIN_PASSWORD"
-            printf "SWAGGER_USERNAME=%s\n"    "$SWAGGER_USERNAME"
-            printf "SWAGGER_PASSWORD=%s\n"    "$SWAGGER_PASSWORD"
-            printf "TOGETHER_API_KEY=%s\n"    "$TOGETHER_API_KEY"
+            # docker-compose recursively interprets values from .env when
+            # substituting ${VAR}. To pass literal '$' (e.g. bcrypt hashes),
+            # we escape every '$' to '$$'. After substitution compose
+            # collapses '$$' → '$' so the container receives the real value.
+            esc() { printf '%s' "$1" | sed 's/\$/$$/g'; }
+            printf "DB_USER=%s\n"             "$(esc "$DB_USER")"
+            printf "DB_PASSWORD=%s\n"         "$(esc "$DB_PASSWORD")"
+            printf "DB_NAME=%s\n"             "$(esc "$DB_NAME")"
+            printf "JWT_SECRET_KEY=%s\n"      "$(esc "$JWT_SECRET_KEY")"
+            printf "SEED_ADMIN_USERNAME=%s\n" "$(esc "$SEED_ADMIN_USERNAME")"
+            printf "SEED_ADMIN_PASSWORD=%s\n" "$(esc "$SEED_ADMIN_PASSWORD")"
+            printf "SWAGGER_USERNAME=%s\n"    "$(esc "$SWAGGER_USERNAME")"
+            printf "SWAGGER_PASSWORD=%s\n"    "$(esc "$SWAGGER_PASSWORD")"
+            printf "TOGETHER_API_KEY=%s\n"    "$(esc "$TOGETHER_API_KEY")"
           } > /tmp/dev.env
 
       - name: Save artifacts
