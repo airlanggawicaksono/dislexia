@@ -1,0 +1,29 @@
+meta {
+  name: Me - List History
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{base_url}}/api/v1/me/history
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+params:query {
+  ~feature: summarize
+}
+
+assert {
+  res.status: eq 200
+  res.body.items: isArray
+}
+
+docs {
+  Lists all history items for the authenticated user. Uncomment the `feature` query
+  param to filter by one feature (summarize, professionalize, define, screen).
+}

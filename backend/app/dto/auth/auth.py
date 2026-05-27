@@ -1,32 +1,25 @@
 from pydantic import BaseModel, Field, ConfigDict
 
+from app.policies import ACCOUNT_NUMBER_LENGTH, ACCOUNT_NUMBER_PATTERN
 
-class SignupRequestDTO(BaseModel):
-    """Request model for user signup"""
 
+class GenerateResponseDTO(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
-    email: str = Field(..., description="User email address")
-
-
-class SignupResponseDTO(BaseModel):
-    """Response model for user signup"""
-
-    model_config = ConfigDict(populate_by_name=True)
-
-    access_code: str = Field(
-        ..., description="7-digit access code for login", min_length=7, max_length=7
-    )
-    email: str = Field(..., description="User email address")
-    username: str = Field(..., description="Auto-generated username")
-    message: str = Field(..., description="Success message")
+    account_number: str = Field(..., description="16-digit account number — save this, it's your only key")
+    display_name: str = Field(..., description="Auto-generated adjective-animal nickname (e.g. 'amusing-bee')")
+    access_token: str
+    token_type: str = "bearer"
+    expires_in: int
 
 
 class LoginRequestDTO(BaseModel):
-    """Request model for user login"""
+    model_config = ConfigDict(populate_by_name=True, str_strip_whitespace=True)
 
-    model_config = ConfigDict(populate_by_name=True)
-
-    access_code: str = Field(
-        ..., description="7-digit access code", min_length=7, max_length=7
+    account_number: str = Field(
+        ...,
+        min_length=ACCOUNT_NUMBER_LENGTH,
+        max_length=ACCOUNT_NUMBER_LENGTH,
+        pattern=ACCOUNT_NUMBER_PATTERN,
+        description="16-digit account number (digits only)",
     )

@@ -1,0 +1,37 @@
+meta {
+  name: Define - Process
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{base_url}}/api/v1/me/define/process
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "text": "photosynthesis"
+  }
+}
+
+script:post-response {
+  const body = res.getBody();
+  if (body.session_id) bru.setEnvVar("session_id", body.session_id);
+  if (body.history_id) bru.setEnvVar("history_id", body.history_id);
+}
+
+assert {
+  res.status: eq 200
+  res.body.feature: eq define
+  res.body.result: isDefined
+}

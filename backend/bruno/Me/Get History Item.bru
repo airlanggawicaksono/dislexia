@@ -1,0 +1,25 @@
+meta {
+  name: Me - Get History Item
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{base_url}}/api/v1/me/history/{{history_id}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 200
+  res.body.id: isDefined
+}
+
+docs {
+  Looks up a single history item by id. Returns 403 if it belongs to a different user.
+  Uses the {{history_id}} captured by a previous feature request.
+}

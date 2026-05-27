@@ -1,0 +1,37 @@
+meta {
+  name: Screen - Reply
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{base_url}}/api/v1/me/screen/reply
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "text": "I read fairly slowly, especially long paragraphs. I sometimes need to re-read sentences.",
+    "session_id": "{{session_id}}"
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.session_id: isDefined
+  res.body.is_complete: isDefined
+}
+
+docs {
+  Submit a reply for the current screening question. Run this 23+ times to walk through the full ARHQ.
+  is_complete flips to true on the final turn.
+}

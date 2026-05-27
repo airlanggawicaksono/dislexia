@@ -1,0 +1,40 @@
+meta {
+  name: Admin - Login
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{base_url}}/api/v1/admin/login
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "username": "admin",
+    "password": "12345678"
+  }
+}
+
+script:post-response {
+  const body = res.getBody();
+  bru.setEnvVar("admin_token", body.access_token);
+  if (body.admin) bru.setEnvVar("admin_id", body.admin.admin_id);
+}
+
+assert {
+  res.status: eq 200
+  res.body.access_token: isDefined
+  res.body.admin.must_change_password: isDefined
+}
+
+docs {
+  Logs in as the seeded master admin. Auto-saves admin_token + admin_id env vars.
+  After first login, must_change_password will be true — call the Change Password
+  request before hitting any other admin endpoint.
+}

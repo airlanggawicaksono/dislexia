@@ -1,0 +1,27 @@
+meta {
+  name: Admin - List Users
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{base_url}}/api/v1/admin/users
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{admin_token}}
+}
+
+assert {
+  res.status: eq 200
+  res.body.items: isArray
+  res.body.total: isNumber
+}
+
+docs {
+  Lists every end user with display_name + MD5(account_number).
+  Raw account_number is intentionally redacted — admins never see Mullvad credentials.
+  Use account_md5 from this list to filter the History endpoints.
+}

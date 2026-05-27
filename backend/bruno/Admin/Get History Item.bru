@@ -1,0 +1,24 @@
+meta {
+  name: Admin - Get History Item
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{base_url}}/api/v1/admin/history/{{history_id}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{admin_token}}
+}
+
+assert {
+  res.status: eq 200
+  res.body.id: isDefined
+}
+
+docs {
+  Admin: fetch any history item by id with no ownership check.
+}

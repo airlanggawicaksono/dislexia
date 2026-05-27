@@ -1,13 +1,17 @@
 meta {
-  name: Summarize Text
+  name: Summarize - Process
   type: http
-  seq: 5
+  seq: 1
 }
 
 post {
-  url: {{base_url}}/api/v1/{{access_hash}}/summarize/process
+  url: {{base_url}}/api/v1/me/summarize/process
   body: json
-  auth: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
 }
 
 headers {
@@ -16,11 +20,19 @@ headers {
 
 body:json {
   {
-    "text": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat."
+    "text": "The quarterly earnings report indicates that the company exceeded all projected revenue targets for the third consecutive period, with notable gains across all geographic segments and product categories. Management cited operational efficiency and strategic acquisitions as key drivers."
   }
+}
+
+script:post-response {
+  const body = res.getBody();
+  if (body.session_id) bru.setEnvVar("session_id", body.session_id);
+  if (body.history_id) bru.setEnvVar("history_id", body.history_id);
 }
 
 assert {
   res.status: eq 200
   res.body.feature: eq summarize
+  res.body.result: isDefined
+  res.body.session_id: isDefined
 }

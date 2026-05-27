@@ -1,0 +1,21 @@
+meta {
+  name: Screen - History
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{base_url}}/api/v1/me/screen/history
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 200
+  res.body.feature: eq screen
+  res.body.items: isArray
+}

@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 from alembic import context
 
 from app.config.database import Base
-from app.models import User  # noqa: F401
+from app.models import User, Admin, ChatSession, FeatureHistory  # noqa: F401
 
 config = context.config
 

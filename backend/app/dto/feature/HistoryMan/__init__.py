@@ -1,6 +1,6 @@
 """Feature DTOs (Summarize, Professionalize, Define)"""
 
-from app.dto.feature.base import (
+from backend.app.dto.feature.HistoryMan.base import (
     HistoryItemDTO,
     HistoryListResponseDTO,
     FeatureRequestDTO,

@@ -1,42 +1,62 @@
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.services.user_service import UserService
-from app.dto.auth.userdata import TokenResponseDTO
-from app.dto.auth.auth import SignupRequestDTO, SignupResponseDTO, LoginRequestDTO
-from app.config.database import get_db
 
-router = APIRouter(prefix="/api/v1/auth", tags=["Authentication"])
+from app.config.database import get_db
+from app.services.user_service import UserService
+from app.dto.auth.auth import GenerateResponseDTO, LoginRequestDTO
+from app.dto.auth.userdata import TokenResponseDTO
+from app.openapi import AUTH_RESPONSES
+
+TAG = {
+    "name": "Authentication",
+    "description": (
+        "Mullvad-style account auth. No email, no password. "
+        "Generate a 16-digit account number, log in with it, receive a JWT."
+    ),
+}
+
+router = APIRouter(prefix="/api/v1/auth", tags=[TAG["name"]])
 
 
 def get_user_service(db: AsyncSession = Depends(get_db)) -> UserService:
-    """Dependency injection for UserService with DB session"""
     return UserService(db)
 
 
 @router.post(
-    "/signup", response_model=SignupResponseDTO, status_code=status.HTTP_201_CREATED
+    "/generate",
+    response_model=GenerateResponseDTO,
+    status_code=status.HTTP_201_CREATED,
+    summary="Generate new account",
+    responses={
+        201: {"description": "Account created. Save the account_number — it is the only way to log back in."},
+    },
 )
-async def signup(
-    request: SignupRequestDTO, user_service: UserService = Depends(get_user_service)
-):
+async def generate(user_service: UserService = Depends(get_user_service)):
     """
-    User signup - Create new account with email
+    Create a new account.
 
-    Creates a new user account with an auto-generated username
-    and a 7-digit access code. The access code is returned and should be used
-    for login to get a JWT token.
+    Returns a randomly generated 16-digit `account_number` plus an access token.
+    **No email or password is required.** Save the account number — it is the
+    only credential for this account.
     """
-    return await user_service.signup(request.email)
+    return await user_service.generate()
 
 
-@router.post("/login", response_model=TokenResponseDTO, status_code=status.HTTP_200_OK)
-async def login(
-    request: LoginRequestDTO, user_service: UserService = Depends(get_user_service)
-):
+@router.post(
+    "/login",
+    response_model=TokenResponseDTO,
+    status_code=status.HTTP_200_OK,
+    summary="Log in with account number",
+    responses={
+        200: {"description": "Login successful. Use the returned access_token as Bearer credential."},
+        **AUTH_RESPONSES,
+        401: {"description": "Invalid account number."},
+    },
+)
+async def login(request: LoginRequestDTO, user_service: UserService = Depends(get_user_service)):
     """
-    User login with 7-digit access code
+    Log in using a 16-digit account number.
 
-    Authenticates user using the 7-digit access code received during signup.
-    Returns a JWT token that should be used for all subsequent API calls.
+    Returns an access token and the current user profile.
     """
-    return await user_service.login(request.access_code)
+    return await user_service.login(request.account_number)

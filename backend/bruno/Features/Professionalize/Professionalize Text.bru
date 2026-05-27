@@ -1,13 +1,17 @@
 meta {
-  name: Professionalize Text
+  name: Professionalize - Process
   type: http
-  seq: 7
+  seq: 1
 }
 
 post {
-  url: {{base_url}}/api/v1/{{access_hash}}/professionalize/process
+  url: {{base_url}}/api/v1/me/professionalize/process
   body: json
-  auth: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
 }
 
 headers {
@@ -16,11 +20,18 @@ headers {
 
 body:json {
   {
-    "text": "i think we shoud meet up next week to talk bout the project stuff and things"
+    "text": "yo so basically i think we should prolly meet up next week and chat about the project stuff cuz things are kinda all over the place rn"
   }
+}
+
+script:post-response {
+  const body = res.getBody();
+  if (body.session_id) bru.setEnvVar("session_id", body.session_id);
+  if (body.history_id) bru.setEnvVar("history_id", body.history_id);
 }
 
 assert {
   res.status: eq 200
   res.body.feature: eq professionalize
+  res.body.result: isDefined
 }
