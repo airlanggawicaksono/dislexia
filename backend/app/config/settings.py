@@ -10,8 +10,14 @@ class Settings(BaseSettings):
     All configuration should be set in .env file, no hardcoded values
     """
 
+    # Local dev reads .env.dev (gitignored, hand-edited values).
+    # On the VPS, the container gets env vars from docker-compose directly
+    # so the file lookup is just a no-op fallback.
     model_config = SettingsConfigDict(
-        env_file=".env", env_file_encoding="utf-8", case_sensitive=False, extra="ignore"
+        env_file=(".env.dev", ".env"),
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+        extra="ignore",
     )
 
     # Application Configuration
