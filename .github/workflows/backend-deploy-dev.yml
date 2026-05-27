@@ -37,6 +37,8 @@ jobs:
           SWAGGER_USERNAME: ${{ secrets.SWAGGER_USERNAME }}
           SWAGGER_PASSWORD: ${{ secrets.SWAGGER_PASSWORD }}
           TOGETHER_API_KEY: ${{ secrets.TOGETHER_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
           {
             echo "POSTGRES_IMAGE=postgres:16-alpine"
@@ -56,6 +58,9 @@ jobs:
             echo "JWT_ACCESS_TOKEN_EXPIRE_MINUTES=${{ vars.JWT_ACCESS_TOKEN_EXPIRE_MINUTES }}"
             echo "SWAGGER_DOCS_ENABLED=${{ vars.SWAGGER_DOCS_ENABLED }}"
             echo "LLM_PROVIDER=${{ vars.LLM_PROVIDER }}"
+            echo "TOGETHER_MODEL=${{ vars.TOGETHER_MODEL }}"
+            echo "OPENAI_MODEL=${{ vars.OPENAI_MODEL }}"
+            echo "ANTHROPIC_MODEL=${{ vars.ANTHROPIC_MODEL }}"
             printf "DB_USER=%s\n"             "$DB_USER"
             printf "DB_PASSWORD=%s\n"         "$DB_PASSWORD"
             printf "DB_NAME=%s\n"             "$DB_NAME"
@@ -65,6 +70,8 @@ jobs:
             printf "SWAGGER_USERNAME=%s\n"    "$SWAGGER_USERNAME"
             printf "SWAGGER_PASSWORD=%s\n"    "$SWAGGER_PASSWORD"
             printf "TOGETHER_API_KEY=%s\n"    "$TOGETHER_API_KEY"
+            printf "OPENAI_API_KEY=%s\n"      "$OPENAI_API_KEY"
+            printf "ANTHROPIC_API_KEY=%s\n"   "$ANTHROPIC_API_KEY"
           } > /tmp/dev.env
 
       - name: Save artifacts
