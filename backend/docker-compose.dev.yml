@@ -1,5 +1,6 @@
 # Standalone dev compose file - do NOT use with docker-compose.yml
 # Usage: docker compose -f docker-compose.dev.yml up
+# All values are read from the sibling .env file — no hardcoded values here.
 
 services:
   fastapi-app:
@@ -7,19 +8,27 @@ services:
     container_name: dev-backend
     volumes: []
     ports:
-      - "8000:8000"
+      - "${APP_EXTERNAL_PORT}:${APP_PORT}"
     environment:
-      APP_PORT: "8000"
+      APP_HOST: ${APP_HOST}
+      APP_PORT: ${APP_PORT}
+      APP_WORKERS: ${APP_WORKERS}
+      APP_RELOAD: ${APP_RELOAD}
+      ENVIRONMENT: ${ENVIRONMENT}
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
       DB_NAME: ${DB_NAME}
-      DB_HOST: postgres-db
-      DB_PORT: "5432"
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_ECHO: ${DB_ECHO}
+      DB_POOL_SIZE: ${DB_POOL_SIZE}
+      DB_MAX_OVERFLOW: ${DB_MAX_OVERFLOW}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY}
-      JWT_ALGORITHM: HS256
-      JWT_ACCESS_TOKEN_EXPIRE_MINUTES: 30
-      ENVIRONMENT: development
-      SWAGGER_DOCS_ENABLED: "true"
+      JWT_ALGORITHM: ${JWT_ALGORITHM}
+      JWT_ACCESS_TOKEN_EXPIRE_MINUTES: ${JWT_ACCESS_TOKEN_EXPIRE_MINUTES}
+      SEED_ADMIN_USERNAME: ${SEED_ADMIN_USERNAME}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD}
+      SWAGGER_DOCS_ENABLED: ${SWAGGER_DOCS_ENABLED}
       SWAGGER_USERNAME: ${SWAGGER_USERNAME}
       SWAGGER_PASSWORD: ${SWAGGER_PASSWORD}
       LLM_PROVIDER: ${LLM_PROVIDER}
@@ -34,21 +43,21 @@ services:
         condition: service_healthy
     command: >
       sh -c "uvicorn app.main:app
-      --host 0.0.0.0
-      --port 8000
+      --host ${APP_HOST}
+      --port ${APP_PORT}
       --reload"
     networks:
       - dislexia_network
     restart: always
     healthcheck:
-      test: ["CMD-SHELL", "python -c \"import requests; requests.get('http://localhost:8000/health')\" || exit 1"]
+      test: ["CMD-SHELL", "python -c \"import requests; requests.get('http://localhost:${APP_PORT}/health')\" || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
 
   postgres-db:
-    image: postgres:16-alpine
+    image: ${POSTGRES_IMAGE}
     container_name: dev-postgres
     environment:
       POSTGRES_USER: ${DB_USER}
@@ -57,9 +66,9 @@ services:
     volumes:
       - postgres-dev-data:/var/lib/postgresql
     ports:
-      - "5434:5432"
+      - "${POSTGRES_EXTERNAL_PORT}:${DB_PORT}"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -h localhost -p 5432"]
+      test: ["CMD-SHELL", "pg_isready -h localhost -p ${DB_PORT}"]
       interval: 10s
       timeout: 5s
       retries: 5
