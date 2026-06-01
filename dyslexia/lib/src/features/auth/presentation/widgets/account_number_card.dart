@@ -30,6 +30,7 @@ class AccountNumberCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(Icons.key, color: theme.colorScheme.primary, size: 20),
               const SizedBox(width: 8),
@@ -81,7 +82,8 @@ class AccountNumberCard extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             'This is the only credential for your account. Save it '
-            'somewhere safe — you will need it to log back in.',
+            'somewhere safe, you will need it to log back in.',
+            textAlign: TextAlign.center,
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
             ),
@@ -90,6 +92,7 @@ class AccountNumberCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               'Display name: $displayName',
+              textAlign: TextAlign.center,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
               ),

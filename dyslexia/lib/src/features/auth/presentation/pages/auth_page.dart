@@ -63,13 +63,52 @@ class _AuthPageState extends State<AuthPage> {
               }
             },
             builder: (context, state) {
-              final pending = state is Unauthenticated
-                  ? state.pendingAccountNumber
-                  : null;
+              final unauth = state is Unauthenticated ? state : null;
               final isLoading = state is AuthLoading;
+
+              if (unauth?.pendingAccountNumber != null) {
+                // After generating an account, show the number and a button
+                // to continue, simplifying the UI to prevent confusion.
+                return Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    AccountNumberCard(
+                      accountNumber: unauth!.pendingAccountNumber!,
+                      displayName: unauth.pendingDisplayName,
+                    ),
+                    const SizedBox(height: 24),
+                    FilledButton(
+                      onPressed: isLoading
+                          ? null
+                          : () => context
+                              .read<AuthBloc>()
+                              .add(const RestoreSessionEvent()),
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
+                      child: isLoading
+                          ? const SizedBox(
+                              height: 18,
+                              width: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Text(
+                              'Continue to App',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                    ),
+                  ],
+                );
+              }
+
+              // Default view for login or generate.
               return SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 32, vertical: 48),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 32, vertical: 48),
                 child: Form(
                   key: _formKey,
                   child: Column(
@@ -101,81 +140,67 @@ class _AuthPageState extends State<AuthPage> {
                         },
                       ),
                       const SizedBox(height: 24),
-                      if (pending != null)
-                        AccountNumberCard(
-                          accountNumber: pending,
-                          displayName: state is Unauthenticated
-                              ? state.pendingDisplayName
-                              : null,
-                        )
-                      else
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            if (_mode == AuthMode.login) ...[
-                              AuthTextField(
-                                controller: _accountController,
-                                label: '16-digit account number',
-                                enabled: !isLoading,
-                                keyboardType: TextInputType.number,
-                                inputFormatters: [
-                                  FilteringTextInputFormatter.digitsOnly,
-                                  LengthLimitingTextInputFormatter(16),
-                                ],
-                                validator: (value) {
-                                  final v = (value ?? '').trim();
-                                  if (v.isEmpty) {
-                                    return 'Please enter your account number';
-                                  }
-                                  if (v.length != 16) {
-                                    return 'Account number must be 16 digits';
-                                  }
-                                  return null;
-                                },
-                              ),
-                            ] else ...[
-                              Container(
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: theme.colorScheme.primaryContainer
-                                      .withValues(alpha: 0.4),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  'We will generate a 16-digit account '
-                                  'number for you. Save it — it is the only '
-                                  'way to log back in.',
-                                  style: theme.textTheme.bodyMedium,
-                                ),
-                              ),
-                            ],
-                            const SizedBox(height: 24),
-                            FilledButton(
-                              onPressed: isLoading ? null : _submit,
-                              style: FilledButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(
-                                    vertical: 16),
-                              ),
-                              child: isLoading
-                                  ? const SizedBox(
-                                      height: 18,
-                                      width: 18,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                      ),
-                                    )
-                                  : Text(
-                                      _mode == AuthMode.login
-                                          ? 'Log in'
-                                          : 'Generate account',
-                                      style: const TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                            ),
+                      if (_mode == AuthMode.login) ...[
+                        AuthTextField(
+                          controller: _accountController,
+                          label: '16-digit account number',
+                          enabled: !isLoading,
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                            LengthLimitingTextInputFormatter(16),
                           ],
+                          validator: (value) {
+                            final v = (value ?? '').trim();
+                            if (v.isEmpty) {
+                              return 'Please enter your account number';
+                            }
+                            if (v.length != 16) {
+                              return 'Account number must be 16 digits';
+                            }
+                            return null;
+                          },
                         ),
+                      ] else ...[
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.primaryContainer
+                                .withValues(alpha: 0.4),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            'We will generate a 16-digit account '
+                            'number for you. Save it — it is the only '
+                            'way to log back in.',
+                            style: theme.textTheme.bodyMedium,
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 24),
+                      FilledButton(
+                        onPressed: isLoading ? null : _submit,
+                        style: FilledButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
+                        child: isLoading
+                            ? const SizedBox(
+                                height: 18,
+                                width: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : Text(
+                                _mode == AuthMode.login
+                                    ? 'Log in'
+                                    : 'Generate account',
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                      ),
                     ],
                   ),
                 ),
