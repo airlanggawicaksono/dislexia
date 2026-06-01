@@ -56,12 +56,12 @@ def client() -> TestClient:
 
 def test_cors_origins_default_includes_dyslexic_app():
     """Production-style default must include the production frontend origin."""
-    assert "https://dyslexic.app" in settings.cors_origins
+    assert "https://reader.dyslexic.app" in settings.cors_origins
 
 
 def test_cors_origins_default_includes_localhost_8080():
     """Dev default must include the local Flutter web dev port."""
-    assert "http://localhost:8080" in settings.cors_origins
+    assert "http://localhost:8083" in settings.cors_origins
 
 
 def test_cors_methods_and_headers_default_to_wildcard():
@@ -77,27 +77,29 @@ def test_get_request_has_allow_origin_header(client: TestClient):
     """A simple GET to /health must echo the configured origin."""
     res = client.get(
         "/health",
-        headers={"Origin": "https://dyslexic.app"},
+        headers={"Origin": "https://reader.dyslexic.app"},
     )
     assert res.status_code == 200
-    assert res.headers.get("access-control-allow-origin") == "https://dyslexic.app"
+    assert (
+        res.headers.get("access-control-allow-origin") == "https://reader.dyslexic.app"
+    )
 
 
 def test_get_request_allow_origin_for_localhost(client: TestClient):
     """A GET with localhost origin must also be reflected."""
     res = client.get(
         "/health",
-        headers={"Origin": "http://localhost:8080"},
+        headers={"Origin": "http://localhost:8083"},
     )
     assert res.status_code == 200
-    assert res.headers.get("access-control-allow-origin") == "http://localhost:8080"
+    assert res.headers.get("access-control-allow-origin") == "http://localhost:8083"
 
 
 def test_get_request_allow_credentials_header(client: TestClient):
     """allow_credentials=True must be advertised (lowercased header)."""
     res = client.get(
         "/health",
-        headers={"Origin": "https://dyslexic.app"},
+        headers={"Origin": "https://reader.dyslexic.app"},
     )
     assert res.status_code == 200
     # Starlette emits the value as a stringified bool
@@ -120,14 +122,16 @@ def test_options_preflight_returns_allow_origin(client: TestClient):
     res = client.options(
         "/api/v1/auth/generate",
         headers={
-            "Origin": "https://dyslexic.app",
+            "Origin": "https://reader.dyslexic.app",
             "Access-Control-Request-Method": "POST",
             "Access-Control-Request-Headers": "content-type,authorization",
         },
     )
     # 200 means the middleware handled the preflight
     assert res.status_code == 200
-    assert res.headers.get("access-control-allow-origin") == "https://dyslexic.app"
+    assert (
+        res.headers.get("access-control-allow-origin") == "https://reader.dyslexic.app"
+    )
 
 
 def test_options_preflight_allows_all_methods(client: TestClient):
@@ -135,7 +139,7 @@ def test_options_preflight_allows_all_methods(client: TestClient):
     res = client.options(
         "/api/v1/auth/generate",
         headers={
-            "Origin": "http://localhost:8080",
+            "Origin": "http://localhost:8083",
             "Access-Control-Request-Method": "POST",
         },
     )
@@ -149,7 +153,7 @@ def test_options_preflight_allows_all_headers(client: TestClient):
     res = client.options(
         "/api/v1/auth/generate",
         headers={
-            "Origin": "https://dyslexic.app",
+            "Origin": "https://reader.dyslexic.app",
             "Access-Control-Request-Method": "POST",
             "Access-Control-Request-Headers": "content-type,authorization",
         },

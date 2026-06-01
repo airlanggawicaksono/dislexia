@@ -58,7 +58,7 @@ class Settings(BaseSettings):
 
     # CORS Configuration
     # Comma-separated list of allowed origins. Use ["*"] for development.
-    CORS_ALLOW_ORIGINS: str = "https://dyslexic.app,http://localhost:8080"
+    CORS_ALLOW_ORIGINS: str = "https://reader.dyslexic.app,http://localhost:8083"
     CORS_ALLOW_CREDENTIALS: bool = True
     CORS_ALLOW_METHODS: str = "*"
     CORS_ALLOW_HEADERS: str = "*"
