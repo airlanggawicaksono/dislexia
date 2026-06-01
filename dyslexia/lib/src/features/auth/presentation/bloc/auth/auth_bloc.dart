@@ -1,16 +1,17 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../core/errors/failures.dart';
-import '../../../../core/usecases/usecase.dart';
-import '../../../../core/utils/failure_converter.dart';
-import '../../domain/entities/auth_session_entity.dart';
-import '../../domain/entities/generated_account_entity.dart';
-import '../../domain/repositories/auth_repository.dart';
-import '../../domain/usecases/generate_account_usecase.dart';
-import '../../domain/usecases/login_usecase.dart';
-import '../../domain/usecases/logout_usecase.dart';
-import '../../domain/usecases/restore_session_usecase.dart';
+import '../../../../../core/errors/failures.dart';
+import '../../../../../core/usecases/usecase.dart';
+import '../../../../../core/utils/failure_converter.dart';
+import '../../../domain/entities/auth_session_entity.dart';
+import '../../../domain/entities/generated_account_entity.dart';
+import '../../../domain/usecases/generate_account_usecase.dart';
+import '../../../domain/usecases/login_usecase.dart';
+import '../../../domain/usecases/logout_usecase.dart';
+import '../../../domain/usecases/restore_session_usecase.dart';
+import '../logout_bus.dart';
+import '../token_holder.dart';
 
 part 'auth_event.dart';
 part 'auth_state.dart';
@@ -26,6 +27,18 @@ part 'auth_state.dart';
 ///   Unauthenticated ─LoginEvent─> AuthLoading
 ///   Unauthenticated ─GenerateAccountEvent─> AuthLoading
 ///   Authenticated    ─LogoutEvent─> Unauthenticated
+///
+/// On every transition the bloc also keeps two side-channels in sync:
+///
+/// - [TokenHolder]   — the latest access token (or null when signed out),
+///                     so the [AuthInterceptor] can stamp the
+///                     `Authorization` header on outgoing requests.
+/// - [LogoutBus]     — fires on every 401 from the API. The host that
+///                     owns the bloc (see `_DesktopShellGate` in
+///                     `main.dart`) listens to the bus and dispatches
+///                     a [LogoutEvent] back into the bloc, which is
+///                     how an expired session funnels back through the
+///                     same state machine the user would use.
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final GenerateAccountUseCase _generateAccount;
   final LoginUseCase _login;
@@ -56,6 +69,35 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     emit(Authenticated(session));
   }
 
+  @override
+  void onChange(Change<AuthState> change) {
+    super.onChange(change);
+    _syncSideChannels(change.nextState);
+  }
+
+  @override
+  void onError(Object error, StackTrace stackTrace) {
+    // Make sure we never leave a stale token in memory if the bloc
+    // crashed mid-transition.
+    TokenHolder.instance.clear();
+    super.onError(error, stackTrace);
+  }
+
+  /// Push the new state's relevant bits into the [TokenHolder]. The
+  /// [LogoutBus] is fired *from* the interceptor, not from here — we
+  /// only consume it inside [_DesktopShellGate].
+  void _syncSideChannels(AuthState state) {
+    if (state is Authenticated) {
+      TokenHolder.instance.set(state.session.accessToken);
+    } else if (state is Unauthenticated) {
+      TokenHolder.instance.clear();
+    }
+    // AuthInitial / AuthLoading / AuthError: leave the holder alone —
+    // the previous state still represents the live session and we
+    // don't want a transient `AuthLoading` to wipe the token from a
+    // still-valid session.
+  }
+
   Future<void> _onRestoreSession(
       RestoreSessionEvent event, Emitter<AuthState> emit) async {
     emit(const AuthLoading());
@@ -84,8 +126,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   Future<void> _onGenerateAccount(
       GenerateAccountEvent event, Emitter<AuthState> emit) async {
     emit(const AuthLoading());
-    final result =
-        await _generateAccount.call(const NoParams());
+    final result = await _generateAccount.call(const NoParams());
     result.fold(
       (failure) {
         emit(Unauthenticated(errorMessage: mapFailureToMessage(failure)));
@@ -117,8 +158,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     );
   }
 
-  Future<void> _onLogout(
-      LogoutEvent event, Emitter<AuthState> emit) async {
+  Future<void> _onLogout(LogoutEvent event, Emitter<AuthState> emit) async {
     final result = await _logout.call(const NoParams());
     result.fold(
       (failure) {

@@ -30,6 +30,7 @@ class AccountNumberCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(Icons.key, color: theme.colorScheme.primary, size: 20),
               const SizedBox(width: 8),
