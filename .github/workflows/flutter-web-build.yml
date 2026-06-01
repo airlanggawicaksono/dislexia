@@ -1,0 +1,74 @@
+name: Deploy Flutter Web
+
+on:
+  push:
+    paths:
+      - 'dyslexia/**'
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image
+        run: |
+          docker build -t dyslexia-web-flutter:latest ./dyslexia
+
+      - name: Save image as tar
+        run: |
+          docker save dyslexia-web-flutter:latest -o /tmp/dyslexia-web-flutter.tar
+          ls -la /tmp/dyslexia-web.tar
+
+      - name: Copy image to VPS via SCP
+        run: |
+          echo "${{ secrets.VPS_SSH_KEY }}" > /tmp/vps_key
+          chmod 600 /tmp/vps_key
+          scp -o StrictHostKeyChecking=no -i /tmp/vps_key /tmp/dyslexia-web-flutter.tar ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/tmp/dyslexia-web-flutter.tar
+
+      - name: Deploy on VPS
+        run: |
+          ssh -o StrictHostKeyChecking=no -i /tmp/vps_key ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "
+            set -e
+
+            echo '=== Deploying web on VPS ==='
+
+            echo '=== Load image ==='
+            docker load -i /tmp/dyslexia-web-flutter.tar
+
+            echo '=== Stop old container ==='
+            docker stop dyslexia-web-flutter 2>/dev/null || true
+            docker rm dyslexia-web-flutter 2>/dev/null || true
+
+            echo '=== Start container ==='
+            docker run -d --name dyslexia-web-flutter --restart unless-stopped -p 8080:80 dyslexia-web-flutter:latest
+
+            echo '=== Cleanup ==='
+            rm -f /tmp/dyslexia-web-flutter.tar
+            docker image prune -f
+
+            echo '=== Done ==='
+            docker ps | grep dyslexia-web-flutter
+          "
+
+      - name: Health check
+        run: |
+          ssh -o StrictHostKeyChecking=no -i /tmp/vps_key ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "
+            set -e
+            sleep 5
+            curl -f http://127.0.0.1:8080/ || exit 1
+            echo '=== Web deployed successfully ==='
+          "
+
+      - name: Notify failure
+        if: failure()
+        run: |
+          echo "Deployment failed! Check VPS at ${{ secrets.VPS_HOST }}"

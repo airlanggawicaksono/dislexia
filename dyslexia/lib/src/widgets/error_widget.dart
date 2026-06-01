@@ -16,7 +16,7 @@ class AppErrorWidget extends StatelessWidget {
         children: [
           Icon(
             Icons.error,
-            size: 40.r,
+            size: 40.0,
           ),
           Text(message),
         ],

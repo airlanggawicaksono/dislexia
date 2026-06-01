@@ -1,16 +1,9 @@
 import 'package:get_it/get_it.dart';
 
-import 'injector.dart';
+import 'injector.dart' as injector;
 
 final getIt = GetIt.I;
 
 void configureDepedencies() {
-  DisplaySettingsDependency.init();
-  UploadDependency.init();
-  ScanDependency.init();
-  LensDependency.init();
-
-  getIt.registerLazySingleton(() => ThemeBloc());
-  getIt.registerLazySingleton(() => AppRouteConf());
-  getIt.registerLazySingleton(() => HiveLocalStorage());
+  injector.configureDepedencies();
 }
