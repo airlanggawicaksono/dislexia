@@ -26,7 +26,7 @@ jobs:
       - name: Save image as tar
         run: |
           docker save dyslexia-web-flutter:latest -o /tmp/dyslexia-web-flutter.tar
-          ls -la /tmp/dyslexia-web.tar
+          ls -la /tmp/dyslexia-web-flutter.tar
 
       - name: Copy image to VPS via SCP
         run: |

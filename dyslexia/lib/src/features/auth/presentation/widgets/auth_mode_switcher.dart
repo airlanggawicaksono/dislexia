@@ -20,20 +20,19 @@ class AuthModeSwitcher extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest
-            .withValues(alpha: 0.4),
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
         children: [
           _Segment(
             label: 'Log in',
-            selected: mode == _AuthMode.login,
+            selected: mode == AuthMode.login,
             onTap: () => onChanged(AuthMode.login),
           ),
           _Segment(
             label: 'Generate account',
-            selected: mode == _AuthMode.generate,
+            selected: mode == AuthMode.generate,
             onTap: () => onChanged(AuthMode.generate),
           ),
         ],

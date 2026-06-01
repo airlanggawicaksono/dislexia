@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -9,11 +11,15 @@ import 'package:path_provider/path_provider.dart';
 import 'src/app.dart';
 import 'src/configs/adapter/adapter_conf.dart';
 import 'src/configs/injector/injector_conf.dart';
+import 'src/core/api/api_url.dart';
 import 'src/core/constants/list_translation_locale.dart';
 import 'src/core/shell/desktop_shell.dart';
 import 'src/core/utils/observer.dart';
+import 'src/core/themes/app_theme.dart';
 import 'src/features/auth/presentation/bloc/auth/auth_bloc.dart';
+import 'src/features/auth/presentation/bloc/logout_bus.dart';
 import 'src/features/auth/presentation/pages/auth_page.dart';
+import 'src/core/blocs/theme/theme_bloc.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,6 +36,14 @@ void main() async {
       storageDirectory: HydratedStorageDirectory(path.path),
     );
   }
+
+  // Apply any build-time / env-time base URL override before the DI
+  // container (and therefore the Dio client) is constructed, so the
+  // very first request goes to the configured host. The flag is read
+  // via --dart-define=API_BASE_URL=https://...
+  ApiUrl.configure(
+    baseUrlOverride: const String.fromEnvironment('API_BASE_URL'),
+  );
 
   configureAdapter();
   configureDepedencies();
@@ -57,9 +71,22 @@ class DyslexiaApp extends StatelessWidget {
     // events on the same bloc instance.
     if (kIsWeb) {
       return BlocProvider<AuthBloc>(
-        create: (_) =>
-            getIt<AuthBloc>()..add(const RestoreSessionEvent()),
-        child: const _DesktopShellGate(),
+        create: (_) => getIt<AuthBloc>()..add(const RestoreSessionEvent()),
+        child: BlocProvider(
+          create: (_) => getIt<ThemeBloc>(),
+          child: BlocBuilder<ThemeBloc, ThemeState>(
+            builder: (context, state) {
+              return MaterialApp(
+                debugShowCheckedModeBanner: false,
+                localizationsDelegates: context.localizationDelegates,
+                supportedLocales: context.supportedLocales,
+                locale: context.locale,
+                theme: AppTheme.data(state.isDarkMode),
+                home: const _DesktopShellGate(),
+              );
+            },
+          ),
+        ),
       );
     }
     // Mobile/native platforms use the existing GoRouter-based app.
@@ -71,8 +98,45 @@ class DyslexiaApp extends StatelessWidget {
 /// [DesktopShell] based on the current [AuthState]. Kept separate from
 /// [DyslexiaApp] so [BlocProvider] is only constructed once for the
 /// entire web experience.
-class _DesktopShellGate extends StatelessWidget {
+///
+/// In addition to rendering, this widget also wires the [LogoutBus]
+/// (a global broadcast stream) into the [AuthBloc]: whenever the
+/// [AuthInterceptor] sees a 401 on an authenticated request, the bus
+/// fires and we dispatch a [LogoutEvent] on the bloc. That keeps the
+/// session-expired path on the same state machine the user would use
+/// to sign out manually.
+class _DesktopShellGate extends StatefulWidget {
   const _DesktopShellGate();
+
+  @override
+  State<_DesktopShellGate> createState() => _DesktopShellGateState();
+}
+
+class _DesktopShellGateState extends State<_DesktopShellGate> {
+  StreamSubscription<void>? _logoutSub;
+
+  @override
+  void initState() {
+    super.initState();
+    // Listen to the bus at the gateway so any 401 fired by the
+    // AuthInterceptor gets translated into a LogoutEvent on the
+    // hosted AuthBloc.
+    _logoutSub = LogoutBus.stream.listen((_) {
+      if (!mounted) return;
+      final bloc = context.read<AuthBloc>();
+      // No-op if the user is already signed out — saves us from a
+      // redundant storage wipe and a needless re-emit.
+      if (bloc.state is Authenticated) {
+        bloc.add(const LogoutEvent());
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _logoutSub?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
