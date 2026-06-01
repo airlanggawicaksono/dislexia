@@ -1,3 +1,8 @@
+// DEPRECATED: superseded by FeatureCanvas in DesktopShell's 3-column layout.
+// The top bar is no longer used by the desktop web shell; it is kept here for
+// reference and possible reuse on other surfaces. See feature_canvas.dart for
+// the active implementation.
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

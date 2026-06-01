@@ -12,9 +12,15 @@ import '../../features/reader/presentation/bloc/reader/reader_bloc.dart';
 import '../../features/reader/presentation/bloc/reader/reader_event.dart';
 import '../../features/reader/presentation/pages/reader_page.dart';
 import 'display_settings_panel.dart';
-import 'dyslexia_topbar.dart';
+import 'feature_canvas.dart';
 import 'web_landing_content.dart';
 
+/// 3-column desktop shell:
+///   [ FeatureCanvas ] [ DisplaySettingsPanel ] [ Main content ]
+///
+/// - Column 1: feature buttons (Reader, Upload PDF, Paste, Sample) + manual input
+/// - Column 2: typography/accessibility settings sheet
+/// - Column 3: reader page (or landing) as the primary content area
 class DesktopShell extends StatelessWidget {
   const DesktopShell({super.key});
 
@@ -44,8 +50,9 @@ class DesktopShell extends StatelessWidget {
                       child: const Scaffold(
                         body: Row(
                           children: [
+                            _FeatureColumn(),
                             DisplaySettingsPanel(),
-                            _DesktopContent(),
+                            Expanded(child: _MainColumn()),
                           ],
                         ),
                       ),
@@ -61,14 +68,52 @@ class DesktopShell extends StatelessWidget {
   }
 }
 
-class _DesktopContent extends StatefulWidget {
-  const _DesktopContent();
+/// Column 1: feature canvas (Reader/Upload/Paste/Sample + text input).
+/// All reader state is owned by [_MainColumn]; this widget is a thin
+/// presentation wrapper that just delegates actions to its parent.
+class _FeatureColumn extends StatelessWidget {
+  const _FeatureColumn();
+
   @override
-  State<_DesktopContent> createState() => _DesktopContentState();
+  Widget build(BuildContext context) {
+    return _FeatureCanvasAdapter();
+  }
 }
 
-class _DesktopContentState extends State<_DesktopContent> {
-  final _topbarKey = GlobalKey<DyslexiaTopbarState>();
+/// Internal widget that locates the enclosing [_MainColumnState] and forwards
+/// actions to it. Falls back to no-ops if the parent cannot be found (which
+/// should not happen under normal use).
+class _FeatureCanvasAdapter extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final main = context.findAncestorStateOfType<_MainColumnState>();
+    if (main == null) {
+      return const FeatureCanvas(
+        onTextExtracted: _noopText,
+        onFeedback: _noopFeedback,
+      );
+    }
+    return FeatureCanvas(
+      onTextExtracted: main.setReaderText,
+      onPdfProgress: main.onPdfProgress,
+      onFeedback: main.showSnack,
+    );
+  }
+
+  static void _noopText(String text, String? source) {}
+  static void _noopFeedback(String message) {}
+}
+
+/// Column 3: main content area. The reader page is the default destination;
+/// before any text is loaded we show the web landing content (paste/upload CTA).
+class _MainColumn extends StatefulWidget {
+  const _MainColumn();
+
+  @override
+  State<_MainColumn> createState() => _MainColumnState();
+}
+
+class _MainColumnState extends State<_MainColumn> {
   String _readerText = '';
   String? _readerSource;
   bool _showReader = false;
@@ -77,15 +122,15 @@ class _DesktopContentState extends State<_DesktopContent> {
   @override
   void initState() {
     super.initState();
-    // Auto-load the dyslexia sample on first launch so users see content
-    // immediately, matching the React web reference behaviour.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      _setReaderText(kDyslexiaSampleText, 'Sample');
+      // Auto-load the dyslexia sample on first launch so users see content
+      // immediately, matching the React web reference behaviour.
+      setReaderText(kDyslexiaSampleText, 'Sample');
     });
   }
 
-  void _setReaderText(String text, String? source) {
+  void setReaderText(String text, String? source) {
     if (text.trim().isEmpty) {
       if (_showReader) {
         setState(() {
@@ -110,7 +155,7 @@ class _DesktopContentState extends State<_DesktopContent> {
     }
   }
 
-  void _hideReader() {
+  void hideReader() {
     setState(() {
       _showReader = false;
       _readerText = '';
@@ -118,7 +163,7 @@ class _DesktopContentState extends State<_DesktopContent> {
     });
   }
 
-  void _onPdfProgress(int current, int total) {
+  void onPdfProgress(int current, int total) {
     if (current >= total) {
       setState(() => _pdfProgress = null);
     } else {
@@ -126,42 +171,31 @@ class _DesktopContentState extends State<_DesktopContent> {
     }
   }
 
-  void _showSnack(String message) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+  void showSnack(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: Stack(
-        children: [
-          Column(
-            children: [
-              DyslexiaTopbar(
-                key: _topbarKey,
-                onTextExtracted: _setReaderText,
-                onPdfProgress: _onPdfProgress,
+    return Stack(
+      children: [
+        _showReader
+            ? ReaderPage(
+                text: _readerText,
+                sourceName: _readerSource,
+                onBack: hideReader,
+              )
+            : WebLandingContent(
+                onUploadTap: () => showSnack(
+                    'Use Upload PDF in the feature panel on the left'),
+                onPasteTap: setReaderText,
+                onCameraSnack: showSnack,
               ),
-              Expanded(
-                child: _showReader
-                    ? ReaderPage(
-                        text: _readerText,
-                        sourceName: _readerSource,
-                        onBack: _hideReader,
-                      )
-                    : WebLandingContent(
-                        onUploadTap: () =>
-                            _topbarKey.currentState?.triggerUploadPdf(),
-                        onPasteTap: _setReaderText,
-                        onCameraSnack: _showSnack,
-                      ),
-              ),
-            ],
-          ),
-          if (_pdfProgress != null) _buildPdfProgressOverlay(),
-        ],
-      ),
+        if (_pdfProgress != null) _buildPdfProgressOverlay(),
+      ],
     );
   }
 
