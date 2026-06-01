@@ -9,7 +9,9 @@ import '../../core/constants/sample_text.dart';
 import '../../features/display_settings/presentation/bloc/display_settings/display_settings_bloc.dart';
 import '../../features/display_settings/presentation/theme/display_colors.dart';
 import '../../features/reader/presentation/bloc/reader/reader_bloc.dart';
-import '../../features/reader/presentation/bloc/reader/reader_event.dart';
+import '../../features/reader/presentation/bloc/reader_shell/reader_shell_bloc.dart';
+import '../../features/reader/presentation/bloc/reader_shell/reader_shell_event.dart';
+import '../../features/reader/presentation/bloc/reader_shell/reader_shell_state.dart';
 import '../../features/reader/presentation/pages/reader_page.dart';
 import 'display_settings_panel.dart';
 import 'feature_canvas.dart';
@@ -19,6 +21,12 @@ import '../../features/sidebar/presentation/bloc/sidebar/sidebar_state.dart';
 import '../../features/sidebar/presentation/pages/sidebar_shell_page.dart';
 import '../../features/sidebar/presentation/widgets/placeholder_panel.dart';
 
+/// Width below which the shell switches to its compact layout:
+/// the typography/accessibility settings column is hidden and the
+/// feature canvas collapses to an icon-only rail so the reader gets
+/// the room it needs.
+const double kShellCompactBreakpoint = 800;
+
 /// 3-column desktop shell driven by [SidebarBloc]:
 ///   [ SidebarShellPage ] [ Main content ] [ DisplaySettingsPanel? ]
 ///
@@ -26,10 +34,18 @@ import '../../features/sidebar/presentation/widgets/placeholder_panel.dart';
 ///   Screening). 96 px wide; selection state lives in [SidebarBloc].
 /// - Column 2: the main content area. Switches on the active
 ///   [SidebarSection]. Reader renders the existing
-///   [FeatureCanvas]+[ReaderPage]+landing stack; the other 4 sections
+///   [FeatureCanvas]+[MainColumn]+landing stack; the other 4 sections
 ///   render a [PlaceholderPanel].
 /// - Column 3: typography/accessibility settings. Only shown when the
-///   active section is implemented (currently just Reader).
+///   active section is implemented (currently just Reader) AND the
+///   window is at least [kShellCompactBreakpoint] wide.
+///
+/// The reader main column's view-state (loaded text, source, PDF
+/// progress) is owned by [ReaderShellBloc] so the column itself is a
+/// pure stateless widget that BlocBuilder's the state. Children that
+/// need to mutate the column (FeatureCanvas, ReaderPage) dispatch
+/// events through `context.read<ReaderShellBloc>()` — no ancestor
+/// state lookup is required.
 class DesktopShell extends StatelessWidget {
   const DesktopShell({super.key});
 
@@ -47,6 +63,7 @@ class DesktopShell extends StatelessWidget {
             BlocProvider(create: (_) => getIt<DisplaySettingsBloc>()),
             BlocProvider(create: (_) => getIt<ReaderBloc>()),
             BlocProvider(create: (_) => SidebarBloc()),
+            BlocProvider(create: (_) => ReaderShellBloc()),
           ],
           child: BlocBuilder<DisplaySettingsBloc, DisplaySettingsState>(
             builder: (context, displayState) {
@@ -55,29 +72,53 @@ class DesktopShell extends StatelessWidget {
                   return MaterialApp(
                     debugShowCheckedModeBanner: false,
                     theme: AppTheme.data(themeState.isDarkMode),
-                    home: ConstrainedBox(
-                      constraints: const BoxConstraints(minWidth: 1040),
-                      child: Scaffold(
-                        body: BlocBuilder<SidebarBloc, SidebarState>(
-                          builder: (context, sidebar) {
-                            final isReader =
-                                sidebar.section.isImplemented;
-                            return Row(
-                              children: [
-                                const SidebarShellPage(),
-                                Expanded(
-                                  child: isReader
-                                      ? const _MainColumn()
-                                      : PlaceholderPanel(
-                                          section: sidebar.section,
-                                        ),
-                                ),
-                                if (isReader)
-                                  const DisplaySettingsPanel(),
-                              ],
-                            );
-                          },
-                        ),
+                    home: Scaffold(
+                      body: LayoutBuilder(
+                        builder: (context, constraints) {
+                          final compact =
+                              constraints.maxWidth < kShellCompactBreakpoint;
+                          return BlocBuilder<SidebarBloc, SidebarState>(
+                            builder: (context, sidebar) {
+                              final isImplemented =
+                                  sidebar.section.isImplemented;
+                              return Row(
+                                children: [
+                                  const SidebarShellPage(),
+                                  FeatureCanvas(
+                                    compact: compact,
+                                    onTextExtracted: (text, source) {
+                                      context
+                                          .read<ReaderShellBloc>()
+                                          .add(LoadTextEvent(text,
+                                              source: source));
+                                    },
+                                    onPdfProgress: (current, total) {
+                                      context.read<ReaderShellBloc>().add(
+                                            SetPdfProgressEvent(
+                                                current: current, total: total),
+                                          );
+                                    },
+                                    onFeedback: (message) {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        SnackBar(content: Text(message)),
+                                      );
+                                    },
+                                  ),
+                                  Expanded(
+                                    child: isImplemented
+                                        ? const MainColumn()
+                                        : PlaceholderPanel(
+                                            section: sidebar.section,
+                                          ),
+                                  ),
+                                  if (isImplemented && !compact)
+                                    const DisplaySettingsPanel(),
+                                ],
+                              );
+                            },
+                          );
+                        },
                       ),
                     ),
                   );
@@ -93,102 +134,91 @@ class DesktopShell extends StatelessWidget {
 
 /// Column 2: main content area. The reader page is the default destination;
 /// before any text is loaded we show the web landing content (paste/upload CTA).
-class _MainColumn extends StatefulWidget {
-  const _MainColumn();
+///
+/// View-state is owned by [ReaderShellBloc] — the widget is stateless and
+/// BlocBuilder's the state. The auto-load of the sample text is dispatched
+/// on first frame.
+class MainColumn extends StatefulWidget {
+  const MainColumn({super.key});
 
   @override
-  State<_MainColumn> createState() => _MainColumnState();
+  State<MainColumn> createState() => _MainColumnState();
 }
 
-class _MainColumnState extends State<_MainColumn> {
-  String _readerText = '';
-  String? _readerSource;
-  bool _showReader = false;
-  ({int current, int total})? _pdfProgress;
+class _MainColumnState extends State<MainColumn> {
+  bool _autoLoadDispatched = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
+      if (!mounted || _autoLoadDispatched) return;
+      _autoLoadDispatched = true;
       // Auto-load the dyslexia sample on first launch so users see content
       // immediately, matching the React web reference behaviour.
-      setReaderText(kDyslexiaSampleText, 'Sample');
+      context
+          .read<ReaderShellBloc>()
+          .add(const LoadTextEvent(kDyslexiaSampleText, source: 'Sample'));
     });
   }
 
-  void setReaderText(String text, String? source) {
-    if (text.trim().isEmpty) {
-      if (_showReader) {
-        setState(() {
-          _showReader = false;
-          _readerText = '';
-          _readerSource = null;
-        });
-      }
-      return;
-    }
-
-    context.read<ReaderBloc>().add(SetTextEvent(text, sourceName: source));
-
-    if (!_showReader || _readerSource != source) {
-      setState(() {
-        _readerText = text;
-        _readerSource = source;
-        _showReader = true;
-      });
-    } else {
-      _readerText = text;
-    }
-  }
-
-  void hideReader() {
-    setState(() {
-      _showReader = false;
-      _readerText = '';
-      _readerSource = null;
-    });
-  }
-
-  void onPdfProgress(int current, int total) {
-    if (current >= total) {
-      setState(() => _pdfProgress = null);
-    } else {
-      setState(() => _pdfProgress = (current: current, total: total));
-    }
-  }
-
-  void showSnack(String message) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+  void _onBack() {
+    context.read<ReaderShellBloc>().add(const ClearTextEvent());
   }
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        _showReader
-            ? ReaderPage(
-                text: _readerText,
-                sourceName: _readerSource,
-                onBack: hideReader,
-              )
-            : WebLandingContent(
-                onUploadTap: () => showSnack(
-                    'Use Upload PDF in the feature panel on the left'),
-                onPasteTap: setReaderText,
-                onCameraSnack: showSnack,
-              ),
-        if (_pdfProgress != null) _buildPdfProgressOverlay(),
-      ],
+    return BlocBuilder<ReaderShellBloc, ReaderShellState>(
+      builder: (context, state) {
+        return Stack(
+          children: [
+            state.showReader
+                ? ReaderPage(
+                    text: state.text,
+                    sourceName: state.source,
+                    onBack: _onBack,
+                  )
+                : WebLandingContent(
+                    onUploadTap: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                              'Use Upload PDF in the feature panel on the left'),
+                        ),
+                      );
+                    },
+                    onPasteTap: (text, source) {
+                      context
+                          .read<ReaderShellBloc>()
+                          .add(LoadTextEvent(text, source: source));
+                    },
+                    onCameraSnack: (message) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(message)),
+                      );
+                    },
+                  ),
+            if (state.pdfProgress != null) _PdfProgressOverlay(
+              current: state.pdfProgress!.current,
+              total: state.pdfProgress!.total,
+            ),
+          ],
+        );
+      },
     );
   }
+}
 
-  Widget _buildPdfProgressOverlay() {
-    final progress = _pdfProgress!;
-    final pct = progress.current / progress.total;
+/// Translucent PDF processing overlay. Pulled out of [MainColumn] so the
+/// state-building branch stays readable.
+class _PdfProgressOverlay extends StatelessWidget {
+  final int current;
+  final int total;
+  const _PdfProgressOverlay({required this.current, required this.total});
+
+  @override
+  Widget build(BuildContext context) {
+    final pct = total == 0 ? 0.0 : current / total;
     final ds = context.read<DisplaySettingsBloc>().state.settings;
     final bg = bgColor(ds.colorTheme);
     final fg = fgColor(ds.colorTheme);
@@ -225,7 +255,7 @@ class _MainColumnState extends State<_MainColumn> {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    'Page ${progress.current} of ${progress.total}',
+                    'Page $current of $total',
                     style: TextStyle(
                         fontSize: 13, color: fg.withValues(alpha: 0.6)),
                   ),

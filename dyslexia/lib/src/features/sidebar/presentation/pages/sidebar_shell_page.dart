@@ -4,8 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/sidebar/sidebar_bloc.dart';
 import '../bloc/sidebar/sidebar_event.dart';
 import '../bloc/sidebar/sidebar_state.dart';
-import '../domain/entities/sidebar_section.dart';
-import 'sidebar_item.dart';
+import '../../domain/entities/sidebar_section.dart';
+import '../widgets/sidebar_item.dart';
 
 /// Vertical rail widget that lists all 5 sidebar sections.
 ///

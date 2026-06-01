@@ -19,11 +19,13 @@ class FeatureCanvas extends StatefulWidget {
   final void Function(String text, String? source) onTextExtracted;
   final void Function(int current, int total)? onPdfProgress;
   final void Function(String message) onFeedback;
+  final bool compact;
   const FeatureCanvas({
     super.key,
     required this.onTextExtracted,
     this.onPdfProgress,
     required this.onFeedback,
+    this.compact = false,
   });
 
   @override
@@ -123,7 +125,7 @@ class FeatureCanvasState extends State<FeatureCanvas> {
         final iconBgColor = fg.withValues(alpha: 0.12);
 
         return Container(
-          width: 220,
+          width: widget.compact ? 72 : 220,
           decoration: BoxDecoration(
             color: bg,
             border: Border(right: BorderSide(color: fg.withValues(alpha: 0.08))),
@@ -132,22 +134,26 @@ class FeatureCanvasState extends State<FeatureCanvas> {
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
               children: [
-                Row(
-                  children: [
-                    const Icon(Icons.accessibility_new,
-                        color: Color(0xFF3D5A99), size: 24),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Features',
-                      style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: fg),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
+                if (!widget.compact) ...[
+                  Row(
+                    children: [
+                      const Icon(Icons.accessibility_new,
+                          color: Color(0xFF3D5A99), size: 24),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Features',
+                        style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: fg),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                ] else
+                  const SizedBox(height: 8),
                 _FeatureTile(
+                  compact: widget.compact,
                   tileColor: tileColor,
                   iconBgColor: iconBgColor,
                   fgColor: fg,
@@ -159,6 +165,7 @@ class FeatureCanvasState extends State<FeatureCanvas> {
                 ),
                 const SizedBox(height: 8),
                 _FeatureTile(
+                  compact: widget.compact,
                   tileColor: tileColor,
                   iconBgColor: iconBgColor,
                   fgColor: fg,
@@ -170,6 +177,7 @@ class FeatureCanvasState extends State<FeatureCanvas> {
                 ),
                 const SizedBox(height: 8),
                 _FeatureTile(
+                  compact: widget.compact,
                   tileColor: tileColor,
                   iconBgColor: iconBgColor,
                   fgColor: fg,
@@ -181,6 +189,7 @@ class FeatureCanvasState extends State<FeatureCanvas> {
                 ),
                 const SizedBox(height: 8),
                 _FeatureTile(
+                  compact: widget.compact,
                   tileColor: tileColor,
                   iconBgColor: iconBgColor,
                   fgColor: fg,
@@ -191,9 +200,11 @@ class FeatureCanvasState extends State<FeatureCanvas> {
                   onTap: _isLoading ? null : _onSample,
                 ),
                 const SizedBox(height: 16),
-                _Label(title: 'TYPE OR PASTE', color: fg.withValues(alpha: 0.5)),
-                const SizedBox(height: 6),
-                _buildInput(fg),
+                if (!widget.compact) ...[
+                  _Label(title: 'TYPE OR PASTE', color: fg.withValues(alpha: 0.5)),
+                  const SizedBox(height: 6),
+                  _buildInput(fg),
+                ],
               ],
             ),
           ),
@@ -260,6 +271,7 @@ class _FeatureTile extends StatelessWidget {
   final Color tileColor;
   final Color iconBgColor;
   final Color fgColor;
+  final bool compact;
 
   const _FeatureTile({
     required this.icon,
@@ -268,6 +280,7 @@ class _FeatureTile extends StatelessWidget {
     required this.tileColor,
     required this.iconBgColor,
     required this.fgColor,
+    this.compact = false,
   });
 
   @override
@@ -281,33 +294,38 @@ class _FeatureTile extends StatelessWidget {
         padding: EdgeInsets.zero,
         onPressed: onTap,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          padding: EdgeInsets.symmetric(
+              horizontal: compact ? 6 : 12, vertical: compact ? 6 : 12),
           decoration: BoxDecoration(
             color: effectiveTile,
             borderRadius: BorderRadius.circular(10),
           ),
           child: Row(
+            mainAxisAlignment:
+                compact ? MainAxisAlignment.center : MainAxisAlignment.start,
             children: [
               Container(
-                width: 28,
-                height: 28,
+                width: compact ? 32 : 28,
+                height: compact ? 32 : 28,
                 decoration: BoxDecoration(
                   color: iconBgColor,
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: Icon(icon, size: 16, color: effectiveFg),
+                child: Icon(icon, size: compact ? 18 : 16, color: effectiveFg),
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: effectiveFg,
+              if (!compact) ...[
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: effectiveFg,
+                    ),
                   ),
                 ),
-              ),
+              ],
             ],
           ),
         ),
@@ -321,29 +339,34 @@ class _FeatureTile extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(10),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          padding: EdgeInsets.symmetric(
+              horizontal: compact ? 6 : 12, vertical: compact ? 6 : 12),
           child: Row(
+            mainAxisAlignment:
+                compact ? MainAxisAlignment.center : MainAxisAlignment.start,
             children: [
               Container(
-                width: 28,
-                height: 28,
+                width: compact ? 32 : 28,
+                height: compact ? 32 : 28,
                 decoration: BoxDecoration(
                   color: iconBgColor,
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: Icon(icon, size: 16, color: effectiveFg),
+                child: Icon(icon, size: compact ? 18 : 16, color: effectiveFg),
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: effectiveFg,
+              if (!compact) ...[
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: effectiveFg,
+                    ),
                   ),
                 ),
-              ),
+              ],
             ],
           ),
         ),
