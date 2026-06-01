@@ -24,9 +24,23 @@ enum AppColorTheme {
   skyBlue,
   peach,
   dark,
+  lightBlue,
+  grey,
 }
 
-enum DisplayPreset { defaultPreset, dyslexiaFriendly, highContrast, nightMode }
+enum DisplayPreset {
+  defaultPreset,
+  dyslexiaFriendly,
+  highContrast,
+  nightMode,
+  lightBlueTheme,
+  greyTheme,
+  lavenderTheme,
+  whiteTheme,
+  skyBlueTheme,
+  mintGreenTheme,
+  peachTheme,
+}
 
 class DisplaySettingsEntity extends Equatable {
   final double fontSize;
@@ -36,6 +50,8 @@ class DisplaySettingsEntity extends Equatable {
   final DyslexiaFont font;
   final AppColorTheme colorTheme;
   final DisplayPreset preset;
+  final bool rulerEnabled;
+  final bool syllablesEnabled;
 
   const DisplaySettingsEntity({
     required this.fontSize,
@@ -45,6 +61,8 @@ class DisplaySettingsEntity extends Equatable {
     required this.font,
     required this.colorTheme,
     required this.preset,
+    required this.rulerEnabled,
+    required this.syllablesEnabled,
   });
 
   @override
@@ -56,5 +74,7 @@ class DisplaySettingsEntity extends Equatable {
         font,
         colorTheme,
         preset,
+        rulerEnabled,
+        syllablesEnabled,
       ];
 }

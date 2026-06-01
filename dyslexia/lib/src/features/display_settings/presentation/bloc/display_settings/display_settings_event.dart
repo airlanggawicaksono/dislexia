@@ -53,3 +53,7 @@ class ApplyPresetEvent extends DisplaySettingsEvent {
   @override
   List<Object?> get props => [preset];
 }
+
+class ToggleRulerEvent extends DisplaySettingsEvent {}
+
+class ToggleSyllablesEvent extends DisplaySettingsEvent {}

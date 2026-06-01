@@ -153,6 +153,13 @@ class DisplaySettingsPage extends StatelessWidget {
         DisplayPreset.dyslexiaFriendly => 'Dyslexia Friendly',
         DisplayPreset.highContrast => 'High Contrast',
         DisplayPreset.nightMode => 'Night Mode',
+        DisplayPreset.lightBlueTheme => 'Light Blue',
+        DisplayPreset.greyTheme => 'Grey',
+        DisplayPreset.lavenderTheme => 'Lavender',
+        DisplayPreset.whiteTheme => 'White',
+        DisplayPreset.skyBlueTheme => 'Sky Blue',
+        DisplayPreset.mintGreenTheme => 'Mint Green',
+        DisplayPreset.peachTheme => 'Peach',
       };
 
   String _presetSubtitle(DisplayPreset p) => switch (p) {
@@ -160,6 +167,13 @@ class DisplaySettingsPage extends StatelessWidget {
         DisplayPreset.dyslexiaFriendly => 'OpenDyslexic - Cream - 20pt - 2.0x',
         DisplayPreset.highContrast => 'Plus Jakarta Sans - Dark - 22pt',
         DisplayPreset.nightMode => 'Plus Jakarta Sans - Dark - 18pt',
+        DisplayPreset.lightBlueTheme => 'Sassoon Primary - Light Blue - 18pt',
+        DisplayPreset.greyTheme => 'Tahoma - Grey - 18pt',
+        DisplayPreset.lavenderTheme => 'Sassoon Primary - Lavender - 18pt',
+        DisplayPreset.whiteTheme => 'OpenDyslexic - White - 18pt',
+        DisplayPreset.skyBlueTheme => 'Plus Jakarta Sans - Sky Blue - 18pt',
+        DisplayPreset.mintGreenTheme => 'Lexend - Mint Green - 18pt',
+        DisplayPreset.peachTheme => 'Sassoon Primary - Peach - 18pt',
       };
 }
 

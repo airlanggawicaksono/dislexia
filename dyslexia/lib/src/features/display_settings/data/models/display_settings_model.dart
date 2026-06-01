@@ -9,6 +9,8 @@ class DisplaySettingsModel extends DisplaySettingsEntity {
     required super.font,
     required super.colorTheme,
     required super.preset,
+    required super.rulerEnabled,
+    required super.syllablesEnabled,
   });
 
   factory DisplaySettingsModel.defaults() => const DisplaySettingsModel(
@@ -19,6 +21,8 @@ class DisplaySettingsModel extends DisplaySettingsEntity {
         font: DyslexiaFont.openDyslexic,
         colorTheme: AppColorTheme.cream,
         preset: DisplayPreset.defaultPreset,
+        rulerEnabled: true,
+        syllablesEnabled: true,
       );
 
   Map<String, dynamic> toMap() => {
@@ -29,6 +33,8 @@ class DisplaySettingsModel extends DisplaySettingsEntity {
         'font': font.index,
         'colorTheme': colorTheme.index,
         'preset': preset.index,
+        'rulerEnabled': rulerEnabled,
+        'syllablesEnabled': syllablesEnabled,
       };
 
   factory DisplaySettingsModel.fromMap(Map<String, dynamic> map) =>
@@ -43,6 +49,8 @@ class DisplaySettingsModel extends DisplaySettingsEntity {
             .clamp(0, AppColorTheme.values.length - 1)],
         preset: DisplayPreset.values[(map['preset'] as int? ?? 0)
             .clamp(0, DisplayPreset.values.length - 1)],
+        rulerEnabled: map['rulerEnabled'] as bool? ?? true,
+        syllablesEnabled: map['syllablesEnabled'] as bool? ?? true,
       );
 
   DisplaySettingsModel copyWith({
@@ -53,6 +61,8 @@ class DisplaySettingsModel extends DisplaySettingsEntity {
     DyslexiaFont? font,
     AppColorTheme? colorTheme,
     DisplayPreset? preset,
+    bool? rulerEnabled,
+    bool? syllablesEnabled,
   }) =>
       DisplaySettingsModel(
         fontSize: fontSize ?? this.fontSize,
@@ -62,5 +72,7 @@ class DisplaySettingsModel extends DisplaySettingsEntity {
         font: font ?? this.font,
         colorTheme: colorTheme ?? this.colorTheme,
         preset: preset ?? this.preset,
+        rulerEnabled: rulerEnabled ?? this.rulerEnabled,
+        syllablesEnabled: syllablesEnabled ?? this.syllablesEnabled,
       );
 }

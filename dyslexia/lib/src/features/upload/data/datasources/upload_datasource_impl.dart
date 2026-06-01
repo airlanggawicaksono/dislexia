@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:archive/archive.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:syncfusion_flutter_pdf/pdf.dart';
 import 'package:uuid/uuid.dart';
@@ -24,21 +25,39 @@ class UploadDatasourceImpl implements UploadDatasource {
 
     final file = result.files.first;
     final path = file.path;
-    if (path == null) throw Exception('Could not access file path');
-
     final ext = file.extension?.toLowerCase() ?? '';
     final sourceName = file.name;
     final String text;
 
-    switch (ext) {
-      case 'txt':
-        text = await File(path).readAsString();
-      case 'pdf':
-        text = await _extractPdfText(path);
-      case 'docx':
-        text = await _extractDocxText(path);
-      default:
-        text = await _ocrImage(path);
+    if (kIsWeb) {
+      // Web: read from bytes
+      final bytes = file.bytes;
+      if (bytes == null) throw Exception('Could not read file on web');
+
+      switch (ext) {
+        case 'txt':
+          text = utf8.decode(bytes);
+        case 'pdf':
+          text = await _extractPdfTextFromBytes(bytes);
+        case 'docx':
+          text = await _extractDocxTextFromBytes(bytes);
+        default:
+          throw Exception('Image OCR not supported on web yet');
+      }
+    } else {
+      // Native: use file path
+      if (path == null) throw Exception('Could not access file path');
+
+      switch (ext) {
+        case 'txt':
+          text = await File(path).readAsString();
+        case 'pdf':
+          text = await _extractPdfText(path);
+        case 'docx':
+          text = await _extractDocxText(path);
+        default:
+          text = await _ocrImage(path);
+      }
     }
 
     return DocumentEntity(
@@ -50,6 +69,10 @@ class UploadDatasourceImpl implements UploadDatasource {
 
   Future<String> _extractPdfText(String path) async {
     final bytes = await File(path).readAsBytes();
+    return _extractPdfTextFromBytes(bytes);
+  }
+
+  Future<String> _extractPdfTextFromBytes(List<int> bytes) async {
     final document = PdfDocument(inputBytes: bytes);
     try {
       final text = PdfTextExtractor(document).extractText();
@@ -61,6 +84,10 @@ class UploadDatasourceImpl implements UploadDatasource {
 
   Future<String> _extractDocxText(String path) async {
     final bytes = await File(path).readAsBytes();
+    return _extractDocxTextFromBytes(bytes);
+  }
+
+  Future<String> _extractDocxTextFromBytes(List<int> bytes) async {
     final archive = ZipDecoder().decodeBytes(bytes);
     final docFile = archive.findFile('word/document.xml');
     if (docFile == null) throw Exception('Invalid or unsupported DOCX file');

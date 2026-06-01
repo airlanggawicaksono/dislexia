@@ -15,31 +15,31 @@ class AppTheme {
       appBarTheme: AppBarTheme(
         backgroundColor: isDark ? AppColor.navy : AppColor.purple,
         centerTitle: true,
-        elevation: 2.h,
-        titleTextStyle: AppFont.bold.s16,
+        elevation: 2.0,
+        titleTextStyle: AppFont.bold.copyWith(fontSize: 16),
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: isDark ? AppColor.blue : AppColor.lightPurple,
         foregroundColor: isDark ? Colors.white : Colors.black,
-        elevation: 2.h,
-        extendedTextStyle: AppFont.normal.s14,
+        elevation: 2.0,
+        extendedTextStyle: AppFont.normal.copyWith(fontSize: 14),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: isDark ? AppColor.blue : AppColor.lightPurple,
-          elevation: 2.h,
-          textStyle: AppFont.normal.s14,
+          elevation: 2.0,
+          textStyle: AppFont.normal.copyWith(fontSize: 14),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(6.r),
+            borderRadius: BorderRadius.circular(6.0),
           ),
         ),
       ),
       visualDensity: VisualDensity.adaptivePlatformDensity,
       fontFamily: GoogleFonts.poppins().fontFamily,
       textTheme: TextTheme(
-        bodySmall: AppFont.normal.s12,
-        bodyMedium: AppFont.normal.s14,
-        bodyLarge: AppFont.normal.s16,
+        bodySmall: AppFont.normal.copyWith(fontSize: 12),
+        bodyMedium: AppFont.normal.copyWith(fontSize: 14),
+        bodyLarge: AppFont.normal.copyWith(fontSize: 16),
       ),
       cupertinoOverrideTheme: CupertinoThemeData(
         primaryColor: isDark ? AppColor.blue : AppColor.purple,
@@ -48,9 +48,9 @@ class AppTheme {
             ? const Color(0xFF1C1C1E)
             : CupertinoColors.systemGroupedBackground,
         textTheme: CupertinoTextThemeData(
-          textStyle: AppFont.normal.s14,
-          navTitleTextStyle: AppFont.bold.s16.copyWith(color: Colors.white),
-          actionTextStyle: AppFont.normal.s14.copyWith(
+          textStyle: AppFont.normal.copyWith(fontSize: 14),
+          navTitleTextStyle: AppFont.bold.copyWith(fontSize: 16, color: Colors.white),
+          actionTextStyle: AppFont.normal.copyWith(fontSize: 14,
             color: isDark ? AppColor.blue : AppColor.purple,
           ),
         ),
