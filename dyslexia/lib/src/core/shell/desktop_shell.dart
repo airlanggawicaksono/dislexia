@@ -91,42 +91,6 @@ class DesktopShell extends StatelessWidget {
   }
 }
 
-/// Column 1: feature canvas (Reader/Upload/Paste/Sample + text input).
-/// All reader state is owned by [_MainColumn]; this widget is a thin
-/// presentation wrapper that just delegates actions to its parent.
-class _FeatureColumn extends StatelessWidget {
-  const _FeatureColumn();
-
-  @override
-  Widget build(BuildContext context) {
-    return _FeatureCanvasAdapter();
-  }
-}
-
-/// Internal widget that locates the enclosing [_MainColumnState] and forwards
-/// actions to it. Falls back to no-ops if the parent cannot be found (which
-/// should not happen under normal use).
-class _FeatureCanvasAdapter extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final main = context.findAncestorStateOfType<_MainColumnState>();
-    if (main == null) {
-      return const FeatureCanvas(
-        onTextExtracted: _noopText,
-        onFeedback: _noopFeedback,
-      );
-    }
-    return FeatureCanvas(
-      onTextExtracted: main.setReaderText,
-      onPdfProgress: main.onPdfProgress,
-      onFeedback: main.showSnack,
-    );
-  }
-
-  static void _noopText(String text, String? source) {}
-  static void _noopFeedback(String message) {}
-}
-
 /// Column 2: main content area. The reader page is the default destination;
 /// before any text is loaded we show the web landing content (paste/upload CTA).
 class _MainColumn extends StatefulWidget {
