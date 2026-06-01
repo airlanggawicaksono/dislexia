@@ -62,6 +62,12 @@ jobs:
             echo "ANTHROPIC_MODEL=claude-haiku-4-5-20251001"
             echo "OPENAI_API_KEY="
             echo "ANTHROPIC_API_KEY="
+            echo "CORS_ALLOW_ORIGINS=https://reader.dyslexic.app,http://localhost:8083"
+            echo "CORS_ALLOW_CREDENTIALS=true"
+            echo "CORS_ALLOW_METHODS=*"
+            echo "CORS_ALLOW_HEADERS=*"
+            echo "CORS_EXPOSE_HEADERS="
+            echo "CORS_MAX_AGE=600"
             # docker-compose recursively interprets values from .env when
             # substituting ${VAR}. To pass literal '$' (e.g. bcrypt hashes),
             # we escape every '$' to '$$'. After substitution compose
