@@ -14,13 +14,22 @@ import '../../features/reader/presentation/pages/reader_page.dart';
 import 'display_settings_panel.dart';
 import 'feature_canvas.dart';
 import 'web_landing_content.dart';
+import '../../features/sidebar/presentation/bloc/sidebar/sidebar_bloc.dart';
+import '../../features/sidebar/presentation/bloc/sidebar/sidebar_state.dart';
+import '../../features/sidebar/presentation/pages/sidebar_shell_page.dart';
+import '../../features/sidebar/presentation/widgets/placeholder_panel.dart';
 
-/// 3-column desktop shell:
-///   [ FeatureCanvas ] [ Main content (Reader) ] [ DisplaySettingsPanel ]
+/// 3-column desktop shell driven by [SidebarBloc]:
+///   [ SidebarShellPage ] [ Main content ] [ DisplaySettingsPanel? ]
 ///
-/// - Column 1: feature buttons (Reader, Upload PDF, Paste, Sample) + manual input
-/// - Column 2: reader page (or landing) as the primary content area
-/// - Column 3: typography/accessibility settings panel
+/// - Column 1: sidebar rail (Reader, Summarize, Define, Personalize,
+///   Screening). 96 px wide; selection state lives in [SidebarBloc].
+/// - Column 2: the main content area. Switches on the active
+///   [SidebarSection]. Reader renders the existing
+///   [FeatureCanvas]+[ReaderPage]+landing stack; the other 4 sections
+///   render a [PlaceholderPanel].
+/// - Column 3: typography/accessibility settings. Only shown when the
+///   active section is implemented (currently just Reader).
 class DesktopShell extends StatelessWidget {
   const DesktopShell({super.key});
 
@@ -37,6 +46,7 @@ class DesktopShell extends StatelessWidget {
             BlocProvider(create: (_) => getIt<ThemeBloc>()),
             BlocProvider(create: (_) => getIt<DisplaySettingsBloc>()),
             BlocProvider(create: (_) => getIt<ReaderBloc>()),
+            BlocProvider(create: (_) => SidebarBloc()),
           ],
           child: BlocBuilder<DisplaySettingsBloc, DisplaySettingsState>(
             builder: (context, displayState) {
@@ -47,13 +57,26 @@ class DesktopShell extends StatelessWidget {
                     theme: AppTheme.data(themeState.isDarkMode),
                     home: ConstrainedBox(
                       constraints: const BoxConstraints(minWidth: 1040),
-                      child: const Scaffold(
-                        body: Row(
-                          children: [
-                            _FeatureColumn(),
-                            Expanded(child: _MainColumn()),
-                            DisplaySettingsPanel(),
-                          ],
+                      child: Scaffold(
+                        body: BlocBuilder<SidebarBloc, SidebarState>(
+                          builder: (context, sidebar) {
+                            final isReader =
+                                sidebar.section.isImplemented;
+                            return Row(
+                              children: [
+                                const SidebarShellPage(),
+                                Expanded(
+                                  child: isReader
+                                      ? const _MainColumn()
+                                      : PlaceholderPanel(
+                                          section: sidebar.section,
+                                        ),
+                                ),
+                                if (isReader)
+                                  const DisplaySettingsPanel(),
+                              ],
+                            );
+                          },
                         ),
                       ),
                     ),
