@@ -2,6 +2,7 @@ import secrets as _secrets
 from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.docs import get_redoc_html, get_swagger_ui_html
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 
@@ -88,6 +89,18 @@ app = FastAPI(
     openapi_url="/openapi.json",
     openapi_tags=tags_metadata,
     lifespan=lifespan,
+)
+
+# CORS — must be added BEFORE any route so Access-Control-* headers appear on
+# every response (including OPTIONS preflights and the custom /docs, /redoc routes).
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origins,
+    allow_credentials=settings.CORS_ALLOW_CREDENTIALS,
+    allow_methods=settings.cors_methods,
+    allow_headers=settings.cors_headers,
+    expose_headers=settings.cors_expose_headers,
+    max_age=settings.CORS_MAX_AGE,
 )
 
 if settings.SWAGGER_DOCS_ENABLED:

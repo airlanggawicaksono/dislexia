@@ -1,5 +1,5 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from typing import Optional
+from typing import List, Optional
 
 
 class Settings(BaseSettings):
@@ -55,6 +55,49 @@ class Settings(BaseSettings):
     SWAGGER_DOCS_ENABLED: bool = True
     SWAGGER_USERNAME: str = "admin"
     SWAGGER_PASSWORD: str = "changeme"
+
+    # CORS Configuration
+    # Comma-separated list of allowed origins. Use ["*"] for development.
+    CORS_ALLOW_ORIGINS: str = "https://dyslexic.app,http://localhost:8080"
+    CORS_ALLOW_CREDENTIALS: bool = True
+    CORS_ALLOW_METHODS: str = "*"
+    CORS_ALLOW_HEADERS: str = "*"
+    CORS_EXPOSE_HEADERS: str = ""
+    CORS_MAX_AGE: int = 600
+
+    @property
+    def cors_origins(self) -> List[str]:
+        """Parse CORS_ALLOW_ORIGINS into a list (handles "*" sentinel)."""
+        raw = (self.CORS_ALLOW_ORIGINS or "").strip()
+        if not raw:
+            return []
+        if raw == "*":
+            return ["*"]
+        return [o.strip() for o in raw.split(",") if o.strip()]
+
+    @property
+    def cors_methods(self) -> List[str]:
+        """Parse CORS_ALLOW_METHODS into a list (handles "*" sentinel)."""
+        raw = (self.CORS_ALLOW_METHODS or "").strip()
+        if not raw or raw == "*":
+            return ["*"]
+        return [m.strip().upper() for m in raw.split(",") if m.strip()]
+
+    @property
+    def cors_headers(self) -> List[str]:
+        """Parse CORS_ALLOW_HEADERS into a list (handles "*" sentinel)."""
+        raw = (self.CORS_ALLOW_HEADERS or "").strip()
+        if not raw or raw == "*":
+            return ["*"]
+        return [h.strip() for h in raw.split(",") if h.strip()]
+
+    @property
+    def cors_expose_headers(self) -> List[str]:
+        """Parse CORS_EXPOSE_HEADERS into a list."""
+        raw = (self.CORS_EXPOSE_HEADERS or "").strip()
+        if not raw:
+            return []
+        return [h.strip() for h in raw.split(",") if h.strip()]
 
     # LLM defaults
     LLM_PROVIDER: str = "together"
