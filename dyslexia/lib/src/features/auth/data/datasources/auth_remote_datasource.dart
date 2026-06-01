@@ -25,10 +25,11 @@ class AuthRemoteDatasourceImpl implements AuthRemoteDatasource {
 
   @override
   Future<AuthSessionModel> login(String accountNumber) async {
+    final cleaned = accountNumber.replaceAll(RegExp(r'\s+'), '');
     final res = await _api.execute(
       method: Method.post,
       url: '${ApiUrl.baseUrl}/auth/login',
-      data: {'account_number': accountNumber},
+      data: {'account_number': cleaned},
     );
     return AuthSessionModel.fromJson(res);
   }
