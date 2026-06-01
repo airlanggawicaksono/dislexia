@@ -185,7 +185,7 @@ class FeatureCanvasState extends State<FeatureCanvas> {
                   iconBgColor: iconBgColor,
                   fgColor: fg,
                   icon: _isCupertino
-                      ? CupertinoIcons.text_book_closed
+                      ? CupertinoIcons.book
                       : Icons.menu_book_rounded,
                   label: 'Sample',
                   onTap: _isLoading ? null : _onSample,

@@ -16,11 +16,11 @@ import 'feature_canvas.dart';
 import 'web_landing_content.dart';
 
 /// 3-column desktop shell:
-///   [ FeatureCanvas ] [ DisplaySettingsPanel ] [ Main content ]
+///   [ FeatureCanvas ] [ Main content (Reader) ] [ DisplaySettingsPanel ]
 ///
 /// - Column 1: feature buttons (Reader, Upload PDF, Paste, Sample) + manual input
-/// - Column 2: typography/accessibility settings sheet
-/// - Column 3: reader page (or landing) as the primary content area
+/// - Column 2: reader page (or landing) as the primary content area
+/// - Column 3: typography/accessibility settings panel
 class DesktopShell extends StatelessWidget {
   const DesktopShell({super.key});
 
@@ -51,8 +51,8 @@ class DesktopShell extends StatelessWidget {
                         body: Row(
                           children: [
                             _FeatureColumn(),
-                            DisplaySettingsPanel(),
                             Expanded(child: _MainColumn()),
+                            DisplaySettingsPanel(),
                           ],
                         ),
                       ),
@@ -104,7 +104,7 @@ class _FeatureCanvasAdapter extends StatelessWidget {
   static void _noopFeedback(String message) {}
 }
 
-/// Column 3: main content area. The reader page is the default destination;
+/// Column 2: main content area. The reader page is the default destination;
 /// before any text is loaded we show the web landing content (paste/upload CTA).
 class _MainColumn extends StatefulWidget {
   const _MainColumn();
