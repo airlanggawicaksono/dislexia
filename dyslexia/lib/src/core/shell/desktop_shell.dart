@@ -5,6 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../configs/injector/injector_conf.dart';
 import '../blocs/theme/theme_bloc.dart';
 import '../themes/app_theme.dart';
+import '../../core/constants/sample_text.dart';
 import '../../features/display_settings/presentation/bloc/display_settings/display_settings_bloc.dart';
 import '../../features/display_settings/presentation/theme/display_colors.dart';
 import '../../features/reader/presentation/bloc/reader/reader_bloc.dart';
@@ -72,6 +73,17 @@ class _DesktopContentState extends State<_DesktopContent> {
   String? _readerSource;
   bool _showReader = false;
   ({int current, int total})? _pdfProgress;
+
+  @override
+  void initState() {
+    super.initState();
+    // Auto-load the dyslexia sample on first launch so users see content
+    // immediately, matching the React web reference behaviour.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _setReaderText(kDyslexiaSampleText, 'Sample');
+    });
+  }
 
   void _setReaderText(String text, String? source) {
     if (text.trim().isEmpty) {

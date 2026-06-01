@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../configs/injector/injector_conf.dart';
+import '../../core/constants/sample_text.dart';
 import '../../features/display_settings/presentation/bloc/display_settings/display_settings_bloc.dart';
 import '../../features/display_settings/presentation/theme/display_colors.dart';
 import '../../features/upload/data/datasources/pdf_extractor_service.dart';
@@ -83,6 +84,11 @@ class DyslexiaTopbarState extends State<DyslexiaTopbar> {
     widget.onTextExtracted(text, 'Clipboard');
   }
 
+  void _onSample() {
+    _controller.text = '';
+    widget.onTextExtracted(kDyslexiaSampleText, 'Sample');
+  }
+
   void _showFeedback(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(msg), duration: const Duration(seconds: 2)),
@@ -90,6 +96,8 @@ class DyslexiaTopbarState extends State<DyslexiaTopbar> {
   }
 
   void triggerUploadPdf() => _onUploadPdf();
+
+  void triggerSample() => _onSample();
 
   void setText(String text) => _controller.text = text;
 
@@ -180,6 +188,22 @@ class DyslexiaTopbarState extends State<DyslexiaTopbar> {
             onPressed: _isLoading ? null : _onPaste,
             icon: const Icon(Icons.content_paste, size: 18),
             label: const Text('Paste', style: TextStyle(fontSize: 13)),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: const Color(0xFF3D5A99),
+              side: const BorderSide(color: Color(0xFF3D5A99)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        SizedBox(
+          height: 36,
+          child: OutlinedButton.icon(
+            onPressed: _isLoading ? null : _onSample,
+            icon: const Icon(Icons.menu_book_rounded, size: 18),
+            label: const Text('Sample', style: TextStyle(fontSize: 13)),
             style: OutlinedButton.styleFrom(
               foregroundColor: const Color(0xFF3D5A99),
               side: const BorderSide(color: Color(0xFF3D5A99)),
