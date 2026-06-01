@@ -26,3 +26,7 @@ class FilePickerFailure extends Failure {}
 class OcrFailure extends Failure {}
 
 class TextExtractionFailure extends Failure {}
+
+class InvalidAccountNumberFailure extends Failure {}
+
+class NetworkFailure extends Failure {}

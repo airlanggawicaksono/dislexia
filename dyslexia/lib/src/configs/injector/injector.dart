@@ -1,5 +1,6 @@
 import 'package:get_it/get_it.dart';
 
+import '../../features/auth/di/auth_dependency.dart';
 import '../../features/display_settings/di/display_settings_dependency.dart';
 import '../../features/lens/di/lens_dependency.dart';
 import '../../features/reader/di/reader_dependency.dart';
@@ -12,6 +13,7 @@ import '../../core/cache/hive_local_storage.dart';
 final getIt = GetIt.I;
 
 void configureDepedencies() {
+  AuthDependency.init();
   DisplaySettingsDependency.init();
   UploadDependency.init();
   ScanDependency.init();

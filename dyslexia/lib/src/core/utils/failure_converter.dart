@@ -13,5 +13,7 @@ String mapFailureToMessage(Failure failure) {
     FilePickerFailure _ => "Failed to pick file",
     OcrFailure _ => "Failed to read text from image",
     TextExtractionFailure _ => "Failed to extract text",
+    InvalidAccountNumberFailure _ => "Account number must be 16 digits",
+    NetworkFailure _ => "No internet connection",
   };
 }

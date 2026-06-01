@@ -20,6 +20,7 @@ import '../../features/sidebar/presentation/bloc/sidebar/sidebar_bloc.dart';
 import '../../features/sidebar/presentation/bloc/sidebar/sidebar_state.dart';
 import '../../features/sidebar/presentation/pages/sidebar_shell_page.dart';
 import '../../features/sidebar/presentation/widgets/placeholder_panel.dart';
+import '../../features/auth/presentation/widgets/auth_user_menu.dart';
 
 /// Width below which the shell switches to its compact layout:
 /// the typography/accessibility settings column is hidden and the
@@ -73,52 +74,62 @@ class DesktopShell extends StatelessWidget {
                     debugShowCheckedModeBanner: false,
                     theme: AppTheme.data(themeState.isDarkMode),
                     home: Scaffold(
-                      body: LayoutBuilder(
-                        builder: (context, constraints) {
-                          final compact =
-                              constraints.maxWidth < kShellCompactBreakpoint;
-                          return BlocBuilder<SidebarBloc, SidebarState>(
-                            builder: (context, sidebar) {
-                              final isImplemented =
-                                  sidebar.section.isImplemented;
-                              return Row(
-                                children: [
-                                  const SidebarShellPage(),
-                                  FeatureCanvas(
-                                    compact: compact,
-                                    onTextExtracted: (text, source) {
-                                      context
-                                          .read<ReaderShellBloc>()
-                                          .add(LoadTextEvent(text,
-                                              source: source));
-                                    },
-                                    onPdfProgress: (current, total) {
-                                      context.read<ReaderShellBloc>().add(
-                                            SetPdfProgressEvent(
-                                                current: current, total: total),
-                                          );
-                                    },
-                                    onFeedback: (message) {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        SnackBar(content: Text(message)),
-                                      );
-                                    },
-                                  ),
-                                  Expanded(
-                                    child: isImplemented
-                                        ? const MainColumn()
-                                        : PlaceholderPanel(
-                                            section: sidebar.section,
-                                          ),
-                                  ),
-                                  if (isImplemented && !compact)
-                                    const DisplaySettingsPanel(),
-                                ],
-                              );
-                            },
-                          );
-                        },
+                      body: Column(
+                        children: [
+                          const _ShellHeaderBar(),
+                          Expanded(
+                            child: LayoutBuilder(
+                              builder: (context, constraints) {
+                                final compact =
+                                    constraints.maxWidth < kShellCompactBreakpoint;
+                                return BlocBuilder<SidebarBloc, SidebarState>(
+                                  builder: (context, sidebar) {
+                                    final isImplemented =
+                                        sidebar.section.isImplemented;
+                                    return Row(
+                                      children: [
+                                        const SidebarShellPage(),
+                                        FeatureCanvas(
+                                          compact: compact,
+                                          onTextExtracted: (text, source) {
+                                            context
+                                                .read<ReaderShellBloc>()
+                                                .add(LoadTextEvent(text,
+                                                    source: source));
+                                          },
+                                          onPdfProgress: (current, total) {
+                                            context
+                                                .read<ReaderShellBloc>()
+                                                .add(
+                                                  SetPdfProgressEvent(
+                                                      current: current,
+                                                      total: total),
+                                                );
+                                          },
+                                          onFeedback: (message) {
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              SnackBar(content: Text(message)),
+                                            );
+                                          },
+                                        ),
+                                        Expanded(
+                                          child: isImplemented
+                                              ? const MainColumn()
+                                              : PlaceholderPanel(
+                                                  section: sidebar.section,
+                                                ),
+                                        ),
+                                        if (isImplemented && !compact)
+                                          const DisplaySettingsPanel(),
+                                      ],
+                                    );
+                                  },
+                                );
+                              },
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   );
@@ -265,6 +276,34 @@ class _PdfProgressOverlay extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+
+/// Slim 40-px header bar that sits above the 3-column body. Currently
+/// only hosts the [AuthUserMenu] (avatar + logout) on the right edge;
+/// kept as a dedicated widget so future shell-wide controls (global
+/// search, theme toggle shortcut, etc.) can land here without touching
+/// the layout code.
+class _ShellHeaderBar extends StatelessWidget {
+  const _ShellHeaderBar();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 40,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      alignment: Alignment.centerRight,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        border: Border(
+          bottom: BorderSide(
+            color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
+          ),
+        ),
+      ),
+      child: const AuthUserMenu(),
     );
   }
 }
