@@ -80,9 +80,9 @@ class _AuthPageState extends State<AuthPage> {
                     FilledButton(
                       onPressed: isLoading
                           ? null
-                          : () => context
-                              .read<AuthBloc>()
-                              .add(const RestoreSessionEvent()),
+                          : () => context.read<AuthBloc>().add(
+                                LoginEvent(unauth.pendingAccountNumber!),
+                              ),
                       style: FilledButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
