@@ -70,6 +70,7 @@ class _AuthPageState extends State<AuthPage> {
                 // After generating an account, show the number and a button
                 // to continue, simplifying the UI to prevent confusion.
                 return Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     AccountNumberCard(
@@ -80,9 +81,9 @@ class _AuthPageState extends State<AuthPage> {
                     FilledButton(
                       onPressed: isLoading
                           ? null
-                          : () => context.read<AuthBloc>().add(
-                                LoginEvent(unauth.pendingAccountNumber!),
-                              ),
+                          : () => context
+                              .read<AuthBloc>()
+                              .add(const RestoreSessionEvent()),
                       style: FilledButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),

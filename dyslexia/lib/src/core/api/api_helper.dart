@@ -12,24 +12,29 @@ class ApiHelper {
     required Method method,
     required String url,
     dynamic data,
+    Map<String, dynamic>? queryParameters,
   }) async {
     try {
       Response? response;
       switch (method) {
         case Method.get:
-          response = await _dio.get(url);
+          response = await _dio.get(url, queryParameters: queryParameters);
           break;
         case Method.post:
-          response = await _dio.post(url);
+          response = await _dio.post(url,
+              data: data, queryParameters: queryParameters);
           break;
         case Method.put:
-          response = await _dio.put(url);
+          response =
+              await _dio.put(url, data: data, queryParameters: queryParameters);
           break;
         case Method.patch:
-          response = await _dio.patch(url);
+          response = await _dio.patch(url,
+              data: data, queryParameters: queryParameters);
           break;
         case Method.delete:
-          response = await _dio.delete(url);
+          response = await _dio.delete(url,
+              data: data, queryParameters: queryParameters);
           break;
       }
 
