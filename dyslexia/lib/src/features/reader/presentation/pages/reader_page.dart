@@ -284,16 +284,6 @@ class _ReadingRuler extends StatelessWidget {
                 child: SizedBox(
                   height: height,
                   width: 120,
-                  child: Center(
-                    child: Container(
-                      height: 4,
-                      width: 60,
-                      decoration: BoxDecoration(
-                        color: foregroundColor.withValues(alpha: 0.3),
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
                 ),
               ),
             ),
