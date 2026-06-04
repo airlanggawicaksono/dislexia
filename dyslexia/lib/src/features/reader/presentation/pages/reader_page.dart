@@ -115,8 +115,16 @@ class ReaderPage extends StatefulWidget {
   final String text;
   final String? sourceName;
   final VoidCallback? onBack;
-  const ReaderPage(
-      {super.key, required this.text, this.sourceName, this.onBack});
+  final bool settingsPanelOpen;
+  final VoidCallback? onToggleSettings;
+  const ReaderPage({
+    super.key,
+    required this.text,
+    this.sourceName,
+    this.onBack,
+    this.settingsPanelOpen = true,
+    this.onToggleSettings,
+  });
 
   @override
   State<ReaderPage> createState() => _ReaderPageState();
@@ -273,19 +281,18 @@ class _ReaderPageState extends State<ReaderPage> {
                             ),
                           ),
                           onChanged: (text) {
-                            // Empty input → reload the sample so the
-                            // reader never sits empty after the user
-                            // clears the field.
-                            if (text.trim().isEmpty) {
+                            // Live-format: every keystroke dispatches
+                            // a LoadTextEvent so the reader body
+                            // updates immediately, no Format button
+                            // required. Empty input → reload the
+                            // sample so the reader never sits empty.
+                            final trimmed = text.trim();
+                            if (trimmed.isEmpty) {
                               context.read<ReaderShellBloc>().add(
                                     const LoadTextEvent(kDyslexiaSampleText,
                                         source: 'Sample'),
                                   );
-                            }
-                          },
-                          onSubmitted: (text) {
-                            final trimmed = text.trim();
-                            if (trimmed.isNotEmpty) {
+                            } else {
                               context.read<ReaderShellBloc>().add(
                                     LoadTextEvent(trimmed,
                                         source: 'Manual Input'),
@@ -297,24 +304,6 @@ class _ReaderPageState extends State<ReaderPage> {
                     ),
                     const SizedBox(width: 8),
                     // Action buttons
-                    _AppBarAction(
-                      icon: Icons.check_rounded,
-                      label: 'Format',
-                      color: fg,
-                      onTap: () {
-                        final text = _topbarController.text.trim();
-                        if (text.isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content: Text('Type or paste some text first')),
-                          );
-                          return;
-                        }
-                        context.read<ReaderShellBloc>().add(
-                              LoadTextEvent(text, source: 'Manual Input'),
-                            );
-                      },
-                    ),
                     const SizedBox(width: 4),
                     _AppBarAction(
                       icon: Icons.content_paste_rounded,
@@ -369,18 +358,20 @@ class _ReaderPageState extends State<ReaderPage> {
                       },
                     ),
                     const SizedBox(width: 4),
-                    IconButton(
-                      icon: Icon(
-                        s.syllablesEnabled
-                            ? Icons.text_fields
-                            : Icons.text_fields_outlined,
-                        color: fg,
+                    if (widget.onToggleSettings != null)
+                      IconButton(
+                        tooltip: widget.settingsPanelOpen
+                            ? 'Hide display settings'
+                            : 'Show display settings',
+                        icon: Icon(
+                          widget.settingsPanelOpen
+                              ? Icons.tune
+                              : Icons.tune_outlined,
+                          color: fg,
+                          size: 20,
+                        ),
+                        onPressed: widget.onToggleSettings,
                       ),
-                      tooltip: 'Toggle syllabification',
-                      onPressed: () => context
-                          .read<DisplaySettingsBloc>()
-                          .add(ToggleSyllablesEvent()),
-                    ),
                   ],
                 ),
               ),

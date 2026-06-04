@@ -45,8 +45,18 @@ const double kShellCompactBreakpoint = 800;
 /// need to mutate the column (FeatureCanvas, ReaderPage) dispatch
 /// events through `context.read<ReaderShellBloc>()` — no ancestor
 /// state lookup is required.
-class DesktopShell extends StatelessWidget {
+class DesktopShell extends StatefulWidget {
   const DesktopShell({super.key});
+
+  @override
+  State<DesktopShell> createState() => _DesktopShellState();
+}
+
+class _DesktopShellState extends State<DesktopShell> {
+  // Whether the right-hand DisplaySettingsPanel is shown. Toggled
+  // from the gear button in the shell's top bar. Defaults to open
+  // so users see the typography controls immediately on launch.
+  bool _settingsPanelOpen = true;
 
   @override
   Widget build(BuildContext context) {
@@ -89,13 +99,29 @@ class DesktopShell extends StatelessWidget {
                                         const SidebarShellPage(),
                                         Expanded(
                                           child: isImplemented
-                                              ? const MainColumn()
+                                              ? MainColumn(
+                                                  settingsPanelOpen:
+                                                      _settingsPanelOpen,
+                                                  onToggleSettings: () => setState(
+                                                      () => _settingsPanelOpen =
+                                                          !_settingsPanelOpen),
+                                                )
                                               : PlaceholderPanel(
                                                   section: sidebar.section,
                                                 ),
                                         ),
-                                        if (isImplemented && !compact)
-                                          const DisplaySettingsPanel(),
+                                        // The settings panel is only
+                                        // visible on wide screens and
+                                        // when the user has toggled it
+                                        // on. The gear button in the top
+                                        // bar flips _settingsPanelOpen.
+                                        if (isImplemented &&
+                                            !compact &&
+                                            _settingsPanelOpen)
+                                          DisplaySettingsPanel(
+                                            onClose: () => setState(() =>
+                                                _settingsPanelOpen = false),
+                                          ),
                                       ],
                                     );
                                   },
@@ -124,7 +150,13 @@ class DesktopShell extends StatelessWidget {
 /// BlocBuilder's the state. The auto-load of the sample text is dispatched
 /// on first frame.
 class MainColumn extends StatefulWidget {
-  const MainColumn({super.key});
+  final bool settingsPanelOpen;
+  final VoidCallback? onToggleSettings;
+  const MainColumn({
+    super.key,
+    this.settingsPanelOpen = true,
+    this.onToggleSettings,
+  });
 
   @override
   State<MainColumn> createState() => _MainColumnState();
@@ -168,6 +200,8 @@ class _MainColumnState extends State<MainColumn> {
                 text: state.text,
                 sourceName: state.source,
                 onBack: _onBack,
+                settingsPanelOpen: widget.settingsPanelOpen,
+                onToggleSettings: widget.onToggleSettings,
               )
             else
               // Empty state — no text loaded. The reader's AppBar is
@@ -246,9 +280,9 @@ class _PdfProgressOverlay extends StatelessWidget {
   }
 }
 
-/// Slim top bar that sits above the 3-column body. Currently only
-/// hosts the [AuthUserMenu] (avatar + logout) on the right edge.
-/// The reader's own AppBar provides all input controls.
+/// Slim top bar that sits above the 3-column body. Hosts the
+/// [AuthUserMenu] on the right edge. The reader's own AppBar
+/// provides all input controls including the settings toggle.
 class _ShellHeaderBar extends StatelessWidget {
   const _ShellHeaderBar();
 
