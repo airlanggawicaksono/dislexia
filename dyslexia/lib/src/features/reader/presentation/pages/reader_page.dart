@@ -138,11 +138,16 @@ class _ReaderPageState extends State<ReaderPage> {
             appBar: AppBar(
               backgroundColor: bg,
               elevation: 0,
-              leading: IconButton(
-                icon: Icon(Icons.arrow_back, color: fg),
-                onPressed:
-                    widget.onBack ?? () => Navigator.of(context).maybePop(),
-              ),
+              // Source 'Sample' is the in-app teaser → no back button.
+              // Other sources (PDF, Clipboard, Manual Input, etc.) get
+              // a back button that returns the user to the landing.
+              leading: widget.sourceName == 'Sample'
+                  ? null
+                  : IconButton(
+                      icon: Icon(Icons.arrow_back, color: fg),
+                      onPressed: widget.onBack ??
+                          () => Navigator.of(context).maybePop(),
+                    ),
               title: Text(widget.sourceName ?? 'Reader',
                   style: TextStyle(color: fg)),
               actions: [
@@ -164,7 +169,8 @@ class _ReaderPageState extends State<ReaderPage> {
               children: [
                 MouseRegion(
                   onHover: s.rulerEnabled
-                      ? (e) => setState(() => _rulerY = e.localPosition.dy)
+                      ? (e) => setState(
+                          () => _rulerY = e.localPosition.dy - rulerH / 2)
                       : null,
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.symmetric(vertical: 28),

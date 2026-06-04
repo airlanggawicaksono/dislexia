@@ -43,7 +43,14 @@ class FeatureCanvasState extends State<FeatureCanvas> {
   }
 
   void _onTextChanged(String text) {
-    widget.onTextExtracted(text, 'Manual Input');
+    // Empty input → reload the sample so the reader never sits empty
+    // after the user clears the field. Any non-empty value is treated
+    // as manual input and dispatched as-is.
+    if (text.trim().isEmpty) {
+      widget.onTextExtracted(kDyslexiaSampleText, 'Sample');
+    } else {
+      widget.onTextExtracted(text, 'Manual Input');
+    }
   }
 
   Future<void> _onUploadPdf() async {
@@ -90,6 +97,7 @@ class FeatureCanvasState extends State<FeatureCanvas> {
   Future<void> _onPaste() async {
     final data = await Clipboard.getData(Clipboard.kTextPlain);
     final text = data?.text?.trim() ?? '';
+    if (!mounted) return;
     if (text.isEmpty) {
       widget.onFeedback('Nothing found in clipboard');
       return;
@@ -99,12 +107,6 @@ class FeatureCanvasState extends State<FeatureCanvas> {
   }
 
   void _onSample() {
-    _controller.text = '';
-    widget.onTextExtracted(kDyslexiaSampleText, 'Sample');
-  }
-
-  void _onReader() {
-    // Reader button: open the dyslexia sample as a quick demo.
     _controller.text = '';
     widget.onTextExtracted(kDyslexiaSampleText, 'Sample');
   }
@@ -128,7 +130,8 @@ class FeatureCanvasState extends State<FeatureCanvas> {
           width: widget.compact ? 72 : 220,
           decoration: BoxDecoration(
             color: bg,
-            border: Border(right: BorderSide(color: fg.withValues(alpha: 0.08))),
+            border:
+                Border(right: BorderSide(color: fg.withValues(alpha: 0.08))),
           ),
           child: SafeArea(
             child: ListView(
@@ -152,18 +155,6 @@ class FeatureCanvasState extends State<FeatureCanvas> {
                   const SizedBox(height: 16),
                 ] else
                   const SizedBox(height: 8),
-                _FeatureTile(
-                  compact: widget.compact,
-                  tileColor: tileColor,
-                  iconBgColor: iconBgColor,
-                  fgColor: fg,
-                  icon: _isCupertino
-                      ? CupertinoIcons.book
-                      : Icons.menu_book_rounded,
-                  label: 'Reader',
-                  onTap: _onReader,
-                ),
-                const SizedBox(height: 8),
                 _FeatureTile(
                   compact: widget.compact,
                   tileColor: tileColor,
@@ -201,7 +192,8 @@ class FeatureCanvasState extends State<FeatureCanvas> {
                 ),
                 const SizedBox(height: 16),
                 if (!widget.compact) ...[
-                  _Label(title: 'TYPE OR PASTE', color: fg.withValues(alpha: 0.5)),
+                  _Label(
+                      title: 'TYPE OR PASTE', color: fg.withValues(alpha: 0.5)),
                   const SizedBox(height: 6),
                   _buildInput(fg),
                 ],
@@ -286,7 +278,8 @@ class _FeatureTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final disabled = onTap == null;
-    final effectiveTile = disabled ? tileColor.withValues(alpha: 0.4) : tileColor;
+    final effectiveTile =
+        disabled ? tileColor.withValues(alpha: 0.4) : tileColor;
     final effectiveFg = disabled ? fgColor.withValues(alpha: 0.4) : fgColor;
 
     if (_isCupertino) {

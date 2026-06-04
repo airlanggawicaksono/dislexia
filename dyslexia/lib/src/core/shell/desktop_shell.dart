@@ -15,7 +15,6 @@ import '../../features/reader/presentation/bloc/reader_shell/reader_shell_state.
 import '../../features/reader/presentation/pages/reader_page.dart';
 import 'display_settings_panel.dart';
 import 'feature_canvas.dart';
-import 'web_landing_content.dart';
 import '../../features/sidebar/presentation/bloc/sidebar/sidebar_bloc.dart';
 import '../../features/sidebar/presentation/bloc/sidebar/sidebar_state.dart';
 import '../../features/sidebar/presentation/pages/sidebar_shell_page.dart';
@@ -80,8 +79,8 @@ class DesktopShell extends StatelessWidget {
                           Expanded(
                             child: LayoutBuilder(
                               builder: (context, constraints) {
-                                final compact =
-                                    constraints.maxWidth < kShellCompactBreakpoint;
+                                final compact = constraints.maxWidth <
+                                    kShellCompactBreakpoint;
                                 return BlocBuilder<SidebarBloc, SidebarState>(
                                   builder: (context, sidebar) {
                                     final isImplemented =
@@ -89,30 +88,6 @@ class DesktopShell extends StatelessWidget {
                                     return Row(
                                       children: [
                                         const SidebarShellPage(),
-                                        FeatureCanvas(
-                                          compact: compact,
-                                          onTextExtracted: (text, source) {
-                                            context
-                                                .read<ReaderShellBloc>()
-                                                .add(LoadTextEvent(text,
-                                                    source: source));
-                                          },
-                                          onPdfProgress: (current, total) {
-                                            context
-                                                .read<ReaderShellBloc>()
-                                                .add(
-                                                  SetPdfProgressEvent(
-                                                      current: current,
-                                                      total: total),
-                                                );
-                                          },
-                                          onFeedback: (message) {
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              SnackBar(content: Text(message)),
-                                            );
-                                          },
-                                        ),
                                         Expanded(
                                           child: isImplemented
                                               ? const MainColumn()
@@ -174,44 +149,59 @@ class _MainColumnState extends State<MainColumn> {
   }
 
   void _onBack() {
-    context.read<ReaderShellBloc>().add(const ClearTextEvent());
+    // Returning to landing always reloads the sample text so the user
+    // sees the dyslexia sample in the reader (with ruler, syllabify,
+    // display settings) instead of an empty column.
+    context.read<ReaderShellBloc>().add(
+          const LoadTextEvent(kDyslexiaSampleText, source: 'Sample'),
+        );
   }
 
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<ReaderShellBloc, ReaderShellState>(
       builder: (context, state) {
-        return Stack(
+        return Row(
           children: [
-            state.showReader
-                ? ReaderPage(
-                    text: state.text,
-                    sourceName: state.source,
-                    onBack: _onBack,
-                  )
-                : WebLandingContent(
-                    onUploadTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                              'Use Upload PDF in the feature panel on the left'),
-                        ),
-                      );
-                    },
-                    onPasteTap: (text, source) {
-                      context
-                          .read<ReaderShellBloc>()
-                          .add(LoadTextEvent(text, source: source));
-                    },
-                    onCameraSnack: (message) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(message)),
-                      );
-                    },
-                  ),
-            if (state.pdfProgress != null) _PdfProgressOverlay(
-              current: state.pdfProgress!.current,
-              total: state.pdfProgress!.total,
+            FeatureCanvas(
+              onTextExtracted: (text, source) {
+                context
+                    .read<ReaderShellBloc>()
+                    .add(LoadTextEvent(text, source: source));
+              },
+              onPdfProgress: (current, total) {
+                context.read<ReaderShellBloc>().add(
+                      SetPdfProgressEvent(current: current, total: total),
+                    );
+              },
+              onFeedback: (message) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(message)),
+                );
+              },
+            ),
+            Expanded(
+              child: Stack(
+                children: [
+                  if (state.showReader)
+                    ReaderPage(
+                      key: const ValueKey('reader'),
+                      text: state.text,
+                      sourceName: state.source,
+                      onBack: _onBack,
+                    )
+                  else
+                    // Empty state — no text loaded. FeatureCanvas on the
+                    // left is the only entry point (Paste / Upload PDF /
+                    // Sample / manual input).
+                    const SizedBox.expand(),
+                  if (state.pdfProgress != null)
+                    _PdfProgressOverlay(
+                      current: state.pdfProgress!.current,
+                      total: state.pdfProgress!.total,
+                    ),
+                ],
+              ),
             ),
           ],
         );
@@ -279,7 +269,6 @@ class _PdfProgressOverlay extends StatelessWidget {
     );
   }
 }
-
 
 /// Slim 40-px header bar that sits above the 3-column body. Currently
 /// only hosts the [AuthUserMenu] (avatar + logout) on the right edge;

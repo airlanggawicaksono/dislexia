@@ -69,6 +69,7 @@ flutter:
   assets:
     - assets/translations/
     - assets/fonts/
+    - assets/images/
 
   fonts:
     - family: OpenDyslexic

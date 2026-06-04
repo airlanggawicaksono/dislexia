@@ -115,6 +115,14 @@ class _AuthPageState extends State<AuthPage> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      Center(
+                        child: Image.asset(
+                          'assets/images/logo_owl.png',
+                          height: 80,
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
                       Text(
                         'Dyslexia',
                         textAlign: TextAlign.center,
