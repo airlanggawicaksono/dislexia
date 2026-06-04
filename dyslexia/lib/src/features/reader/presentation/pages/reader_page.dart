@@ -4,9 +4,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/utils/font_utils.dart';
 import '../../../display_settings/presentation/bloc/display_settings/display_settings_bloc.dart';
 import '../../../display_settings/presentation/theme/display_colors.dart';
+import '../../data/syllabifier.dart';
 import '../bloc/reader/reader_bloc.dart';
 import '../bloc/reader/reader_event.dart';
-import '../bloc/reader/reader_state.dart';
 
 class _WordHighlightText extends StatefulWidget {
   final String text;
@@ -177,11 +177,15 @@ class _ReaderPageState extends State<ReaderPage> {
                     child: Center(
                       child: SizedBox(
                         width: 740,
-                        child: BlocBuilder<ReaderBloc, ReaderState>(
-                          builder: (context, state) {
-                            final displayText = state.displayText.isEmpty
-                                ? widget.text
-                                : state.displayText;
+                        // Use DisplaySettingsBloc.syllablesEnabled directly
+                        // to recompute the display text on the fly. The
+                        // ReaderBloc used to own a separate toggle that
+                        // drifted out of sync with the panel switch.
+                        child: Builder(
+                          builder: (context) {
+                            final displayText = s.syllablesEnabled
+                                ? syllabify(widget.text)
+                                : widget.text;
                             final paragraphs = displayText
                                 .split('\n\n')
                                 .where((p) => p.trim().isNotEmpty)
