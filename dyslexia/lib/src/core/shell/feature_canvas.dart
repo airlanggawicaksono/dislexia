@@ -138,19 +138,11 @@ class FeatureCanvasState extends State<FeatureCanvas> {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
               children: [
                 if (!widget.compact) ...[
-                  Row(
-                    children: [
-                      const Icon(Icons.accessibility_new,
-                          color: Color(0xFF3D5A99), size: 24),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Features',
-                        style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: fg),
-                      ),
-                    ],
+                  const SizedBox(width: 8),
+                  Text(
+                    'Features',
+                    style: TextStyle(
+                        fontSize: 13, fontWeight: FontWeight.w700, color: fg),
                   ),
                   const SizedBox(height: 16),
                 ] else
