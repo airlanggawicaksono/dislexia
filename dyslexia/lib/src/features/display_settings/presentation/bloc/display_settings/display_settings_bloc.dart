@@ -58,7 +58,22 @@ class DisplaySettingsBloc
 
   void _applyPreset(
       ApplyPresetEvent event, Emitter<DisplaySettingsState> emit) {
-    emit(state.copyWith(settings: _presetToModel(event.preset)));
+    // Presets only change typography / colour / font. Per-user
+    // accessibility toggles (ruler, syllable dots) are kept as-is
+    // so switching presets never silently turns the reader's
+    // assistive features on or off.
+    final presetModel = _presetToModel(event.preset);
+    emit(state.copyWith(
+      settings: state.settings.copyWith(
+        fontSize: presetModel.fontSize,
+        lineSpacing: presetModel.lineSpacing,
+        letterSpacing: presetModel.letterSpacing,
+        wordSpacing: presetModel.wordSpacing,
+        font: presetModel.font,
+        colorTheme: presetModel.colorTheme,
+        preset: presetModel.preset,
+      ),
+    ));
   }
 
   void _toggleRuler(

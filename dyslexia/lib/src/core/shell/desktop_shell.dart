@@ -14,8 +14,6 @@ import '../../features/reader/presentation/bloc/reader_shell/reader_shell_event.
 import '../../features/reader/presentation/bloc/reader_shell/reader_shell_state.dart';
 import '../../features/reader/presentation/pages/reader_page.dart';
 import 'display_settings_panel.dart';
-import 'feature_canvas.dart';
-import 'web_landing_content.dart';
 import '../../features/sidebar/presentation/bloc/sidebar/sidebar_bloc.dart';
 import '../../features/sidebar/presentation/bloc/sidebar/sidebar_state.dart';
 import '../../features/sidebar/presentation/pages/sidebar_shell_page.dart';
@@ -47,8 +45,18 @@ const double kShellCompactBreakpoint = 800;
 /// need to mutate the column (FeatureCanvas, ReaderPage) dispatch
 /// events through `context.read<ReaderShellBloc>()` — no ancestor
 /// state lookup is required.
-class DesktopShell extends StatelessWidget {
+class DesktopShell extends StatefulWidget {
   const DesktopShell({super.key});
+
+  @override
+  State<DesktopShell> createState() => _DesktopShellState();
+}
+
+class _DesktopShellState extends State<DesktopShell> {
+  // Whether the right-hand DisplaySettingsPanel is shown. Toggled
+  // from the gear button in the shell's top bar. Defaults to open
+  // so users see the typography controls immediately on launch.
+  bool _settingsPanelOpen = true;
 
   @override
   Widget build(BuildContext context) {
@@ -80,8 +88,8 @@ class DesktopShell extends StatelessWidget {
                           Expanded(
                             child: LayoutBuilder(
                               builder: (context, constraints) {
-                                final compact =
-                                    constraints.maxWidth < kShellCompactBreakpoint;
+                                final compact = constraints.maxWidth <
+                                    kShellCompactBreakpoint;
                                 return BlocBuilder<SidebarBloc, SidebarState>(
                                   builder: (context, sidebar) {
                                     final isImplemented =
@@ -89,39 +97,31 @@ class DesktopShell extends StatelessWidget {
                                     return Row(
                                       children: [
                                         const SidebarShellPage(),
-                                        FeatureCanvas(
-                                          compact: compact,
-                                          onTextExtracted: (text, source) {
-                                            context
-                                                .read<ReaderShellBloc>()
-                                                .add(LoadTextEvent(text,
-                                                    source: source));
-                                          },
-                                          onPdfProgress: (current, total) {
-                                            context
-                                                .read<ReaderShellBloc>()
-                                                .add(
-                                                  SetPdfProgressEvent(
-                                                      current: current,
-                                                      total: total),
-                                                );
-                                          },
-                                          onFeedback: (message) {
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              SnackBar(content: Text(message)),
-                                            );
-                                          },
-                                        ),
                                         Expanded(
                                           child: isImplemented
-                                              ? const MainColumn()
+                                              ? MainColumn(
+                                                  settingsPanelOpen:
+                                                      _settingsPanelOpen,
+                                                  onToggleSettings: () => setState(
+                                                      () => _settingsPanelOpen =
+                                                          !_settingsPanelOpen),
+                                                )
                                               : PlaceholderPanel(
                                                   section: sidebar.section,
                                                 ),
                                         ),
-                                        if (isImplemented && !compact)
-                                          const DisplaySettingsPanel(),
+                                        // The settings panel is only
+                                        // visible on wide screens and
+                                        // when the user has toggled it
+                                        // on. The gear button in the top
+                                        // bar flips _settingsPanelOpen.
+                                        if (isImplemented &&
+                                            !compact &&
+                                            _settingsPanelOpen)
+                                          DisplaySettingsPanel(
+                                            onClose: () => setState(() =>
+                                                _settingsPanelOpen = false),
+                                          ),
                                       ],
                                     );
                                   },
@@ -150,7 +150,13 @@ class DesktopShell extends StatelessWidget {
 /// BlocBuilder's the state. The auto-load of the sample text is dispatched
 /// on first frame.
 class MainColumn extends StatefulWidget {
-  const MainColumn({super.key});
+  final bool settingsPanelOpen;
+  final VoidCallback? onToggleSettings;
+  const MainColumn({
+    super.key,
+    this.settingsPanelOpen = true,
+    this.onToggleSettings,
+  });
 
   @override
   State<MainColumn> createState() => _MainColumnState();
@@ -174,7 +180,12 @@ class _MainColumnState extends State<MainColumn> {
   }
 
   void _onBack() {
-    context.read<ReaderShellBloc>().add(const ClearTextEvent());
+    // Returning to landing always reloads the sample text so the user
+    // sees the dyslexia sample in the reader (with ruler, syllabify,
+    // display settings) instead of an empty column.
+    context.read<ReaderShellBloc>().add(
+          const LoadTextEvent(kDyslexiaSampleText, source: 'Sample'),
+        );
   }
 
   @override
@@ -183,36 +194,25 @@ class _MainColumnState extends State<MainColumn> {
       builder: (context, state) {
         return Stack(
           children: [
-            state.showReader
-                ? ReaderPage(
-                    text: state.text,
-                    sourceName: state.source,
-                    onBack: _onBack,
-                  )
-                : WebLandingContent(
-                    onUploadTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                              'Use Upload PDF in the feature panel on the left'),
-                        ),
-                      );
-                    },
-                    onPasteTap: (text, source) {
-                      context
-                          .read<ReaderShellBloc>()
-                          .add(LoadTextEvent(text, source: source));
-                    },
-                    onCameraSnack: (message) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(message)),
-                      );
-                    },
-                  ),
-            if (state.pdfProgress != null) _PdfProgressOverlay(
-              current: state.pdfProgress!.current,
-              total: state.pdfProgress!.total,
-            ),
+            if (state.showReader)
+              ReaderPage(
+                key: const ValueKey('reader'),
+                text: state.text,
+                sourceName: state.source,
+                onBack: _onBack,
+                settingsPanelOpen: widget.settingsPanelOpen,
+                onToggleSettings: widget.onToggleSettings,
+              )
+            else
+              // Empty state — no text loaded. The reader's AppBar is
+              // the only entry point (Paste / Upload PDF / Sample /
+              // manual input).
+              const SizedBox.expand(),
+            if (state.pdfProgress != null)
+              _PdfProgressOverlay(
+                current: state.pdfProgress!.current,
+                total: state.pdfProgress!.total,
+              ),
           ],
         );
       },
@@ -280,12 +280,9 @@ class _PdfProgressOverlay extends StatelessWidget {
   }
 }
 
-
-/// Slim 40-px header bar that sits above the 3-column body. Currently
-/// only hosts the [AuthUserMenu] (avatar + logout) on the right edge;
-/// kept as a dedicated widget so future shell-wide controls (global
-/// search, theme toggle shortcut, etc.) can land here without touching
-/// the layout code.
+/// Slim top bar that sits above the 3-column body. Hosts the
+/// [AuthUserMenu] on the right edge. The reader's own AppBar
+/// provides all input controls including the settings toggle.
 class _ShellHeaderBar extends StatelessWidget {
   const _ShellHeaderBar();
 

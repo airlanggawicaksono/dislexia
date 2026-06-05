@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -206,38 +205,42 @@ class _FontChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 72,
-        margin: const EdgeInsets.only(right: 6),
-        padding: const EdgeInsets.symmetric(vertical: 6),
-        decoration: BoxDecoration(
-          color: selected ? const Color(0xFF3D5A99) : surfaceColor,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text('Aa',
-                style: applyDyslexiaFont(
-                    font: font,
-                    baseStyle: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: selected
-                            ? Colors.white
-                            : surfaceColor.withValues(alpha: 1)))),
-            const SizedBox(height: 2),
-            Text(_labels[font] ?? '',
-                style: TextStyle(
-                    fontSize: 8,
-                    color: selected
-                        ? Colors.white70
-                        : surfaceColor.withValues(alpha: 0.6)),
-                textAlign: TextAlign.center,
-                maxLines: 1),
-          ],
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          width: 72,
+          margin: const EdgeInsets.only(right: 6),
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          decoration: BoxDecoration(
+            color: selected ? const Color(0xFF3D5A99) : surfaceColor,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text('Aa',
+                  style: applyDyslexiaFont(
+                      font: font,
+                      baseStyle: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: selected
+                              ? Colors.white
+                              : surfaceColor.withValues(alpha: 1)))),
+              const SizedBox(height: 2),
+              Text(_labels[font] ?? '',
+                  style: TextStyle(
+                      fontSize: 8,
+                      color: selected
+                          ? Colors.white70
+                          : surfaceColor.withValues(alpha: 0.6)),
+                  textAlign: TextAlign.center,
+                  maxLines: 1),
+            ],
+          ),
         ),
       ),
     );
@@ -253,22 +256,26 @@ class _ColorSwatch extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 20,
-        height: 20,
-        decoration: BoxDecoration(
-          color: bgColor(theme),
-          borderRadius: BorderRadius.circular(4),
-          border: Border.all(
-              color: selected ? const Color(0xFF3D5A99) : Colors.black12,
-              width: selected ? 2 : 1),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(4),
+        child: Container(
+          width: 20,
+          height: 20,
+          decoration: BoxDecoration(
+            color: bgColor(theme),
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(
+                color: selected ? const Color(0xFF3D5A99) : Colors.black12,
+                width: selected ? 2 : 1),
+          ),
+          child: selected
+              ? const Center(
+                  child: Icon(Icons.check, size: 10, color: Color(0xFF3D5A99)))
+              : null,
         ),
-        child: selected
-            ? const Center(
-                child: Icon(Icons.check, size: 10, color: Color(0xFF3D5A99)))
-            : null,
       ),
     );
   }
@@ -325,28 +332,32 @@ class _PresetChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        margin: const EdgeInsets.only(bottom: 4),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: selected
-              ? const Color(0xFF3D5A99).withValues(alpha: 0.15)
-              : surfaceColor,
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(
-              color: selected ? const Color(0xFF3D5A99) : Colors.transparent,
-              width: 1),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(6),
+        child: Container(
+          width: double.infinity,
+          margin: const EdgeInsets.only(bottom: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: selected
+                ? const Color(0xFF3D5A99).withValues(alpha: 0.15)
+                : surfaceColor,
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(
+                color: selected ? const Color(0xFF3D5A99) : Colors.transparent,
+                width: 1),
+          ),
+          child: Text(label,
+              style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                  color: selected
+                      ? const Color(0xFF3D5A99)
+                      : surfaceColor.withValues(alpha: 1))),
         ),
-        child: Text(label,
-            style: TextStyle(
-                fontSize: 10,
-                fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                color: selected
-                    ? const Color(0xFF3D5A99)
-                    : surfaceColor.withValues(alpha: 1))),
       ),
     );
   }
@@ -358,44 +369,52 @@ class _ToggleRow extends StatelessWidget {
   final VoidCallback onToggle;
   final Color fgColor;
   const _ToggleRow(
-      {required this.label, required this.value, required this.onToggle, required this.fgColor});
+      {required this.label,
+      required this.value,
+      required this.onToggle,
+      required this.fgColor});
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onToggle,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        child: Row(
-          children: [
-            Text(label,
-                style: TextStyle(fontSize: 11, color: fgColor.withValues(alpha: 0.7))),
-            const Spacer(),
-            Container(
-              width: 32,
-              height: 18,
-              decoration: BoxDecoration(
-                color: value
-                    ? const Color(0xFF3D5A99)
-                    : fgColor.withValues(alpha: 0.25),
-                borderRadius: BorderRadius.circular(9),
-              ),
-              child: AnimatedAlign(
-                duration: const Duration(milliseconds: 200),
-                alignment:
-                    value ? Alignment.centerRight : Alignment.centerLeft,
-                child: Container(
-                  margin: const EdgeInsets.all(2),
-                  width: 14,
-                  height: 14,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onToggle,
+        borderRadius: BorderRadius.circular(6),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          child: Row(
+            children: [
+              Text(label,
+                  style: TextStyle(
+                      fontSize: 11, color: fgColor.withValues(alpha: 0.7))),
+              const Spacer(),
+              Container(
+                width: 32,
+                height: 18,
+                decoration: BoxDecoration(
+                  color: value
+                      ? const Color(0xFF3D5A99)
+                      : fgColor.withValues(alpha: 0.25),
+                  borderRadius: BorderRadius.circular(9),
+                ),
+                child: AnimatedAlign(
+                  duration: const Duration(milliseconds: 200),
+                  alignment:
+                      value ? Alignment.centerRight : Alignment.centerLeft,
+                  child: Container(
+                    margin: const EdgeInsets.all(2),
+                    width: 14,
+                    height: 14,
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
