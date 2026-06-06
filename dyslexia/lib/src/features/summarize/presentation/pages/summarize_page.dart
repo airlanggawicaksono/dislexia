@@ -226,6 +226,7 @@ class _ResultCard extends StatelessWidget {
         final s = ds.settings;
         final fg = fgColor(s.colorTheme);
         return Card(
+          color: fg.withValues(alpha: 0.06),
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
