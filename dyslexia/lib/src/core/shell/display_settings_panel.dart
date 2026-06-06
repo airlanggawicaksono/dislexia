@@ -96,25 +96,29 @@ class DisplaySettingsPanel extends StatelessWidget {
                     value: s.fontSize,
                     min: 12,
                     max: 32,
-                    onChanged: (v) => bloc.add(UpdateFontSizeEvent(v))),
+                    onChanged: (v) => bloc.add(UpdateFontSizeEvent(v)),
+                    fgColor: fg),
                 _MiniSlider(
                     label: 'Line',
                     value: s.lineSpacing,
                     min: 1.0,
                     max: 3.0,
-                    onChanged: (v) => bloc.add(UpdateLineSpacingEvent(v))),
+                    onChanged: (v) => bloc.add(UpdateLineSpacingEvent(v)),
+                    fgColor: fg),
                 _MiniSlider(
                     label: 'Letter',
                     value: s.letterSpacing,
                     min: 0.0,
                     max: 2.0,
-                    onChanged: (v) => bloc.add(UpdateLetterSpacingEvent(v))),
+                    onChanged: (v) => bloc.add(UpdateLetterSpacingEvent(v)),
+                    fgColor: fg),
                 _MiniSlider(
                     label: 'Word',
                     value: s.wordSpacing,
                     min: 0.0,
                     max: 8.0,
-                    onChanged: (v) => bloc.add(UpdateWordSpacingEvent(v))),
+                    onChanged: (v) => bloc.add(UpdateWordSpacingEvent(v)),
+                    fgColor: fg),
                 const SizedBox(height: 12),
                 _Label(title: 'PRESETS', color: fg.withValues(alpha: 0.5)),
                 ...DisplayPreset.values.map((p) => _PresetChip(
@@ -287,12 +291,15 @@ class _MiniSlider extends StatelessWidget {
   final double min;
   final double max;
   final ValueChanged<double> onChanged;
-  const _MiniSlider(
-      {required this.label,
-      required this.value,
-      required this.min,
-      required this.max,
-      required this.onChanged});
+  final Color fgColor;
+  const _MiniSlider({
+    required this.label,
+    required this.value,
+    required this.min,
+    required this.max,
+    required this.onChanged,
+    required this.fgColor,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -303,7 +310,7 @@ class _MiniSlider extends StatelessWidget {
           SizedBox(
               width: 36,
               child: Text(label,
-                  style: const TextStyle(fontSize: 10, color: Colors.black45))),
+                  style: TextStyle(fontSize: 10, color: fgColor.withValues(alpha: 0.6)))),
           Expanded(
             child: AdaptiveSlider(
               value: value.clamp(min, max),
