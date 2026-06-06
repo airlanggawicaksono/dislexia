@@ -10,6 +10,7 @@ import '../../../display_settings/presentation/bloc/display_settings/display_set
 import '../../../display_settings/presentation/theme/display_colors.dart';
 import '../../../upload/data/datasources/pdf_extractor_service.dart';
 import '../../data/syllabifier.dart';
+import '../../../../core/widgets/ruler/reading_ruler.dart';
 import '../bloc/reader/reader_bloc.dart';
 import '../bloc/reader/reader_event.dart';
 import '../bloc/reader_shell/reader_shell_bloc.dart';
@@ -412,7 +413,7 @@ class _ReaderPageState extends State<ReaderPage> {
                   ),
                 ),
                 if (s.rulerEnabled)
-                  _ReadingRuler(
+                  ReadingRuler(
                     height: rulerH,
                     foregroundColor: fg,
                     rulerY: _rulerY,
@@ -422,65 +423,6 @@ class _ReaderPageState extends State<ReaderPage> {
             ),
           );
         },
-      ),
-    );
-  }
-}
-
-class _ReadingRuler extends StatelessWidget {
-  final double height;
-  final Color foregroundColor;
-  final double rulerY;
-  final ValueChanged<double> onPositionChanged;
-  const _ReadingRuler({
-    required this.height,
-    required this.foregroundColor,
-    required this.rulerY,
-    required this.onPositionChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final maxH = MediaQuery.of(context).size.height;
-    return Positioned(
-      top: rulerY.clamp(0.0, maxH - height),
-      left: 0,
-      right: 0,
-      child: SizedBox(
-        height: height,
-        child: Stack(
-          children: [
-            IgnorePointer(
-              child: Container(
-                width: double.infinity,
-                height: height,
-                decoration: BoxDecoration(
-                  color: foregroundColor.withValues(alpha: 0.06),
-                  border: Border(
-                    top: BorderSide(
-                        color: foregroundColor.withValues(alpha: 0.4),
-                        width: 1.5),
-                    bottom: BorderSide(
-                        color: foregroundColor.withValues(alpha: 0.4),
-                        width: 1.5),
-                  ),
-                ),
-              ),
-            ),
-            Center(
-              child: GestureDetector(
-                onVerticalDragStart: (d) =>
-                    onPositionChanged(rulerY + d.localPosition.dy - height / 2),
-                onVerticalDragUpdate: (d) =>
-                    onPositionChanged(rulerY + d.delta.dy),
-                child: SizedBox(
-                  height: height,
-                  width: 120,
-                ),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

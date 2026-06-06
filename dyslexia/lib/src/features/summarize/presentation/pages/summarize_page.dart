@@ -10,6 +10,7 @@ import '../../../display_settings/presentation/bloc/display_settings/display_set
 import '../../../display_settings/presentation/theme/display_colors.dart';
 import '../../../reader/data/syllabifier.dart';
 import '../../../upload/data/datasources/pdf_extractor_service.dart';
+import '../../../../core/widgets/ruler/reading_ruler.dart';
 import '../bloc/summarize_bloc.dart';
 import '../bloc/summarize_event.dart';
 import '../bloc/summarize_state.dart';
@@ -35,6 +36,7 @@ class _SummarizeBody extends StatefulWidget {
 class _SummarizeBodyState extends State<_SummarizeBody> {
   final _controller = TextEditingController();
   bool _inputExpanded = true;
+  double _rulerY = 120.0;
 
   @override
   void dispose() {
@@ -148,26 +150,44 @@ class _SummarizeBodyState extends State<_SummarizeBody> {
                       : const SizedBox.shrink(),
                 ),
                 Expanded(
-                  child: BlocBuilder<SummarizeBloc, SummarizeState>(
-                    builder: (context, state) {
-                      return switch (state) {
-                        SummarizeInitial() => const SizedBox(),
-                        SummarizeLoading() => const Center(
-                            child: CircularProgressIndicator(),
+                  child: Stack(
+                    children: [
+                      BlocBuilder<SummarizeBloc, SummarizeState>(
+                        builder: (context, state) {
+                          return switch (state) {
+                            SummarizeInitial() => const SizedBox(),
+                            SummarizeLoading() => const Center(
+                                child: CircularProgressIndicator(),
+                              ),
+                            SummarizeResultState(:final result) =>
+                              _ResultCard(
+                                text: result,
+                                inputExpanded: _inputExpanded,
+                                onToggleInput: () => setState(
+                                    () => _inputExpanded = !_inputExpanded),
+                              ),
+                            SummarizeErrorState(:final message) => Center(
+                                child: Text(message,
+                                    style:
+                                        const TextStyle(color: Colors.red)),
+                              ),
+                            _ => const SizedBox(),
+                          };
+                        },
+                      ),
+                      if (s.rulerEnabled)
+                        MouseRegion(
+                          onHover: (e) => setState(
+                              () => _rulerY = e.localPosition.dy - 24),
+                          child: ReadingRuler(
+                            height: 48,
+                            foregroundColor: fg,
+                            rulerY: _rulerY,
+                            onPositionChanged: (y) =>
+                                setState(() => _rulerY = y),
                           ),
-                        SummarizeResultState(:final result) => _ResultCard(
-                            text: result,
-                            inputExpanded: _inputExpanded,
-                            onToggleInput: () => setState(
-                                () => _inputExpanded = !_inputExpanded),
-                          ),
-                        SummarizeErrorState(:final message) => Center(
-                            child: Text(message,
-                                style: const TextStyle(color: Colors.red)),
-                          ),
-                        _ => const SizedBox(),
-                      };
-                    },
+                        ),
+                    ],
                   ),
                 ),
               ],
