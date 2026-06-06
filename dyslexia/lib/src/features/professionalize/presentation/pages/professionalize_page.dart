@@ -93,13 +93,13 @@ class _ProfessionalizeBodyState extends State<_ProfessionalizeBody> {
                   if (!context.mounted) return;
                   final text = data?.text?.trim() ?? '';
                   if (text.isEmpty) {
-                    showAdaptiveFeedback(
-                        context, 'Nothing found in clipboard');
+                    showAdaptiveFeedback(context, 'Nothing found in clipboard');
                     return;
                   }
                   _controller.text = text;
                 },
               ),
+              const SizedBox(width: 4),
               const SizedBox(width: 4),
               _FeatureBarAction(
                 icon: Icons.picture_as_pdf_rounded,
@@ -107,11 +107,12 @@ class _ProfessionalizeBodyState extends State<_ProfessionalizeBody> {
                 color: fg,
                 onTap: () => _pickPdf(context),
               ),
-              const SizedBox(width: 4),
+              const SizedBox(width: 12),
               _FeatureBarAction(
                 icon: Icons.auto_awesome,
                 label: 'Professionalize',
-                color: fg,
+                color: Colors.white,
+                backgroundColor: const Color(0xFF3D5A99),
                 onTap: () {
                   final text = _controller.text.trim();
                   if (text.isNotEmpty) {
@@ -167,8 +168,7 @@ class _ProfessionalizeBodyState extends State<_ProfessionalizeBody> {
                           ),
                         ProfessionalizeErrorState(:final message) => Center(
                             child: Text(message,
-                                style:
-                                    const TextStyle(color: Colors.red)),
+                                style: const TextStyle(color: Colors.red)),
                           ),
                         _ => const SizedBox(),
                       };
@@ -188,18 +188,20 @@ class _FeatureBarAction extends StatelessWidget {
   final IconData icon;
   final String label;
   final Color color;
+  final Color? backgroundColor;
   final VoidCallback onTap;
   const _FeatureBarAction({
     required this.icon,
     required this.label,
     required this.color,
+    this.backgroundColor,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: color.withValues(alpha: 0.08),
+      color: backgroundColor ?? color.withValues(alpha: 0.08),
       borderRadius: BorderRadius.circular(8),
       child: InkWell(
         onTap: onTap,
