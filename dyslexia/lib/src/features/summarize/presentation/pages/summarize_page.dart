@@ -220,9 +220,11 @@ class _ResultCard extends StatelessWidget {
       builder: (context, ds) {
         final s = ds.settings;
         final fg = fgColor(s.colorTheme);
-        return Card(
-          color: fg.withValues(alpha: 0.06),
-          surfaceTintColor: Colors.transparent,
+        return Container(
+          decoration: BoxDecoration(
+            color: fg.withValues(alpha: 0.06),
+            borderRadius: BorderRadius.circular(12),
+          ),
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -253,19 +255,17 @@ class _ResultCard extends StatelessWidget {
                 const Divider(),
                 Expanded(
                   child: SingleChildScrollView(
-                    child: Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      child: Text(
-                        text,
-                        style: applyDyslexiaFont(
-                          font: s.font,
-                          baseStyle: TextStyle(
-                            fontSize: s.fontSize,
-                            color: fg,
-                            height: s.lineSpacing,
-                            letterSpacing: s.letterSpacing,
-                            wordSpacing: s.wordSpacing,
-                          ),
+                    padding: const EdgeInsets.only(top: 12),
+                    child: Text(
+                      text,
+                      style: applyDyslexiaFont(
+                        font: s.font,
+                        baseStyle: TextStyle(
+                          fontSize: s.fontSize,
+                          color: fg,
+                          height: s.lineSpacing,
+                          letterSpacing: s.letterSpacing,
+                          wordSpacing: s.wordSpacing,
                         ),
                       ),
                     ),
