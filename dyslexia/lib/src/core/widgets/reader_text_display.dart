@@ -38,51 +38,57 @@ class _ReaderTextDisplayState extends State<ReaderTextDisplay> {
         .where((p) => p.trim().isNotEmpty)
         .toList();
 
-    return Stack(
-      children: [
-        MouseRegion(
-          onHover: s.rulerEnabled
-              ? (e) => setState(() => _rulerY = e.localPosition.dy)
-              : null,
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(vertical: 28),
-            child: Center(
-              child: SizedBox(
-                width: 740,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: paragraphs
-                      .map((para) => Padding(
-                            padding: const EdgeInsets.only(bottom: 20),
-                            child: WordHighlightText(
-                              text: para.trim(),
-                              style: applyDyslexiaFont(
-                                font: s.font,
-                                baseStyle: TextStyle(
-                                  fontSize: s.fontSize,
-                                  color: fg,
-                                  height: s.lineSpacing,
-                                  letterSpacing: s.letterSpacing,
-                                  wordSpacing: s.wordSpacing,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final maxW = constraints.maxWidth;
+        final contentWidth = maxW < 800.0 ? maxW - 32 : 740.0.clamp(400.0, maxW - 64);
+        return Stack(
+          children: [
+            MouseRegion(
+              onHover: s.rulerEnabled
+                  ? (e) => setState(() => _rulerY = e.localPosition.dy)
+                  : null,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(vertical: 28),
+                child: Center(
+                  child: SizedBox(
+                    width: contentWidth,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: paragraphs
+                          .map((para) => Padding(
+                                padding: const EdgeInsets.only(bottom: 20),
+                                child: WordHighlightText(
+                                  text: para.trim(),
+                                  style: applyDyslexiaFont(
+                                    font: s.font,
+                                    baseStyle: TextStyle(
+                                      fontSize: s.fontSize,
+                                      color: fg,
+                                      height: s.lineSpacing,
+                                      letterSpacing: s.letterSpacing,
+                                      wordSpacing: s.wordSpacing,
+                                    ),
+                                  ),
+                                  maxWidth: contentWidth,
                                 ),
-                              ),
-                              maxWidth: 740,
-                            ),
-                          ))
-                      .toList(),
+                              ))
+                          .toList(),
+                    ),
+                  ),
                 ),
               ),
             ),
-          ),
-        ),
-        if (s.rulerEnabled)
-          ReadingRuler(
-            height: rulerH,
-            foregroundColor: fg,
-            rulerY: _rulerY,
-            onPositionChanged: (y) => setState(() => _rulerY = y),
-          ),
-      ],
+            if (s.rulerEnabled)
+              ReadingRuler(
+                height: rulerH,
+                foregroundColor: fg,
+                rulerY: _rulerY,
+                onPositionChanged: (y) => setState(() => _rulerY = y),
+              ),
+          ],
+        );
+      },
     );
   }
 }
