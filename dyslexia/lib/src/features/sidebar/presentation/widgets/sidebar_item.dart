@@ -4,16 +4,12 @@ import 'package:flutter/material.dart';
 
 import '../../domain/entities/sidebar_section.dart';
 
-/// A single vertical rail entry for the desktop sidebar.
-///
-/// Two visual states: idle (transparent background) and selected (tinted
-/// background with an accent rail on the leading edge). Tap target is
-/// the full 72×72 area to make it easy to hit on trackpads.
 class SidebarItem extends StatelessWidget {
   final SidebarSection section;
   final bool selected;
   final VoidCallback onTap;
   final bool compact;
+  final bool touchMode;
 
   const SidebarItem({
     super.key,
@@ -21,22 +17,22 @@ class SidebarItem extends StatelessWidget {
     required this.selected,
     required this.onTap,
     this.compact = false,
+    this.touchMode = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final isCupertino = _useCupertinoIcons();
-    final icon =
-        isCupertino ? section.cupertinoIcon : section.materialIcon;
+    final icon = isCupertino ? section.cupertinoIcon : section.materialIcon;
     final theme = Theme.of(context);
     final accent = const Color(0xFF3D5A99);
     final idleFg = theme.colorScheme.onSurface.withValues(alpha: 0.6);
     final selectedFg = accent;
     final idleBg = Colors.transparent;
     final selectedBg = accent.withValues(alpha: 0.12);
-
     final fg = selected ? selectedFg : idleFg;
     final bg = selected ? selectedBg : idleBg;
+    final itemSize = touchMode ? 56.0 : 72.0;
 
     return Tooltip(
       message: section.label,
@@ -44,11 +40,11 @@ class SidebarItem extends StatelessWidget {
       waitDuration: const Duration(milliseconds: 300),
       child: InkResponse(
         onTap: onTap,
-        radius: 32,
+        radius: touchMode ? 28 : 32,
         highlightShape: BoxShape.circle,
         child: Container(
-          width: 72,
-          height: 72,
+          width: itemSize,
+          height: itemSize,
           decoration: BoxDecoration(
             color: bg,
             border: Border(
@@ -69,8 +65,7 @@ class SidebarItem extends StatelessWidget {
                   section.label,
                   style: TextStyle(
                     fontSize: 10,
-                    fontWeight:
-                        selected ? FontWeight.w600 : FontWeight.w500,
+                    fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
                     color: fg,
                   ),
                   textAlign: TextAlign.center,

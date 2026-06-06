@@ -14,7 +14,8 @@ import '../widgets/sidebar_item.dart';
 /// narrow (96px) so the rest of the window is reserved for content.
 class SidebarShellPage extends StatelessWidget {
   final bool compact;
-  const SidebarShellPage({super.key, this.compact = false});
+  final bool touchMode;
+  const SidebarShellPage({super.key, this.compact = false, this.touchMode = false});
 
   static const _fullWidth = 96.0;
   static const _compactWidth = 56.0;
@@ -43,6 +44,7 @@ class SidebarShellPage extends StatelessWidget {
                   SidebarItem(
                     section: section,
                     compact: compact,
+                    touchMode: touchMode,
                     selected: state.section == section,
                     onTap: () => context
                         .read<SidebarBloc>()

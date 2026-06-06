@@ -99,13 +99,14 @@ class _DesktopShellState extends State<DesktopShell> {
                                     kSidebarIconBreakpoint;
                                 final hiddenSidebar = constraints.maxWidth <
                                     kSidebarHiddenBreakpoint;
+                                final touchMode = constraints.maxWidth < 800;
                                 return BlocBuilder<SidebarBloc, SidebarState>(
                                   builder: (context, sidebar) {
                                     return Row(
                                       children: [
                                         if (!hiddenSidebar)
                                           SidebarShellPage(
-                                              compact: compactSidebar),
+                                              compact: compactSidebar, touchMode: touchMode),
                                         Expanded(
                                           child: switch (sidebar.section) {
                                             SidebarSection.reader => const MainColumn(),
