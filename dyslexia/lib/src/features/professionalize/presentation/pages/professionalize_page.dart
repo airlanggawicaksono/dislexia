@@ -151,6 +151,7 @@ class _ProfessionalizeBodyState extends State<_ProfessionalizeBody> {
                 ),
                 Expanded(
                   child: BlocBuilder<ProfessionalizeBloc, ProfessionalizeState>(
+                    buildWhen: (_, __) => true,
                     builder: (context, state) {
                       return switch (state) {
                         ProfessionalizeInitial() => const SizedBox(),
@@ -269,7 +270,7 @@ class _ResultCard extends StatelessWidget {
                   children: [
                     const Icon(Icons.auto_awesome, size: 18),
                     const SizedBox(width: 8),
-                    const Text('Professionalized',
+                    const Text('Summary',
                         style: TextStyle(
                             fontWeight: FontWeight.w600, fontSize: 15)),
                     const Spacer(),
@@ -324,15 +325,24 @@ class _ResultCard extends StatelessWidget {
     if (!rulerEnabled) return body;
 
     return MouseRegion(
-      onHover: (e) => onRulerChanged(e.localPosition.dy - 24),
+      onHover: (e) => onRulerChanged(e.localPosition.dy),
       child: Stack(
         children: [
           body,
-          ReadingRuler(
-            height: 48,
-            foregroundColor: fgColor,
-            rulerY: rulerY,
-            onPositionChanged: onRulerChanged,
+          IgnorePointer(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: SizedBox(
+                width: double.infinity,
+                height: double.infinity,
+                child: ReadingRuler(
+                  height: 48,
+                  foregroundColor: fgColor,
+                  rulerY: rulerY,
+                  onPositionChanged: onRulerChanged,
+                ),
+              ),
+            ),
           ),
         ],
       ),

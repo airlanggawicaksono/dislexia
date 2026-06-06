@@ -151,6 +151,7 @@ class _SummarizeBodyState extends State<_SummarizeBody> {
                 ),
                 Expanded(
                   child: BlocBuilder<SummarizeBloc, SummarizeState>(
+                    buildWhen: (_, __) => true,
                     builder: (context, state) {
                       return switch (state) {
                         SummarizeInitial() => const SizedBox(),
