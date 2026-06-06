@@ -36,8 +36,11 @@ class DisplaySettingsPanel extends StatelessWidget {
         final bloc = context.read<DisplaySettingsBloc>();
         final borderColor = fg.withValues(alpha: 0.08);
 
-        return Container(
-          width: 248,
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final isFullWidth = constraints.maxWidth < 720;
+            return Container(
+          width: isFullWidth ? double.infinity : 248,
           decoration: BoxDecoration(
             color: bg,
             border: Border(right: BorderSide(color: borderColor)),
@@ -146,9 +149,10 @@ class DisplaySettingsPanel extends StatelessWidget {
               ],
             ),
           ),
-        );
-      },
-    );
+          );
+        },
+      );
+    });
   }
 
   String _presetName(DisplayPreset p) => switch (p) {
