@@ -34,6 +34,8 @@ class _DefineBody extends StatefulWidget {
 class _DefineBodyState extends State<_DefineBody> {
   final _controller = TextEditingController();
   bool _inputExpanded = true;
+  bool _isLoadingPdf = false;
+  ({int current, int total})? _pdfProgress;
 
   @override
   void dispose() {
@@ -42,30 +44,51 @@ class _DefineBodyState extends State<_DefineBody> {
   }
 
   Future<void> _pickPdf(BuildContext context) async {
+    setState(() {
+      _isLoadingPdf = true;
+      _pdfProgress = null;
+    });
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['pdf'],
         withData: true,
       );
-      if (result == null || result.files.isEmpty) return;
+      if (result == null || result.files.isEmpty) {
+        if (context.mounted) setState(() => _isLoadingPdf = false);
+        return;
+      }
       final file = result.files.first;
       final bytes = file.bytes;
       if (bytes == null) {
         if (!context.mounted) return;
+        setState(() => _isLoadingPdf = false);
         showAdaptiveFeedback(context, 'Could not read file data');
         return;
       }
-      final text = await getIt<PdfExtractorService>().extractText(bytes);
+      final text = await getIt<PdfExtractorService>().extractText(
+        bytes,
+        onProgress: (current, total) {
+          if (mounted) setState(() => _pdfProgress = (current: current, total: total));
+        },
+      );
+      if (!mounted) return;
+      setState(() {
+        _isLoadingPdf = false;
+        _pdfProgress = null;
+      });
       if (text.trim().isEmpty) {
-        if (!context.mounted) return;
         showAdaptiveFeedback(
             context, 'PDF appears to be empty or contains only images');
         return;
       }
       _controller.text = text;
     } catch (e) {
-      if (!context.mounted) return;
+      if (!mounted) return;
+      setState(() {
+        _isLoadingPdf = false;
+        _pdfProgress = null;
+      });
       showAdaptiveFeedback(context, 'Failed to read PDF: $e');
     }
   }
@@ -100,9 +123,8 @@ class _DefineBodyState extends State<_DefineBody> {
                 },
               ),
               const SizedBox(width: 4),
-              const SizedBox(width: 4),
               _FeatureBarAction(
-                icon: Icons.picture_as_pdf_rounded,
+                icon: Icons.upload_file_rounded,
                 label: 'PDF',
                 color: fg,
                 onTap: () => _pickPdf(context),
@@ -156,7 +178,8 @@ class _DefineBodyState extends State<_DefineBody> {
                         DefineLoading() => const Center(
                             child: CircularProgressIndicator(),
                           ),
-                        DefineResultState(:final result) => FeatureResultCard(
+                        DefineResultState(:final result) =>
+                          FeatureResultCard(
                             text: result,
                             title: 'Summary',
                             inputExpanded: _inputExpanded,
@@ -186,7 +209,7 @@ class _FeatureBarAction extends StatelessWidget {
   final String label;
   final Color color;
   final Color? backgroundColor;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   const _FeatureBarAction({
     required this.icon,
     required this.label,
