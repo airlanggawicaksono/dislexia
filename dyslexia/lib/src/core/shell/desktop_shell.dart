@@ -19,6 +19,7 @@ import '../../features/define/presentation/pages/define_page.dart';
 import '../../features/professionalize/presentation/pages/professionalize_page.dart';
 import 'display_settings_panel.dart';
 import '../../features/sidebar/presentation/bloc/sidebar/sidebar_bloc.dart';
+import '../../features/sidebar/presentation/bloc/sidebar/sidebar_event.dart';
 import '../../features/sidebar/presentation/bloc/sidebar/sidebar_state.dart';
 import '../../features/sidebar/presentation/pages/sidebar_shell_page.dart';
 import '../../features/sidebar/presentation/widgets/placeholder_panel.dart';
@@ -97,11 +98,41 @@ class _DesktopShellState extends State<DesktopShell> {
                               builder: (context, constraints) {
                                 final compactSidebar = constraints.maxWidth <
                                     kSidebarIconBreakpoint;
-                                final hiddenSidebar = constraints.maxWidth <
+                                final bottomNav = constraints.maxWidth <
                                     kSidebarHiddenBreakpoint;
+                                final hiddenSidebar = bottomNav;
                                 final touchMode = constraints.maxWidth < 800;
                                 return BlocBuilder<SidebarBloc, SidebarState>(
                                   builder: (context, sidebar) {
+                                    if (bottomNav) {
+                                      return Column(
+                                        children: [
+                                          Expanded(
+                                            child: _settingsPanelOpen
+                                                ? DisplaySettingsPanel(
+                                                    onClose: () => setState(
+                                                        () => _settingsPanelOpen = false),
+                                                  )
+                                                : switch (sidebar.section) {
+                                                    SidebarSection.reader => const MainColumn(),
+                                                    SidebarSection.summarize =>
+                                                      const SummarizePage(),
+                                                    SidebarSection.define =>
+                                                      const DefinePage(),
+                                                    SidebarSection.professionalize =>
+                                                      const ProfessionalizePage(),
+                                                    _ => PlaceholderPanel(section: sidebar.section),
+                                                  },
+                                          ),
+                                          _BottomNavBar(
+                                            currentSection: sidebar.section,
+                                            onSectionSelected: (s) => context
+                                                .read<SidebarBloc>()
+                                                .add(SidebarSectionSelected(s)),
+                                          ),
+                                        ],
+                                      );
+                                    }
                                     if (_settingsPanelOpen && hiddenSidebar) {
                                       return Row(
                                         children: [
@@ -330,6 +361,44 @@ class _ShellHeaderBar extends StatelessWidget {
           const SizedBox(width: 4),
           const AuthUserMenu(),
         ],
+      ),
+    );
+  }
+}
+
+class _BottomNavBar extends StatelessWidget {
+  final SidebarSection currentSection;
+  final ValueChanged<SidebarSection> onSectionSelected;
+  const _BottomNavBar({required this.currentSection, required this.onSectionSelected});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final accent = const Color(0xFF3D5A99);
+    return Container(
+      height: 56,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        border: Border(top: BorderSide(color: theme.dividerColor.withValues(alpha: 0.5))),
+      ),
+      child: Row(
+        children: SidebarSection.values.map((section) {
+          final selected = currentSection == section;
+          final fg = selected ? accent : theme.colorScheme.onSurface.withValues(alpha: 0.6);
+          return Expanded(
+            child: InkWell(
+              onTap: () => onSectionSelected(section),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(section.materialIcon, size: 20, color: fg),
+                  const SizedBox(height: 2),
+                  Text(section.label, style: TextStyle(fontSize: 9, fontWeight: selected ? FontWeight.w600 : FontWeight.w500, color: fg), textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis),
+                ],
+              ),
+            ),
+          );
+        }).toList(),
       ),
     );
   }
