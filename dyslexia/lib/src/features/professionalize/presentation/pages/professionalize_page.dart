@@ -71,97 +71,104 @@ class _ProfessionalizeBodyState extends State<_ProfessionalizeBody> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Scaffold(
-      backgroundColor: theme.colorScheme.surface,
-      appBar: AppBar(
-        backgroundColor: theme.colorScheme.surface,
-        elevation: 0,
-        title: const Text('Professionalize'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            TextField(
-              controller: _controller,
-              maxLines: 8,
-              decoration: InputDecoration(
-                hintText: 'Type text to professionalize…',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Row(
+    return BlocBuilder<DisplaySettingsBloc, DisplaySettingsState>(
+      builder: (context, ds) {
+        final s = ds.settings;
+        final bg = bgColor(s.colorTheme);
+        final fg = fgColor(s.colorTheme);
+        return Scaffold(
+          backgroundColor: bg,
+          appBar: AppBar(
+            backgroundColor: bg,
+            elevation: 0,
+            title: Text('Professionalize', style: TextStyle(color: fg)),
+          ),
+          body: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Expanded(
-                  child: FilledButton.icon(
-                    onPressed: () {
-                      final text = _controller.text.trim();
-                      if (text.isNotEmpty) {
-                        context
-                            .read<ProfessionalizeBloc>()
-                            .add(ProfessionalizeTextEvent(text));
-                      }
-                    },
-                    icon: const Icon(Icons.auto_awesome),
-                    label: const Text('Professionalize'),
+                TextField(
+                  controller: _controller,
+                  maxLines: 8,
+                  decoration: InputDecoration(
+                    hintText: 'Type text to professionalize…',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
-                const SizedBox(width: 8),
-                OutlinedButton.icon(
-                  onPressed: () async {
-                    final data = await Clipboard.getData(Clipboard.kTextPlain);
-                    if (!context.mounted) return;
-                    final text = data?.text?.trim() ?? '';
-                    if (text.isEmpty) {
-                      showAdaptiveFeedback(
-                          context, 'Nothing found in clipboard');
-                      return;
-                    }
-                    _controller.text = text;
-                  },
-                  icon: const Icon(Icons.content_paste_rounded, size: 18),
-                  label: const Text('Paste'),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: FilledButton.icon(
+                        onPressed: () {
+                          final text = _controller.text.trim();
+                          if (text.isNotEmpty) {
+                            context
+                                .read<ProfessionalizeBloc>()
+                                .add(ProfessionalizeTextEvent(text));
+                          }
+                        },
+                        icon: const Icon(Icons.auto_awesome),
+                        label: const Text('Professionalize'),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    OutlinedButton.icon(
+                      onPressed: () async {
+                        final data =
+                            await Clipboard.getData(Clipboard.kTextPlain);
+                        if (!context.mounted) return;
+                        final text = data?.text?.trim() ?? '';
+                        if (text.isEmpty) {
+                          showAdaptiveFeedback(
+                              context, 'Nothing found in clipboard');
+                          return;
+                        }
+                        _controller.text = text;
+                      },
+                      icon: const Icon(Icons.content_paste_rounded, size: 18),
+                      label: const Text('Paste'),
+                    ),
+                    const SizedBox(width: 8),
+                    OutlinedButton.icon(
+                      onPressed: () => _pickPdf(context),
+                      icon: const Icon(Icons.picture_as_pdf_rounded, size: 18),
+                      label: const Text('PDF'),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                OutlinedButton.icon(
-                  onPressed: () => _pickPdf(context),
-                  icon: const Icon(Icons.picture_as_pdf_rounded, size: 18),
-                  label: const Text('PDF'),
+                const SizedBox(height: 24),
+                Expanded(
+                  child: BlocBuilder<ProfessionalizeBloc, ProfessionalizeState>(
+                    builder: (context, state) {
+                      return switch (state) {
+                        ProfessionalizeInitial() => const SizedBox(),
+                        ProfessionalizeLoading() => const Center(
+                            child: CircularProgressIndicator(),
+                          ),
+                        ProfessionalizeResultState(:final result) => _ResultCard(
+                            text: result,
+                            onClear: () => context
+                                .read<ProfessionalizeBloc>()
+                                .add(ClearProfessionalizeEvent()),
+                          ),
+                        ProfessionalizeErrorState(:final message) => Center(
+                            child: Text(message,
+                                style: const TextStyle(color: Colors.red)),
+                          ),
+                        _ => const SizedBox(),
+                      };
+                    },
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 24),
-            Expanded(
-              child: BlocBuilder<ProfessionalizeBloc, ProfessionalizeState>(
-                builder: (context, state) {
-                  return switch (state) {
-                    ProfessionalizeInitial() => const SizedBox(),
-                    ProfessionalizeLoading() => const Center(
-                        child: CircularProgressIndicator(),
-                      ),
-                    ProfessionalizeResultState(:final result) => _ResultCard(
-                        text: result,
-                        onClear: () => context
-                            .read<ProfessionalizeBloc>()
-                            .add(ClearProfessionalizeEvent()),
-                      ),
-                    ProfessionalizeErrorState(:final message) => Center(
-                        child: Text(message,
-                            style: const TextStyle(color: Colors.red)),
-                      ),
-                    _ => const SizedBox(),
-                  };
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }
@@ -173,45 +180,44 @@ class _ResultCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
+    return BlocBuilder<DisplaySettingsBloc, DisplaySettingsState>(
+      builder: (context, ds) {
+        final s = ds.settings;
+        final fg = fgColor(s.colorTheme);
+        return Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Icon(Icons.auto_awesome, size: 18),
-                const SizedBox(width: 8),
-                const Text('Summary',
-                    style:
-                        TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
-                const Spacer(),
-                IconButton(
-                  tooltip: 'Copy to clipboard',
-                  icon: const Icon(Icons.copy_rounded, size: 18),
-                  onPressed: () {
-                    Clipboard.setData(ClipboardData(text: text));
-                    showAdaptiveFeedback(context, 'Copied to clipboard');
-                  },
+                Row(
+                  children: [
+                    const Icon(Icons.auto_awesome, size: 18),
+                    const SizedBox(width: 8),
+                    const Text('Summary',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w600, fontSize: 15)),
+                    const Spacer(),
+                    IconButton(
+                      tooltip: 'Copy to clipboard',
+                      icon: const Icon(Icons.copy_rounded, size: 18),
+                      onPressed: () {
+                        Clipboard.setData(ClipboardData(text: text));
+                        showAdaptiveFeedback(context, 'Copied to clipboard');
+                      },
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, size: 18),
+                      onPressed: onClear,
+                    ),
+                  ],
                 ),
-                IconButton(
-                  icon: const Icon(Icons.close, size: 18),
-                  onPressed: onClear,
-                ),
-              ],
-            ),
-            const Divider(),
-            Expanded(
-              child: SingleChildScrollView(
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: BlocBuilder<DisplaySettingsBloc,
-                      DisplaySettingsState>(
-                    builder: (context, ds) {
-                      final s = ds.settings;
-                      final fg = fgColor(s.colorTheme);
-                      return Text(
+                const Divider(),
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: Text(
                         text,
                         style: applyDyslexiaFont(
                           font: s.font,
@@ -223,15 +229,15 @@ class _ResultCard extends StatelessWidget {
                             wordSpacing: s.wordSpacing,
                           ),
                         ),
-                      );
-                    },
+                      ),
+                    ),
                   ),
                 ),
-              ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }
