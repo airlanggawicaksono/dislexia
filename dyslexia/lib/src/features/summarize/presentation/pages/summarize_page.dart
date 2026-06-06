@@ -33,6 +33,7 @@ class _SummarizeBody extends StatefulWidget {
 
 class _SummarizeBodyState extends State<_SummarizeBody> {
   final _controller = TextEditingController();
+  bool _inputExpanded = true;
 
   @override
   void dispose() {
@@ -124,17 +125,27 @@ class _SummarizeBodyState extends State<_SummarizeBody> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                TextField(
-                  controller: _controller,
-                  maxLines: 8,
-                  decoration: InputDecoration(
-                    hintText: 'Type text to summarize…',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
+                AnimatedSize(
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeInOut,
+                  child: _inputExpanded
+                      ? Column(
+                          children: [
+                            TextField(
+                              controller: _controller,
+                              maxLines: 8,
+                              decoration: InputDecoration(
+                                hintText: 'Type text to summarize…',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                          ],
+                        )
+                      : const SizedBox.shrink(),
                 ),
-                const SizedBox(height: 24),
                 Expanded(
                   child: BlocBuilder<SummarizeBloc, SummarizeState>(
                     builder: (context, state) {
@@ -145,9 +156,9 @@ class _SummarizeBodyState extends State<_SummarizeBody> {
                           ),
                         SummarizeResultState(:final result) => _ResultCard(
                             text: result,
-                            onClear: () => context
-                                .read<SummarizeBloc>()
-                                .add(ClearSummarizeEvent()),
+                            inputExpanded: _inputExpanded,
+                            onToggleInput: () => setState(
+                                () => _inputExpanded = !_inputExpanded),
                           ),
                         SummarizeErrorState(:final message) => Center(
                             child: Text(message,
@@ -211,8 +222,13 @@ class _FeatureBarAction extends StatelessWidget {
 
 class _ResultCard extends StatelessWidget {
   final String text;
-  final VoidCallback onClear;
-  const _ResultCard({required this.text, required this.onClear});
+  final VoidCallback onToggleInput;
+  final bool inputExpanded;
+  const _ResultCard({
+    required this.text,
+    required this.onToggleInput,
+    required this.inputExpanded,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -239,16 +255,24 @@ class _ResultCard extends StatelessWidget {
                             fontWeight: FontWeight.w600, fontSize: 15)),
                     const Spacer(),
                     IconButton(
+                      tooltip: inputExpanded
+                          ? 'Hide input'
+                          : 'Show input',
+                      icon: Icon(
+                        inputExpanded
+                            ? Icons.unfold_less_rounded
+                            : Icons.unfold_more_rounded,
+                        size: 18,
+                      ),
+                      onPressed: onToggleInput,
+                    ),
+                    IconButton(
                       tooltip: 'Copy to clipboard',
                       icon: const Icon(Icons.copy_rounded, size: 18),
                       onPressed: () {
                         Clipboard.setData(ClipboardData(text: text));
                         showAdaptiveFeedback(context, 'Copied to clipboard');
                       },
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close, size: 18),
-                      onPressed: onClear,
                     ),
                   ],
                 ),
