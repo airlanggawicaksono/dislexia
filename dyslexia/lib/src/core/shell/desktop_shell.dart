@@ -19,16 +19,16 @@ import '../../features/define/presentation/pages/define_page.dart';
 import '../../features/professionalize/presentation/pages/professionalize_page.dart';
 import 'display_settings_panel.dart';
 import '../../features/sidebar/presentation/bloc/sidebar/sidebar_bloc.dart';
+import '../../features/sidebar/presentation/bloc/sidebar/sidebar_event.dart';
 import '../../features/sidebar/presentation/bloc/sidebar/sidebar_state.dart';
 import '../../features/sidebar/presentation/pages/sidebar_shell_page.dart';
 import '../../features/sidebar/presentation/widgets/placeholder_panel.dart';
 import '../../features/auth/presentation/widgets/auth_user_menu.dart';
 
-/// Width below which the shell switches to its compact layout:
-/// the typography/accessibility settings column is hidden and the
-/// feature canvas collapses to an icon-only rail so the reader gets
-/// the room it needs.
-const double kShellCompactBreakpoint = 800;
+/// Width below which the sidebar collapses to icon-only.
+const double kSidebarIconBreakpoint = 900;
+/// Width below which the sidebar is completely hidden.
+const double kSidebarHiddenBreakpoint = 700;
 
 /// 3-column desktop shell driven by [SidebarBloc]:
 ///   [ SidebarShellPage ] [ Main content ] [ DisplaySettingsPanel? ]
@@ -57,9 +57,7 @@ class DesktopShell extends StatefulWidget {
 }
 
 class _DesktopShellState extends State<DesktopShell> {
-  // Whether the right-hand DisplaySettingsPanel is shown. Toggled
-  // from the gear button in the shell's top bar. Defaults to open
-  // so users see the typography controls immediately on launch.
+  bool _bottomSettings = false;
   bool _settingsPanelOpen = true;
 
   @override
@@ -89,36 +87,92 @@ class _DesktopShellState extends State<DesktopShell> {
                       body: Column(
                         children: [
                           _ShellHeaderBar(
-                            settingsPanelOpen: _settingsPanelOpen,
+                            showGear: true,
                             onToggleSettings: () => setState(
                                 () => _settingsPanelOpen = !_settingsPanelOpen),
                           ),
                           Expanded(
-                            child: BlocBuilder<SidebarBloc, SidebarState>(
-                              builder: (context, sidebar) {
-                                return Row(
-                                  children: [
-                                    const SidebarShellPage(),
-                                    Expanded(
-                                      child: switch (sidebar.section) {
-                                        SidebarSection.reader => const MainColumn(),
-                                        SidebarSection.summarize =>
-                                          const SummarizePage(),
-                                        SidebarSection.define =>
-                                          const DefinePage(),
-                                        SidebarSection.professionalize =>
-                                          const ProfessionalizePage(),
-                                        _ => PlaceholderPanel(
-                                            section: sidebar.section,
+                            child: LayoutBuilder(
+                              builder: (context, constraints) {
+                                final compactSidebar = constraints.maxWidth <
+                                    kSidebarIconBreakpoint;
+                                final bottomNav = constraints.maxWidth <
+                                    kSidebarHiddenBreakpoint;
+                                final hiddenSidebar = bottomNav;
+                                final touchMode = constraints.maxWidth < 800;
+                                return BlocBuilder<SidebarBloc, SidebarState>(
+                                  builder: (context, sidebar) {
+                                    if (bottomNav) {
+                                      return Column(
+                                        children: [
+                                          Expanded(
+                                              child: _bottomSettings
+                                                  ? DisplaySettingsPanel(
+                                                      onClose: () => setState(
+                                                          () => _bottomSettings = false),
+                                                    )
+                                                : switch (sidebar.section) {
+                                                    SidebarSection.reader => const MainColumn(),
+                                                    SidebarSection.summarize =>
+                                                      const SummarizePage(),
+                                                    SidebarSection.define =>
+                                                      const DefinePage(),
+                                                    SidebarSection.professionalize =>
+                                                      const ProfessionalizePage(),
+                                                    _ => PlaceholderPanel(section: sidebar.section),
+                                                  },
                                           ),
-                                      },
-                                    ),
-                                    if (_settingsPanelOpen)
-                                      DisplaySettingsPanel(
-                                        onClose: () => setState(
-                                            () => _settingsPanelOpen = false),
-                                      ),
-                                  ],
+                                          _BottomNavBar(
+                                            currentSection: sidebar.section,
+                                            showSettings: _bottomSettings,
+                                            onSectionSelected: (s) => context
+                                                .read<SidebarBloc>()
+                                                .add(SidebarSectionSelected(s)),
+                                            onToggleSettings: () => setState(
+                                                () => _bottomSettings = !_bottomSettings),
+                                          ),
+                                        ],
+                                      );
+                                    }
+                                    if (_bottomSettings && hiddenSidebar) {
+                                      return Row(
+                                        children: [
+                                          Expanded(
+                                            child: DisplaySettingsPanel(
+                                              onClose: () => setState(
+                                                  () => _bottomSettings = false),
+                                            ),
+                                          ),
+                                        ],
+                                      );
+                                    }
+                                    return Row(
+                                      children: [
+                                        if (!hiddenSidebar)
+                                          SidebarShellPage(
+                                              compact: compactSidebar, touchMode: touchMode),
+                                        Expanded(
+                                          child: switch (sidebar.section) {
+                                            SidebarSection.reader => const MainColumn(),
+                                            SidebarSection.summarize =>
+                                              const SummarizePage(),
+                                            SidebarSection.define =>
+                                              const DefinePage(),
+                                            SidebarSection.professionalize =>
+                                              const ProfessionalizePage(),
+                                            _ => PlaceholderPanel(
+                                                section: sidebar.section,
+                                              ),
+                                          },
+                                        ),
+                                        if (!hiddenSidebar && _settingsPanelOpen)
+                                          DisplaySettingsPanel(
+                                            onClose: () => setState(
+                                                () => _settingsPanelOpen = false),
+                                          ),
+                                      ],
+                                    );
+                                  },
                                 );
                               },
                             ),
@@ -265,21 +319,17 @@ class _PdfProgressOverlay extends StatelessWidget {
 
 /// Slim top bar that sits above the 3-column body. Hosts the
 /// [DisplaySettingsPanel] toggle (gear icon) and the [AuthUserMenu]
-/// on the right edge.
+/// on the right edge. The gear button is only shown on wider screens
+/// (>= 700px) — on narrow screens the settings toggle lives in the
+/// bottom nav bar.
 class _ShellHeaderBar extends StatelessWidget {
-  final bool settingsPanelOpen;
-  final VoidCallback onToggleSettings;
-  const _ShellHeaderBar({
-    required this.settingsPanelOpen,
-    required this.onToggleSettings,
-  });
+  final bool showGear;
+  final VoidCallback? onToggleSettings;
+  const _ShellHeaderBar({this.showGear = false, this.onToggleSettings});
 
   @override
   Widget build(BuildContext context) {
-    final muted = Theme.of(context)
-        .colorScheme
-        .onSurface
-        .withValues(alpha: 0.6);
+    final screenW = MediaQuery.of(context).size.width;
     return Container(
       height: 40,
       padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -294,19 +344,75 @@ class _ShellHeaderBar extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          IconButton(
-            tooltip: settingsPanelOpen
-                ? 'Hide display settings'
-                : 'Show display settings',
-            icon: Icon(
-              settingsPanelOpen ? Icons.tune : Icons.tune_outlined,
-              color: muted,
-              size: 20,
+          if (showGear && screenW >= kSidebarHiddenBreakpoint)
+            IconButton(
+              tooltip: 'Toggle display settings',
+              icon: Icon(Icons.tune_outlined, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6), size: 20),
+              onPressed: onToggleSettings,
             ),
-            onPressed: onToggleSettings,
-          ),
           const SizedBox(width: 4),
           const AuthUserMenu(),
+        ],
+      ),
+    );
+  }
+}
+
+class _BottomNavBar extends StatelessWidget {
+  final SidebarSection currentSection;
+  final bool showSettings;
+  final ValueChanged<SidebarSection> onSectionSelected;
+  final VoidCallback onToggleSettings;
+  const _BottomNavBar({
+    required this.currentSection,
+    required this.showSettings,
+    required this.onSectionSelected,
+    required this.onToggleSettings,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final accent = const Color(0xFF3D5A99);
+    final muted = theme.colorScheme.onSurface.withValues(alpha: 0.6);
+    return Container(
+      height: 56,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        border: Border(top: BorderSide(color: theme.dividerColor.withValues(alpha: 0.5))),
+      ),
+      child: Row(
+        children: [
+          ...SidebarSection.values.map((section) {
+            final selected = currentSection == section;
+            final fg = selected ? accent : muted;
+            return Expanded(
+              child: InkWell(
+                onTap: () => onSectionSelected(section),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(section.materialIcon, size: 20, color: fg),
+                    const SizedBox(height: 2),
+                    Text(section.label, style: TextStyle(fontSize: 9, fontWeight: selected ? FontWeight.w600 : FontWeight.w500, color: fg), textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis),
+                  ],
+                ),
+              ),
+            );
+          }),
+          Expanded(
+            child: InkWell(
+              onTap: onToggleSettings,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(showSettings ? Icons.tune : Icons.tune_outlined, size: 20, color: showSettings ? accent : muted),
+                  const SizedBox(height: 2),
+                  Text('Settings', style: TextStyle(fontSize: 9, fontWeight: showSettings ? FontWeight.w600 : FontWeight.w500, color: showSettings ? accent : muted), textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );

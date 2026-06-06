@@ -69,9 +69,7 @@ class _SummarizeBodyState extends State<_SummarizeBody> {
       final text = await getIt<PdfExtractorService>().extractText(
         bytes,
         onProgress: (current, total) {
-          if (mounted) {
-            setState(() => _pdfProgress = (current: current, total: total));
-          }
+          if (mounted) setState(() => _pdfProgress = (current: current, total: total));
         },
       );
       if (!mounted) return;
@@ -80,8 +78,7 @@ class _SummarizeBodyState extends State<_SummarizeBody> {
         _pdfProgress = null;
       });
       if (text.trim().isEmpty) {
-        showAdaptiveFeedback(
-            context, 'PDF appears to be empty or contains only images');
+        showAdaptiveFeedback(context, 'PDF appears to be empty or contains only images');
         return;
       }
       _controller.text = text;
@@ -107,6 +104,7 @@ class _SummarizeBodyState extends State<_SummarizeBody> {
           appBar: AppBar(
             backgroundColor: bg,
             elevation: 0,
+            centerTitle: false,
             title: Text('Summarize', style: TextStyle(color: fg)),
             actions: [
               _FeatureBarAction(
@@ -144,91 +142,86 @@ class _SummarizeBodyState extends State<_SummarizeBody> {
                   }
                 },
               ),
-              const SizedBox(width: 24),
+              const SizedBox(width: 12),
             ],
           ),
-          body: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                AnimatedSize(
-                  duration: const Duration(milliseconds: 250),
-                  curve: Curves.easeInOut,
-                  child: _inputExpanded
-                      ? Column(
-                          children: [
-                            TextField(
-                              controller: _controller,
-                              maxLines: 8,
-                              style: TextStyle(color: fg),
-                              decoration: InputDecoration(
-                                hintText: 'Type text to summarize…',
-                                hintStyle:
-                                    TextStyle(color: fg.withValues(alpha: 0.4)),
-                                fillColor: fg.withValues(alpha: 0.06),
-                                filled: true,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(
-                                      color: fg.withValues(alpha: 0.2)),
+          body: LayoutBuilder(
+            builder: (context, constraints) {
+              final pad = constraints.maxWidth < 600 ? 12.0 : 24.0;
+              return Padding(
+                padding: EdgeInsets.all(pad),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    AnimatedSize(
+                      duration: const Duration(milliseconds: 250),
+                      curve: Curves.easeInOut,
+                      child: _inputExpanded
+                          ? Column(
+                              children: [
+                                TextField(
+                                  controller: _controller,
+                                  maxLines: constraints.maxWidth < 600 ? 4 : 8,
+                                  style: TextStyle(color: fg),
+                                  decoration: InputDecoration(
+                                    hintText: 'Type text to summarize…',
+                                    hintStyle: TextStyle(color: fg.withValues(alpha: 0.4)),
+                                    fillColor: fg.withValues(alpha: 0.06),
+                                    filled: true,
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide(color: fg.withValues(alpha: 0.2)),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide(color: fg.withValues(alpha: 0.2)),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide(color: fg, width: 1.5),
+                                    ),
+                                  ),
                                 ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(
-                                      color: fg.withValues(alpha: 0.2)),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(color: fg, width: 1.5),
-                                ),
+                                SizedBox(height: pad),
+                              ],
+                            )
+                          : const SizedBox.shrink(),
+                    ),
+                    Expanded(
+                      child: BlocBuilder<SummarizeBloc, SummarizeState>(
+                        builder: (context, state) {
+                          return switch (state) {
+                            SummarizeInitial() => _PlaceholderCard(
+                                icon: Icons.auto_awesome,
+                                title: 'Summarize',
+                                description: 'Paste or type text above, then tap Summarize to generate a concise summary.',
+                                fgColor: fg,
                               ),
-                            ),
-                            const SizedBox(height: 24),
-                          ],
-                        )
-                      : const SizedBox.shrink(),
+                            SummarizeLoading() => const Center(child: CircularProgressIndicator()),
+                            SummarizeResultState(:final result) =>
+                              FeatureResultCard(
+                                text: result,
+                                title: 'Summary',
+                                inputExpanded: _inputExpanded,
+                                onToggleInput: () => setState(() => _inputExpanded = !_inputExpanded),
+                                onClear: () {
+                                  setState(() => _inputExpanded = true);
+                                  _controller.clear();
+                                  context.read<SummarizeBloc>().add(ClearSummarizeEvent());
+                                },
+                              ),
+                            SummarizeErrorState(:final message) => Center(
+                                child: Text(message, style: const TextStyle(color: Colors.red)),
+                              ),
+                            _ => const SizedBox(),
+                          };
+                        },
+                      ),
+                    ),
+                  ],
                 ),
-                Expanded(
-                  child: BlocBuilder<SummarizeBloc, SummarizeState>(
-                    builder: (context, state) {
-                      return switch (state) {
-                        SummarizeInitial() => _PlaceholderCard(
-                            icon: Icons.auto_awesome,
-                            title: 'Summarize',
-                            description:
-                                'Paste or type text above, then tap Summarize to generate a concise summary.',
-                            fgColor: fg,
-                          ),
-                        SummarizeLoading() => const Center(
-                            child: CircularProgressIndicator(),
-                          ),
-                        SummarizeResultState(:final result) =>
-                          FeatureResultCard(
-                            text: result,
-                            title: 'Summary',
-                            inputExpanded: _inputExpanded,
-                            onToggleInput: () => setState(
-                                () => _inputExpanded = !_inputExpanded),
-                            onClear: () {
-                              setState(() => _inputExpanded = true);
-                              _controller.clear();
-                              context
-                                  .read<SummarizeBloc>()
-                                  .add(ClearSummarizeEvent());
-                            },
-                          ),
-                        SummarizeErrorState(:final message) => Center(
-                            child: Text(message,
-                                style: const TextStyle(color: Colors.red)),
-                          ),
-                        _ => const SizedBox(),
-                      };
-                    },
-                  ),
-                ),
-              ],
-            ),
+              );
+            },
           ),
         );
       },
@@ -266,13 +259,11 @@ class _PlaceholderCard extends StatelessWidget {
               Icon(icon, size: 48, color: fg.withValues(alpha: 0.3)),
               const SizedBox(height: 16),
               Text(title,
-                  style: TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.w600, color: fg)),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: fg)),
               const SizedBox(height: 8),
               Text(description,
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                      fontSize: 13, color: fg.withValues(alpha: 0.6))),
+                  style: TextStyle(fontSize: 13, color: fg.withValues(alpha: 0.6))),
             ],
           ),
         ),
@@ -312,8 +303,7 @@ class _FeatureBarAction extends StatelessWidget {
               const SizedBox(width: 4),
               Text(
                 label,
-                style: TextStyle(
-                    fontSize: 11, fontWeight: FontWeight.w600, color: color),
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color),
               ),
             ],
           ),
