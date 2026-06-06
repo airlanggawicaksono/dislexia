@@ -1,9 +1,11 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../configs/injector/injector_conf.dart';
 import '../../../../core/widgets/adaptive/adaptive.dart';
+import '../../../upload/data/datasources/pdf_extractor_service.dart';
 import '../bloc/summarize_bloc.dart';
 import '../bloc/summarize_event.dart';
 import '../bloc/summarize_state.dart';
@@ -33,6 +35,35 @@ class _SummarizeBodyState extends State<_SummarizeBody> {
   void dispose() {
     _controller.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickPdf(BuildContext context) async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf'],
+        withData: true,
+      );
+      if (result == null || result.files.isEmpty) return;
+      final file = result.files.first;
+      final bytes = file.bytes;
+      if (bytes == null) {
+        if (!context.mounted) return;
+        showAdaptiveFeedback(context, 'Could not read file data');
+        return;
+      }
+      final text = await getIt<PdfExtractorService>().extractText(bytes);
+      if (text.trim().isEmpty) {
+        if (!context.mounted) return;
+        showAdaptiveFeedback(
+            context, 'PDF appears to be empty or contains only images');
+        return;
+      }
+      _controller.text = text;
+    } catch (e) {
+      if (!context.mounted) return;
+      showAdaptiveFeedback(context, 'Failed to read PDF: $e');
+    }
   }
 
   @override
@@ -92,6 +123,12 @@ class _SummarizeBodyState extends State<_SummarizeBody> {
                   },
                   icon: const Icon(Icons.content_paste_rounded, size: 18),
                   label: const Text('Paste'),
+                ),
+                const SizedBox(width: 8),
+                OutlinedButton.icon(
+                  onPressed: () => _pickPdf(context),
+                  icon: const Icon(Icons.picture_as_pdf_rounded, size: 18),
+                  label: const Text('PDF'),
                 ),
               ],
             ),
