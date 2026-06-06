@@ -23,7 +23,7 @@ enum SidebarSection {
     materialIcon: Icons.translate_rounded,
   ),
   personalize(
-    label: 'Personalize',
+    label: 'Professionalize',
     cupertinoIcon: CupertinoIcons.person_crop_circle,
     materialIcon: Icons.tune_rounded,
   ),
