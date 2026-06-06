@@ -5,6 +5,7 @@ import '../../features/display_settings/di/display_settings_dependency.dart';
 import '../../features/lens/di/lens_dependency.dart';
 import '../../features/reader/di/reader_dependency.dart';
 import '../../features/scan_paste/di/scan_dependency.dart';
+import '../../features/summarize/di/summarize_dependency.dart';
 import '../../features/upload/di/upload_dependency.dart';
 import '../../core/blocs/theme/theme_bloc.dart';
 import '../../routes/app_route_conf.dart';
@@ -16,6 +17,7 @@ void configureDepedencies() {
   AuthDependency.init();
   DisplaySettingsDependency.init();
   UploadDependency.init();
+  SummarizeDependency.init();
   ScanDependency.init();
   LensDependency.init();
   ReaderDependency.init();

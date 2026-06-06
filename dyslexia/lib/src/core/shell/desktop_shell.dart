@@ -13,6 +13,8 @@ import '../../features/reader/presentation/bloc/reader_shell/reader_shell_bloc.d
 import '../../features/reader/presentation/bloc/reader_shell/reader_shell_event.dart';
 import '../../features/reader/presentation/bloc/reader_shell/reader_shell_state.dart';
 import '../../features/reader/presentation/pages/reader_page.dart';
+import '../../features/sidebar/domain/entities/sidebar_section.dart';
+import '../../features/summarize/presentation/pages/summarize_page.dart';
 import 'display_settings_panel.dart';
 import '../../features/sidebar/presentation/bloc/sidebar/sidebar_bloc.dart';
 import '../../features/sidebar/presentation/bloc/sidebar/sidebar_state.dart';
@@ -86,45 +88,30 @@ class _DesktopShellState extends State<DesktopShell> {
                         children: [
                           const _ShellHeaderBar(),
                           Expanded(
-                            child: LayoutBuilder(
-                              builder: (context, constraints) {
-                                final compact = constraints.maxWidth <
-                                    kShellCompactBreakpoint;
-                                return BlocBuilder<SidebarBloc, SidebarState>(
-                                  builder: (context, sidebar) {
-                                    final isImplemented =
-                                        sidebar.section.isImplemented;
-                                    return Row(
-                                      children: [
-                                        const SidebarShellPage(),
-                                        Expanded(
-                                          child: isImplemented
-                                              ? MainColumn(
-                                                  settingsPanelOpen:
-                                                      _settingsPanelOpen,
-                                                  onToggleSettings: () => setState(
-                                                      () => _settingsPanelOpen =
-                                                          !_settingsPanelOpen),
-                                                )
-                                              : PlaceholderPanel(
-                                                  section: sidebar.section,
-                                                ),
-                                        ),
-                                        // The settings panel is only
-                                        // visible on wide screens and
-                                        // when the user has toggled it
-                                        // on. The gear button in the top
-                                        // bar flips _settingsPanelOpen.
-                                        if (isImplemented &&
-                                            !compact &&
-                                            _settingsPanelOpen)
-                                          DisplaySettingsPanel(
-                                            onClose: () => setState(() =>
-                                                _settingsPanelOpen = false),
+                            child: BlocBuilder<SidebarBloc, SidebarState>(
+                              builder: (context, sidebar) {
+                                return Row(
+                                  children: [
+                                    const SidebarShellPage(),
+                                    Expanded(
+                                      child: switch (sidebar.section) {
+                                        SidebarSection.reader => MainColumn(
+                                            settingsPanelOpen:
+                                                _settingsPanelOpen,
+                                            onToggleSettings: () =>
+                                                setState(
+                                              () => _settingsPanelOpen =
+                                                  !_settingsPanelOpen,
+                                            ),
                                           ),
-                                      ],
-                                    );
-                                  },
+                                        SidebarSection.summarize =>
+                                          const SummarizePage(),
+                                        _ => PlaceholderPanel(
+                                            section: sidebar.section,
+                                          ),
+                                      },
+                                    ),
+                                  ],
                                 );
                               },
                             ),
@@ -192,26 +179,36 @@ class _MainColumnState extends State<MainColumn> {
   Widget build(BuildContext context) {
     return BlocBuilder<ReaderShellBloc, ReaderShellState>(
       builder: (context, state) {
-        return Stack(
+        return Row(
           children: [
-            if (state.showReader)
-              ReaderPage(
-                key: const ValueKey('reader'),
-                text: state.text,
-                sourceName: state.source,
-                onBack: _onBack,
-                settingsPanelOpen: widget.settingsPanelOpen,
-                onToggleSettings: widget.onToggleSettings,
-              )
-            else
-              // Empty state — no text loaded. The reader's AppBar is
-              // the only entry point (Paste / Upload PDF / Sample /
-              // manual input).
-              const SizedBox.expand(),
-            if (state.pdfProgress != null)
-              _PdfProgressOverlay(
-                current: state.pdfProgress!.current,
-                total: state.pdfProgress!.total,
+            Expanded(
+              child: Stack(
+                children: [
+                  if (state.showReader)
+                    ReaderPage(
+                      key: const ValueKey('reader'),
+                      text: state.text,
+                      sourceName: state.source,
+                      onBack: _onBack,
+                      settingsPanelOpen: widget.settingsPanelOpen,
+                      onToggleSettings: widget.onToggleSettings,
+                    )
+                  else
+                    const SizedBox.expand(),
+                  if (state.pdfProgress != null)
+                    _PdfProgressOverlay(
+                      current: state.pdfProgress!.current,
+                      total: state.pdfProgress!.total,
+                    ),
+                ],
+              ),
+            ),
+            // The settings panel is rendered inside the reader column
+            // so it only shows up when the Reader section is active.
+            // Toggled via the gear button in the reader's top bar.
+            if (widget.settingsPanelOpen)
+              DisplaySettingsPanel(
+                onClose: () => widget.onToggleSettings?.call(),
               ),
           ],
         );
