@@ -150,44 +150,33 @@ class _SummarizeBodyState extends State<_SummarizeBody> {
                       : const SizedBox.shrink(),
                 ),
                 Expanded(
-                  child: Stack(
-                    children: [
-                      BlocBuilder<SummarizeBloc, SummarizeState>(
-                        builder: (context, state) {
-                          return switch (state) {
-                            SummarizeInitial() => const SizedBox(),
-                            SummarizeLoading() => const Center(
-                                child: CircularProgressIndicator(),
-                              ),
-                            SummarizeResultState(:final result) =>
-                              _ResultCard(
-                                text: result,
-                                inputExpanded: _inputExpanded,
-                                onToggleInput: () => setState(
-                                    () => _inputExpanded = !_inputExpanded),
-                              ),
-                            SummarizeErrorState(:final message) => Center(
-                                child: Text(message,
-                                    style:
-                                        const TextStyle(color: Colors.red)),
-                              ),
-                            _ => const SizedBox(),
-                          };
-                        },
-                      ),
-                      if (s.rulerEnabled)
-                        MouseRegion(
-                          onHover: (e) => setState(
-                              () => _rulerY = e.localPosition.dy - 24),
-                          child: ReadingRuler(
-                            height: 48,
-                            foregroundColor: fg,
+                  child: BlocBuilder<SummarizeBloc, SummarizeState>(
+                    builder: (context, state) {
+                      return switch (state) {
+                        SummarizeInitial() => const SizedBox(),
+                        SummarizeLoading() => const Center(
+                            child: CircularProgressIndicator(),
+                          ),
+                        SummarizeResultState(:final result) =>
+                          _ResultCard(
+                            text: result,
+                            inputExpanded: _inputExpanded,
+                            onToggleInput: () => setState(
+                                () => _inputExpanded = !_inputExpanded),
+                            rulerEnabled: s.rulerEnabled,
                             rulerY: _rulerY,
-                            onPositionChanged: (y) =>
+                            fgColor: fg,
+                            onRulerChanged: (y) =>
                                 setState(() => _rulerY = y),
                           ),
-                        ),
-                    ],
+                        SummarizeErrorState(:final message) => Center(
+                            child: Text(message,
+                                style: const TextStyle(
+                                    color: Colors.red)),
+                          ),
+                        _ => const SizedBox(),
+                      };
+                    },
                   ),
                 ),
               ],
@@ -245,18 +234,26 @@ class _ResultCard extends StatelessWidget {
   final String text;
   final VoidCallback onToggleInput;
   final bool inputExpanded;
+  final bool rulerEnabled;
+  final double rulerY;
+  final Color fgColor;
+  final ValueChanged<double> onRulerChanged;
   const _ResultCard({
     required this.text,
     required this.onToggleInput,
     required this.inputExpanded,
+    this.rulerEnabled = false,
+    this.rulerY = 120,
+    required this.fgColor,
+    required this.onRulerChanged,
   });
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<DisplaySettingsBloc, DisplaySettingsState>(
+    final body = BlocBuilder<DisplaySettingsBloc, DisplaySettingsState>(
       builder: (context, ds) {
         final s = ds.settings;
-        final fg = fgColor(s.colorTheme);
+        final fg = fgColor;
         final displayText = s.syllablesEnabled ? syllabify(text) : text;
         return Container(
           decoration: BoxDecoration(
@@ -322,6 +319,32 @@ class _ResultCard extends StatelessWidget {
           ),
         );
       },
+    );
+
+    if (!rulerEnabled) return body;
+
+    return MouseRegion(
+      onHover: (e) => onRulerChanged(e.localPosition.dy),
+      child: Stack(
+        children: [
+          body,
+          IgnorePointer(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: SizedBox(
+                width: double.infinity,
+                height: double.infinity,
+                child: ReadingRuler(
+                  height: 48,
+                  foregroundColor: fgColor,
+                  rulerY: rulerY,
+                  onPositionChanged: onRulerChanged,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
