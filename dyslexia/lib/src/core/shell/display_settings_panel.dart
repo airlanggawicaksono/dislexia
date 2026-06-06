@@ -29,126 +29,121 @@ class DisplaySettingsPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<DisplaySettingsBloc, DisplaySettingsState>(
-      builder: (context, state) {
-        final bg = bgColor(state.settings.colorTheme);
-        final fg = fgColor(state.settings.colorTheme);
-        final s = state.settings;
-        final bloc = context.read<DisplaySettingsBloc>();
-        final borderColor = fg.withValues(alpha: 0.08);
+        builder: (context, state) {
+      final bg = bgColor(state.settings.colorTheme);
+      final fg = fgColor(state.settings.colorTheme);
+      final s = state.settings;
+      final bloc = context.read<DisplaySettingsBloc>();
+      final borderColor = fg.withValues(alpha: 0.08);
 
-        return LayoutBuilder(
-          builder: (context, constraints) {
-            final isFullWidth = constraints.maxWidth < 720;
-            return Container(
-          width: isFullWidth ? double.infinity : 248,
-          decoration: BoxDecoration(
-            color: bg,
-            border: Border(right: BorderSide(color: borderColor)),
-          ),
-          child: SafeArea(
-            child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Settings',
-                        style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: fg)),
-                    if (onClose != null)
-                      GestureDetector(
-                        onTap: onClose,
-                        child: Icon(Icons.close,
-                            size: 18, color: fg.withValues(alpha: 0.5)),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                _Label(title: 'FONT', color: fg.withValues(alpha: 0.5)),
-                SizedBox(
-                  height: 88,
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
-                    children: _fontOptions
-                        .map((f) => _FontChip(
-                            font: f,
-                            selected: s.font == f,
-                            onTap: () => bloc.add(UpdateFontEvent(f)),
-                            surfaceColor: fg.withValues(alpha: 0.08)))
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          final isFullWidth = constraints.maxWidth < 720;
+          return Container(
+            width: isFullWidth ? double.infinity : 248,
+            decoration: BoxDecoration(
+              color: bg,
+              border: Border(right: BorderSide(color: borderColor)),
+            ),
+            child: SafeArea(
+              child: ListView(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Settings',
+                          style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: fg)),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  _Label(title: 'FONT', color: fg.withValues(alpha: 0.5)),
+                  SizedBox(
+                    height: 88,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      children: _fontOptions
+                          .map((f) => _FontChip(
+                              font: f,
+                              selected: s.font == f,
+                              onTap: () => bloc.add(UpdateFontEvent(f)),
+                              surfaceColor: fg.withValues(alpha: 0.08)))
+                          .toList(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  _Label(title: 'COLOR', color: fg.withValues(alpha: 0.5)),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: AppColorTheme.values
+                        .map((t) => _ColorSwatch(
+                            theme: t,
+                            selected: s.colorTheme == t,
+                            onTap: () => bloc.add(UpdateColorThemeEvent(t))))
                         .toList(),
                   ),
-                ),
-                const SizedBox(height: 12),
-                _Label(title: 'COLOR', color: fg.withValues(alpha: 0.5)),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: AppColorTheme.values
-                      .map((t) => _ColorSwatch(
-                          theme: t,
-                          selected: s.colorTheme == t,
-                          onTap: () => bloc.add(UpdateColorThemeEvent(t))))
-                      .toList(),
-                ),
-                const SizedBox(height: 12),
-                _Label(title: 'TYPOGRAPHY', color: fg.withValues(alpha: 0.5)),
-                _MiniSlider(
-                    label: 'Size',
-                    value: s.fontSize,
-                    min: 12,
-                    max: 32,
-                    onChanged: (v) => bloc.add(UpdateFontSizeEvent(v)),
-                    fgColor: fg),
-                _MiniSlider(
-                    label: 'Line',
-                    value: s.lineSpacing,
-                    min: 1.0,
-                    max: 3.0,
-                    onChanged: (v) => bloc.add(UpdateLineSpacingEvent(v)),
-                    fgColor: fg),
-                _MiniSlider(
-                    label: 'Letter',
-                    value: s.letterSpacing,
-                    min: 0.0,
-                    max: 2.0,
-                    onChanged: (v) => bloc.add(UpdateLetterSpacingEvent(v)),
-                    fgColor: fg),
-                _MiniSlider(
-                    label: 'Word',
-                    value: s.wordSpacing,
-                    min: 0.0,
-                    max: 8.0,
-                    onChanged: (v) => bloc.add(UpdateWordSpacingEvent(v)),
-                    fgColor: fg),
-                const SizedBox(height: 12),
-                _Label(
-                    title: 'ACCESSIBILITY', color: fg.withValues(alpha: 0.5)),
-                _ToggleRow(
-                  label: 'Reading Ruler',
-                  value: s.rulerEnabled,
-                  onToggle: () => bloc.add(ToggleRulerEvent()),
-                  fgColor: fg,
-                ),
-                const SizedBox(height: 4),
-                _ToggleRow(
-                  label: 'Syllable Dots',
-                  value: s.syllablesEnabled,
-                  onToggle: () => bloc.add(ToggleSyllablesEvent()),
-                  fgColor: fg,
-                ),
-                const SizedBox(height: 12),
-                _Label(title: 'PRESETS', color: fg.withValues(alpha: 0.5)),
-                ...DisplayPreset.values.map((p) => _PresetChip(
-                    label: _presetName(p),
-                    selected: s.preset == p,
-                    onTap: () => bloc.add(ApplyPresetEvent(p)),
-                    surfaceColor: fg.withValues(alpha: 0.08))),
-                const SizedBox(height: 12),
-              ],
+                  const SizedBox(height: 12),
+                  _Label(title: 'TYPOGRAPHY', color: fg.withValues(alpha: 0.5)),
+                  _MiniSlider(
+                      label: 'Size',
+                      value: s.fontSize,
+                      min: 12,
+                      max: 32,
+                      onChanged: (v) => bloc.add(UpdateFontSizeEvent(v)),
+                      fgColor: fg),
+                  _MiniSlider(
+                      label: 'Line',
+                      value: s.lineSpacing,
+                      min: 1.0,
+                      max: 3.0,
+                      onChanged: (v) => bloc.add(UpdateLineSpacingEvent(v)),
+                      fgColor: fg),
+                  _MiniSlider(
+                      label: 'Letter',
+                      value: s.letterSpacing,
+                      min: 0.0,
+                      max: 2.0,
+                      onChanged: (v) => bloc.add(UpdateLetterSpacingEvent(v)),
+                      fgColor: fg),
+                  _MiniSlider(
+                      label: 'Word',
+                      value: s.wordSpacing,
+                      min: 0.0,
+                      max: 8.0,
+                      onChanged: (v) => bloc.add(UpdateWordSpacingEvent(v)),
+                      fgColor: fg),
+                  const SizedBox(height: 12),
+                  _Label(
+                      title: 'ACCESSIBILITY', color: fg.withValues(alpha: 0.5)),
+                  _ToggleRow(
+                    label: 'Reading Ruler',
+                    value: s.rulerEnabled,
+                    onToggle: () => bloc.add(ToggleRulerEvent()),
+                    fgColor: fg,
+                  ),
+                  const SizedBox(height: 4),
+                  _ToggleRow(
+                    label: 'Syllable Dots',
+                    value: s.syllablesEnabled,
+                    onToggle: () => bloc.add(ToggleSyllablesEvent()),
+                    fgColor: fg,
+                  ),
+                  const SizedBox(height: 12),
+                  _Label(title: 'PRESETS', color: fg.withValues(alpha: 0.5)),
+                  ...DisplayPreset.values.map((p) => _PresetChip(
+                      label: _presetName(p),
+                      selected: s.preset == p,
+                      onTap: () => bloc.add(ApplyPresetEvent(p)),
+                      surfaceColor: fg.withValues(alpha: 0.08))),
+                  const SizedBox(height: 12),
+                ],
+              ),
             ),
-          ),
           );
         },
       );
