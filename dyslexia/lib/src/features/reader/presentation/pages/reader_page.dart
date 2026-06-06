@@ -6,111 +6,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../configs/injector/injector_conf.dart';
 import '../../../../core/constants/sample_text.dart';
 import '../../../../core/utils/font_utils.dart';
+import '../../../../core/widgets/reader_text_display.dart';
 import '../../../display_settings/presentation/bloc/display_settings/display_settings_bloc.dart';
 import '../../../display_settings/presentation/theme/display_colors.dart';
 import '../../../upload/data/datasources/pdf_extractor_service.dart';
-import '../../data/syllabifier.dart';
-import '../../../../core/widgets/ruler/reading_ruler.dart';
 import '../bloc/reader/reader_bloc.dart';
 import '../bloc/reader/reader_event.dart';
 import '../bloc/reader_shell/reader_shell_bloc.dart';
 import '../bloc/reader_shell/reader_shell_event.dart';
-
-class _WordHighlightText extends StatefulWidget {
-  final String text;
-  final TextStyle style;
-  final double maxWidth;
-
-  const _WordHighlightText({
-    required this.text,
-    required this.style,
-    required this.maxWidth,
-  });
-
-  @override
-  State<_WordHighlightText> createState() => _WordHighlightTextState();
-}
-
-class _WordHighlightTextState extends State<_WordHighlightText> {
-  TextSelection _selection = const TextSelection.collapsed(offset: -1);
-
-  void _updateSelection(Offset localPosition) {
-    final painter = TextPainter(
-      text: TextSpan(text: widget.text, style: widget.style),
-      textDirection: TextDirection.ltr,
-    );
-    painter.layout(maxWidth: widget.maxWidth);
-
-    final index = painter.getPositionForOffset(localPosition).offset;
-
-    if (index >= widget.text.length ||
-        RegExp(r'\s').hasMatch(widget.text[index])) {
-      if (_selection.isValid) {
-        setState(() => _selection = const TextSelection.collapsed(offset: -1));
-      }
-      return;
-    }
-
-    int start = index;
-    while (start > 0 && !RegExp(r'\s').hasMatch(widget.text[start - 1])) {
-      start--;
-    }
-
-    int end = index;
-    while (
-        end < widget.text.length && !RegExp(r'\s').hasMatch(widget.text[end])) {
-      end++;
-    }
-
-    final newSelection = TextSelection(baseOffset: start, extentOffset: end);
-    if (newSelection != _selection) {
-      setState(() {
-        _selection = newSelection;
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      onHover: (event) => _updateSelection(event.localPosition),
-      onExit: (event) {
-        if (_selection.isValid) {
-          setState(() {
-            _selection = const TextSelection.collapsed(offset: -1);
-          });
-        }
-      },
-      child: Builder(builder: (context) {
-        if (!_selection.isValid) {
-          return RichText(
-              text: TextSpan(text: widget.text, style: widget.style));
-        }
-
-        final beforeText = widget.text.substring(0, _selection.start);
-        final selectedText =
-            widget.text.substring(_selection.start, _selection.end);
-        final afterText = widget.text.substring(_selection.end);
-
-        return RichText(
-          text: TextSpan(
-            style: widget.style,
-            children: [
-              TextSpan(text: beforeText),
-              TextSpan(
-                text: selectedText,
-                style: TextStyle(
-                  backgroundColor: widget.style.color!.withOpacity(0.12),
-                ),
-              ),
-              TextSpan(text: afterText),
-            ],
-          ),
-        );
-      }),
-    );
-  }
-}
 
 class ReaderPage extends StatefulWidget {
   final String text;
@@ -128,7 +31,6 @@ class ReaderPage extends StatefulWidget {
 }
 
 class _ReaderPageState extends State<ReaderPage> {
-  double _rulerY = 120.0;
   final _topbarController = TextEditingController();
   final _topbarFocusNode = FocusNode();
 
@@ -209,14 +111,9 @@ class _ReaderPageState extends State<ReaderPage> {
           final s = displayState.settings;
           final bg = bgColor(s.colorTheme);
           final fg = fgColor(s.colorTheme);
-          const rulerH = 48.0;
 
           return Scaffold(
             backgroundColor: bg,
-            // Top bar mirrors dyslexia-web's Topbar.jsx: back/leading
-            // on the left, a type-or-paste input in the middle, action
-            // buttons (Format, PDF, Sample) on the right, and a
-            // syllabification toggle at the far right.
             appBar: PreferredSize(
               preferredSize: const Size.fromHeight(56),
               child: Container(
@@ -358,67 +255,10 @@ class _ReaderPageState extends State<ReaderPage> {
                 ),
               ),
             ),
-            body: Stack(
-              children: [
-                MouseRegion(
-                  onHover: s.rulerEnabled
-                      ? (e) => setState(() => _rulerY = e.localPosition.dy)
-                      : null,
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(vertical: 28),
-                    child: Center(
-                      child: SizedBox(
-                        width: 740,
-                        // Use DisplaySettingsBloc.syllablesEnabled directly
-                        // to recompute the display text on the fly. The
-                        // ReaderBloc used to own a separate toggle that
-                        // drifted out of sync with the panel switch.
-                        child: Builder(
-                          builder: (context) {
-                            final displayText = s.syllablesEnabled
-                                ? syllabify(widget.text)
-                                : widget.text;
-                            final paragraphs = displayText
-                                .split('\n\n')
-                                .where((p) => p.trim().isNotEmpty)
-                                .toList();
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: paragraphs
-                                  .map((para) => Padding(
-                                        padding:
-                                            const EdgeInsets.only(bottom: 20),
-                                        child: _WordHighlightText(
-                                          text: para.trim(),
-                                          style: applyDyslexiaFont(
-                                            font: s.font,
-                                            baseStyle: TextStyle(
-                                              fontSize: s.fontSize,
-                                              color: fg,
-                                              height: s.lineSpacing,
-                                              letterSpacing: s.letterSpacing,
-                                              wordSpacing: s.wordSpacing,
-                                            ),
-                                          ),
-                                          maxWidth: 740,
-                                        ),
-                                      ))
-                                  .toList(),
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                if (s.rulerEnabled)
-                  ReadingRuler(
-                    height: rulerH,
-                    foregroundColor: fg,
-                    rulerY: _rulerY,
-                    onPositionChanged: (y) => setState(() => _rulerY = y),
-                  ),
-              ],
+            body: ReaderTextDisplay(
+              text: widget.text,
+              settings: s,
+              fgColor: fg,
             ),
           );
         },

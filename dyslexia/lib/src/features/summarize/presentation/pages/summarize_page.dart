@@ -162,8 +162,6 @@ class _SummarizeBodyState extends State<_SummarizeBody> {
                             text: result,
                             title: 'Summary',
                             inputExpanded: _inputExpanded,
-                            rulerEnabled: s.rulerEnabled,
-                            fgColor: fg,
                             onToggleInput: () => setState(
                                 () => _inputExpanded = !_inputExpanded),
                           ),
