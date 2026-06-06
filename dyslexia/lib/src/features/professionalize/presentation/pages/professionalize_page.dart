@@ -6,11 +6,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../configs/injector/injector_conf.dart';
 import '../../../../core/utils/font_utils.dart';
 import '../../../../core/widgets/adaptive/adaptive.dart';
+import '../../../../core/widgets/ruler/reading_ruler.dart';
 import '../../../display_settings/presentation/bloc/display_settings/display_settings_bloc.dart';
 import '../../../display_settings/presentation/theme/display_colors.dart';
 import '../../../reader/data/syllabifier.dart';
 import '../../../upload/data/datasources/pdf_extractor_service.dart';
-import '../../../../core/widgets/ruler/reading_ruler.dart';
 import '../bloc/professionalize_bloc.dart';
 import '../bloc/professionalize_event.dart';
 import '../bloc/professionalize_state.dart';
@@ -36,7 +36,6 @@ class _ProfessionalizeBody extends StatefulWidget {
 class _ProfessionalizeBodyState extends State<_ProfessionalizeBody> {
   final _controller = TextEditingController();
   bool _inputExpanded = true;
-  double _rulerY = 120.0;
 
   @override
   void dispose() {
@@ -96,7 +95,8 @@ class _ProfessionalizeBodyState extends State<_ProfessionalizeBody> {
                   if (!context.mounted) return;
                   final text = data?.text?.trim() ?? '';
                   if (text.isEmpty) {
-                    showAdaptiveFeedback(context, 'Nothing found in clipboard');
+                    showAdaptiveFeedback(
+                        context, 'Nothing found in clipboard');
                     return;
                   }
                   _controller.text = text;
@@ -117,7 +117,9 @@ class _ProfessionalizeBodyState extends State<_ProfessionalizeBody> {
                 onTap: () {
                   final text = _controller.text.trim();
                   if (text.isNotEmpty) {
-                    context.read<ProfessionalizeBloc>().add(ProfessionalizeTextEvent(text));
+                    context
+                        .read<ProfessionalizeBloc>()
+                        .add(ProfessionalizeTextEvent(text));
                   }
                 },
               ),
@@ -151,7 +153,6 @@ class _ProfessionalizeBodyState extends State<_ProfessionalizeBody> {
                 ),
                 Expanded(
                   child: BlocBuilder<ProfessionalizeBloc, ProfessionalizeState>(
-                    buildWhen: (_, __) => true,
                     builder: (context, state) {
                       return switch (state) {
                         ProfessionalizeInitial() => const SizedBox(),
@@ -162,18 +163,15 @@ class _ProfessionalizeBodyState extends State<_ProfessionalizeBody> {
                           _ResultCard(
                             text: result,
                             inputExpanded: _inputExpanded,
+                            rulerEnabled: s.rulerEnabled,
+                            fgColor: fg,
                             onToggleInput: () => setState(
                                 () => _inputExpanded = !_inputExpanded),
-                            rulerEnabled: s.rulerEnabled,
-                            rulerY: _rulerY,
-                            fgColor: fg,
-                            onRulerChanged: (y) =>
-                                setState(() => _rulerY = y),
                           ),
                         ProfessionalizeErrorState(:final message) => Center(
                             child: Text(message,
-                                style: const TextStyle(
-                                    color: Colors.red)),
+                                style:
+                                    const TextStyle(color: Colors.red)),
                           ),
                         _ => const SizedBox(),
                       };
@@ -189,8 +187,6 @@ class _ProfessionalizeBodyState extends State<_ProfessionalizeBody> {
   }
 }
 
-/// Compact icon-and-label button used inside feature AppBars.
-/// Mirrors the visual style of ReaderPage's _AppBarAction.
 class _FeatureBarAction extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -231,31 +227,34 @@ class _FeatureBarAction extends StatelessWidget {
   }
 }
 
-class _ResultCard extends StatelessWidget {
+class _ResultCard extends StatefulWidget {
   final String text;
   final VoidCallback onToggleInput;
   final bool inputExpanded;
   final bool rulerEnabled;
-  final double rulerY;
   final Color fgColor;
-  final ValueChanged<double> onRulerChanged;
   const _ResultCard({
     required this.text,
     required this.onToggleInput,
     required this.inputExpanded,
     this.rulerEnabled = false,
-    this.rulerY = 120,
     required this.fgColor,
-    required this.onRulerChanged,
   });
+
+  @override
+  State<_ResultCard> createState() => _ResultCardState();
+}
+
+class _ResultCardState extends State<_ResultCard> {
+  double _rulerY = 120.0;
 
   @override
   Widget build(BuildContext context) {
     final body = BlocBuilder<DisplaySettingsBloc, DisplaySettingsState>(
       builder: (context, ds) {
         final s = ds.settings;
-        final fg = fgColor;
-        final displayText = s.syllablesEnabled ? syllabify(text) : text;
+        final fg = widget.fgColor;
+        final displayText = s.syllablesEnabled ? syllabify(widget.text) : widget.text;
         return Container(
           decoration: BoxDecoration(
             color: fg.withValues(alpha: 0.06),
@@ -275,22 +274,23 @@ class _ResultCard extends StatelessWidget {
                             fontWeight: FontWeight.w600, fontSize: 15)),
                     const Spacer(),
                     IconButton(
-                      tooltip: inputExpanded
+                      tooltip: widget.inputExpanded
                           ? 'Hide input'
                           : 'Show input',
                       icon: Icon(
-                        inputExpanded
+                        widget.inputExpanded
                             ? Icons.unfold_less_rounded
                             : Icons.unfold_more_rounded,
                         size: 18,
                       ),
-                      onPressed: onToggleInput,
+                      onPressed: widget.onToggleInput,
                     ),
                     IconButton(
                       tooltip: 'Copy to clipboard',
                       icon: const Icon(Icons.copy_rounded, size: 18),
                       onPressed: () {
-                        Clipboard.setData(ClipboardData(text: text));
+                        Clipboard.setData(
+                            ClipboardData(text: widget.text));
                         showAdaptiveFeedback(context, 'Copied to clipboard');
                       },
                     ),
@@ -322,29 +322,24 @@ class _ResultCard extends StatelessWidget {
       },
     );
 
-    if (!rulerEnabled) return body;
+    if (!widget.rulerEnabled) return body;
 
-    return MouseRegion(
-      onHover: (e) => onRulerChanged(e.localPosition.dy),
-      child: Stack(
-        children: [
-          body,
-          IgnorePointer(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: SizedBox(
-                width: double.infinity,
-                height: double.infinity,
-                child: ReadingRuler(
-                  height: 48,
-                  foregroundColor: fgColor,
-                  rulerY: rulerY,
-                  onPositionChanged: onRulerChanged,
-                ),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: MouseRegion(
+        onHover: (e) => setState(() => _rulerY = e.localPosition.dy),
+        child: Stack(
+          children: [
+            body,
+            if (widget.rulerEnabled)
+              ReadingRuler(
+                height: 48,
+                foregroundColor: widget.fgColor,
+                rulerY: _rulerY,
+                onPositionChanged: (y) => setState(() => _rulerY = y),
               ),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
