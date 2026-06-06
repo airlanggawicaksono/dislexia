@@ -118,8 +118,7 @@ class _DefineBodyState extends State<_DefineBody> {
                   if (!context.mounted) return;
                   final text = data?.text?.trim() ?? '';
                   if (text.isEmpty) {
-                    showAdaptiveFeedback(
-                        context, 'Nothing found in clipboard');
+                    showAdaptiveFeedback(context, 'Nothing found in clipboard');
                     return;
                   }
                   _controller.text = text;
@@ -145,7 +144,7 @@ class _DefineBodyState extends State<_DefineBody> {
                   }
                 },
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 24),
             ],
           ),
           body: Padding(
@@ -204,13 +203,19 @@ class _DefineBodyState extends State<_DefineBody> {
                         DefineLoading() => const Center(
                             child: CircularProgressIndicator(),
                           ),
-                        DefineResultState(:final result) =>
-                          FeatureResultCard(
+                        DefineResultState(:final result) => FeatureResultCard(
                             text: result,
                             title: 'Summary',
                             inputExpanded: _inputExpanded,
                             onToggleInput: () => setState(
                                 () => _inputExpanded = !_inputExpanded),
+                            onClear: () {
+                              setState(() => _inputExpanded = true);
+                              _controller.clear();
+                              context
+                                  .read<DefineBloc>()
+                                  .add(ClearDefineEvent());
+                            },
                           ),
                         DefineErrorState(:final message) => Center(
                             child: Text(message,
@@ -261,9 +266,7 @@ class _PlaceholderCard extends StatelessWidget {
               const SizedBox(height: 16),
               Text(title,
                   style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: fg)),
+                      fontSize: 18, fontWeight: FontWeight.w600, color: fg)),
               const SizedBox(height: 8),
               Text(description,
                   textAlign: TextAlign.center,

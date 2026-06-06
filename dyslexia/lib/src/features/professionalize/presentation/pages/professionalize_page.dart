@@ -118,8 +118,7 @@ class _ProfessionalizeBodyState extends State<_ProfessionalizeBody> {
                   if (!context.mounted) return;
                   final text = data?.text?.trim() ?? '';
                   if (text.isEmpty) {
-                    showAdaptiveFeedback(
-                        context, 'Nothing found in clipboard');
+                    showAdaptiveFeedback(context, 'Nothing found in clipboard');
                     return;
                   }
                   _controller.text = text;
@@ -141,7 +140,9 @@ class _ProfessionalizeBodyState extends State<_ProfessionalizeBody> {
                 onTap: () {
                   final text = _controller.text.trim();
                   if (text.isNotEmpty) {
-                    context.read<ProfessionalizeBloc>().add(ProfessionalizeTextEvent(text));
+                    context
+                        .read<ProfessionalizeBloc>()
+                        .add(ProfessionalizeTextEvent(text));
                   }
                 },
               ),
@@ -211,6 +212,13 @@ class _ProfessionalizeBodyState extends State<_ProfessionalizeBody> {
                             inputExpanded: _inputExpanded,
                             onToggleInput: () => setState(
                                 () => _inputExpanded = !_inputExpanded),
+                            onClear: () {
+                              setState(() => _inputExpanded = true);
+                              _controller.clear();
+                              context
+                                  .read<ProfessionalizeBloc>()
+                                  .add(ClearProfessionalizeEvent());
+                            },
                           ),
                         ProfessionalizeErrorState(:final message) => Center(
                             child: Text(message,
@@ -261,9 +269,7 @@ class _PlaceholderCard extends StatelessWidget {
               const SizedBox(height: 16),
               Text(title,
                   style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: fg)),
+                      fontSize: 18, fontWeight: FontWeight.w600, color: fg)),
               const SizedBox(height: 8),
               Text(description,
                   textAlign: TextAlign.center,

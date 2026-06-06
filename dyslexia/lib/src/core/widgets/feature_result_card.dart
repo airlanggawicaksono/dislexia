@@ -11,6 +11,7 @@ class FeatureResultCard extends StatelessWidget {
   final String text;
   final String title;
   final VoidCallback onToggleInput;
+  final VoidCallback? onClear;
   final bool inputExpanded;
 
   const FeatureResultCard({
@@ -18,6 +19,7 @@ class FeatureResultCard extends StatelessWidget {
     required this.text,
     required this.title,
     required this.onToggleInput,
+    this.onClear,
     required this.inputExpanded,
   });
 
@@ -45,6 +47,12 @@ class FeatureResultCard extends StatelessWidget {
                     style: TextStyle(
                         fontWeight: FontWeight.w600, fontSize: 15, color: fg)),
                 const Spacer(),
+                if (onClear != null)
+                  IconButton(
+                    tooltip: 'Clear',
+                    icon: Icon(Icons.close_rounded, size: 18, color: fg),
+                    onPressed: onClear,
+                  ),
                 IconButton(
                   tooltip: inputExpanded ? 'Hide input' : 'Show input',
                   icon: Icon(
