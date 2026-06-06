@@ -57,10 +57,7 @@ class DesktopShell extends StatefulWidget {
 }
 
 class _DesktopShellState extends State<DesktopShell> {
-  // Whether the right-hand DisplaySettingsPanel is shown. Toggled
-  // from the gear button in the shell's top bar. Defaults to open
-  // so users see the typography controls immediately on launch.
-  bool _settingsPanelOpen = true;
+  bool _bottomSettings = false;
 
   @override
   Widget build(BuildContext context) {
@@ -88,11 +85,7 @@ class _DesktopShellState extends State<DesktopShell> {
                     home: Scaffold(
                       body: Column(
                         children: [
-                          _ShellHeaderBar(
-                            settingsPanelOpen: _settingsPanelOpen,
-                            onToggleSettings: () => setState(
-                                () => _settingsPanelOpen = !_settingsPanelOpen),
-                          ),
+                          _ShellHeaderBar(),
                           Expanded(
                             child: LayoutBuilder(
                               builder: (context, constraints) {
@@ -108,11 +101,11 @@ class _DesktopShellState extends State<DesktopShell> {
                                       return Column(
                                         children: [
                                           Expanded(
-                                            child: _settingsPanelOpen
-                                                ? DisplaySettingsPanel(
-                                                    onClose: () => setState(
-                                                        () => _settingsPanelOpen = false),
-                                                  )
+                                              child: _bottomSettings
+                                                  ? DisplaySettingsPanel(
+                                                      onClose: () => setState(
+                                                          () => _bottomSettings = false),
+                                                    )
                                                 : switch (sidebar.section) {
                                                     SidebarSection.reader => const MainColumn(),
                                                     SidebarSection.summarize =>
@@ -126,20 +119,23 @@ class _DesktopShellState extends State<DesktopShell> {
                                           ),
                                           _BottomNavBar(
                                             currentSection: sidebar.section,
+                                            showSettings: _bottomSettings,
                                             onSectionSelected: (s) => context
                                                 .read<SidebarBloc>()
                                                 .add(SidebarSectionSelected(s)),
+                                            onToggleSettings: () => setState(
+                                                () => _bottomSettings = !_bottomSettings),
                                           ),
                                         ],
                                       );
                                     }
-                                    if (_settingsPanelOpen && hiddenSidebar) {
+                                    if (_bottomSettings && hiddenSidebar) {
                                       return Row(
                                         children: [
                                           Expanded(
                                             child: DisplaySettingsPanel(
                                               onClose: () => setState(
-                                                  () => _settingsPanelOpen = false),
+                                                  () => _bottomSettings = false),
                                             ),
                                           ),
                                         ],
@@ -164,10 +160,10 @@ class _DesktopShellState extends State<DesktopShell> {
                                               ),
                                           },
                                         ),
-                                        if (_settingsPanelOpen && !hiddenSidebar)
+                                        if (!hiddenSidebar)
                                           DisplaySettingsPanel(
                                             onClose: () => setState(
-                                                () => _settingsPanelOpen = false),
+                                                () => _bottomSettings = false),
                                           ),
                                       ],
                                     );
@@ -316,26 +312,17 @@ class _PdfProgressOverlay extends StatelessWidget {
   }
 }
 
-/// Slim top bar that sits above the 3-column body. Hosts the
-/// [DisplaySettingsPanel] toggle (gear icon) and the [AuthUserMenu]
-/// on the right edge.
+/// Slim top bar that sits above the 3-column body. Hosts only the
+/// [AuthUserMenu] on the right edge.
 class _ShellHeaderBar extends StatelessWidget {
-  final bool settingsPanelOpen;
-  final VoidCallback onToggleSettings;
-  const _ShellHeaderBar({
-    required this.settingsPanelOpen,
-    required this.onToggleSettings,
-  });
+  const _ShellHeaderBar();
 
   @override
   Widget build(BuildContext context) {
-    final muted = Theme.of(context)
-        .colorScheme
-        .onSurface
-        .withValues(alpha: 0.6);
     return Container(
       height: 40,
       padding: const EdgeInsets.symmetric(horizontal: 8),
+      alignment: Alignment.centerRight,
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         border: Border(
@@ -344,37 +331,28 @@ class _ShellHeaderBar extends StatelessWidget {
           ),
         ),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          IconButton(
-            tooltip: settingsPanelOpen
-                ? 'Hide display settings'
-                : 'Show display settings',
-            icon: Icon(
-              settingsPanelOpen ? Icons.tune : Icons.tune_outlined,
-              color: muted,
-              size: 20,
-            ),
-            onPressed: onToggleSettings,
-          ),
-          const SizedBox(width: 4),
-          const AuthUserMenu(),
-        ],
-      ),
+      child: const AuthUserMenu(),
     );
   }
 }
 
 class _BottomNavBar extends StatelessWidget {
   final SidebarSection currentSection;
+  final bool showSettings;
   final ValueChanged<SidebarSection> onSectionSelected;
-  const _BottomNavBar({required this.currentSection, required this.onSectionSelected});
+  final VoidCallback onToggleSettings;
+  const _BottomNavBar({
+    required this.currentSection,
+    required this.showSettings,
+    required this.onSectionSelected,
+    required this.onToggleSettings,
+  });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final accent = const Color(0xFF3D5A99);
+    final muted = theme.colorScheme.onSurface.withValues(alpha: 0.6);
     return Container(
       height: 56,
       decoration: BoxDecoration(
@@ -382,23 +360,38 @@ class _BottomNavBar extends StatelessWidget {
         border: Border(top: BorderSide(color: theme.dividerColor.withValues(alpha: 0.5))),
       ),
       child: Row(
-        children: SidebarSection.values.map((section) {
-          final selected = currentSection == section;
-          final fg = selected ? accent : theme.colorScheme.onSurface.withValues(alpha: 0.6);
-          return Expanded(
+        children: [
+          ...SidebarSection.values.map((section) {
+            final selected = currentSection == section;
+            final fg = selected ? accent : muted;
+            return Expanded(
+              child: InkWell(
+                onTap: () => onSectionSelected(section),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(section.materialIcon, size: 20, color: fg),
+                    const SizedBox(height: 2),
+                    Text(section.label, style: TextStyle(fontSize: 9, fontWeight: selected ? FontWeight.w600 : FontWeight.w500, color: fg), textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis),
+                  ],
+                ),
+              ),
+            );
+          }),
+          Expanded(
             child: InkWell(
-              onTap: () => onSectionSelected(section),
+              onTap: onToggleSettings,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(section.materialIcon, size: 20, color: fg),
+                  Icon(showSettings ? Icons.tune : Icons.tune_outlined, size: 20, color: showSettings ? accent : muted),
                   const SizedBox(height: 2),
-                  Text(section.label, style: TextStyle(fontSize: 9, fontWeight: selected ? FontWeight.w600 : FontWeight.w500, color: fg), textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis),
+                  Text('Settings', style: TextStyle(fontSize: 9, fontWeight: showSettings ? FontWeight.w600 : FontWeight.w500, color: showSettings ? accent : muted), textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis),
                 ],
               ),
             ),
-          );
-        }).toList(),
+          ),
+        ],
       ),
     );
   }
