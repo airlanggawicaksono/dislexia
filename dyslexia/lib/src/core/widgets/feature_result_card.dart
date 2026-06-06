@@ -39,11 +39,11 @@ class FeatureResultCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                const Icon(Icons.auto_awesome, size: 18),
+                Icon(Icons.auto_awesome, size: 18, color: fg),
                 const SizedBox(width: 8),
                 Text(title,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.w600, fontSize: 15)),
+                    style: TextStyle(
+                        fontWeight: FontWeight.w600, fontSize: 15, color: fg)),
                 const Spacer(),
                 IconButton(
                   tooltip: inputExpanded ? 'Hide input' : 'Show input',
@@ -52,12 +52,13 @@ class FeatureResultCard extends StatelessWidget {
                         ? Icons.unfold_less_rounded
                         : Icons.unfold_more_rounded,
                     size: 18,
+                    color: fg,
                   ),
                   onPressed: onToggleInput,
                 ),
                 IconButton(
                   tooltip: 'Copy to clipboard',
-                  icon: const Icon(Icons.copy_rounded, size: 18),
+                  icon: Icon(Icons.copy_rounded, size: 18, color: fg),
                   onPressed: () {
                     Clipboard.setData(ClipboardData(text: text));
                     showAdaptiveFeedback(context, 'Copied to clipboard');

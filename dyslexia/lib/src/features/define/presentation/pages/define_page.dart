@@ -69,7 +69,8 @@ class _DefineBodyState extends State<_DefineBody> {
       final text = await getIt<PdfExtractorService>().extractText(
         bytes,
         onProgress: (current, total) {
-          if (mounted) setState(() => _pdfProgress = (current: current, total: total));
+          if (mounted)
+            setState(() => _pdfProgress = (current: current, total: total));
         },
       );
       if (!mounted) return;
@@ -158,10 +159,23 @@ class _DefineBodyState extends State<_DefineBody> {
                             TextField(
                               controller: _controller,
                               maxLines: 8,
+                              style: TextStyle(color: fg),
                               decoration: InputDecoration(
                                 hintText: 'Type text to define…',
+                                hintStyle: TextStyle(color: fg.withValues(alpha: 0.4)),
+                                fillColor: fg.withValues(alpha: 0.06),
+                                filled: true,
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: fg.withValues(alpha: 0.2)),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: fg.withValues(alpha: 0.2)),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: fg, width: 1.5),
                                 ),
                               ),
                             ),
