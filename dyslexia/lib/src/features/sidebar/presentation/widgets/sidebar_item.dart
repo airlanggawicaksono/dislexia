@@ -13,12 +13,14 @@ class SidebarItem extends StatelessWidget {
   final SidebarSection section;
   final bool selected;
   final VoidCallback onTap;
+  final bool compact;
 
   const SidebarItem({
     super.key,
     required this.section,
     required this.selected,
     required this.onTap,
+    this.compact = false,
   });
 
   @override
@@ -60,20 +62,22 @@ class SidebarItem extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 22, color: fg),
-              const SizedBox(height: 4),
-              Text(
-                section.label,
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight:
-                      selected ? FontWeight.w600 : FontWeight.w500,
-                  color: fg,
+              Icon(icon, size: compact ? 24 : 22, color: fg),
+              if (!compact) ...[
+                const SizedBox(height: 4),
+                Text(
+                  section.label,
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight:
+                        selected ? FontWeight.w600 : FontWeight.w500,
+                    color: fg,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
+              ],
             ],
           ),
         ),

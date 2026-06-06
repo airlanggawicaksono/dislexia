@@ -13,9 +13,13 @@ import '../widgets/sidebar_item.dart';
 /// own: selection state lives in [SidebarBloc]. The rail is always
 /// narrow (96px) so the rest of the window is reserved for content.
 class SidebarShellPage extends StatelessWidget {
-  const SidebarShellPage({super.key});
+  final bool compact;
+  const SidebarShellPage({super.key, this.compact = false});
 
-  static const _width = 96.0;
+  static const _fullWidth = 96.0;
+  static const _compactWidth = 56.0;
+
+  double get width => compact ? _compactWidth : _fullWidth;
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +28,7 @@ class SidebarShellPage extends StatelessWidget {
     final borderColor = theme.dividerColor.withValues(alpha: 0.5);
 
     return Container(
-      width: _width,
+      width: width,
       decoration: BoxDecoration(
         color: surface,
         border: Border(right: BorderSide(color: borderColor)),
@@ -38,6 +42,7 @@ class SidebarShellPage extends StatelessWidget {
                 for (final section in SidebarSection.values) ...[
                   SidebarItem(
                     section: section,
+                    compact: compact,
                     selected: state.section == section,
                     onTap: () => context
                         .read<SidebarBloc>()

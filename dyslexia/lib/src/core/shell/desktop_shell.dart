@@ -24,11 +24,8 @@ import '../../features/sidebar/presentation/pages/sidebar_shell_page.dart';
 import '../../features/sidebar/presentation/widgets/placeholder_panel.dart';
 import '../../features/auth/presentation/widgets/auth_user_menu.dart';
 
-/// Width below which the shell switches to its compact layout:
-/// the typography/accessibility settings column is hidden and the
-/// feature canvas collapses to an icon-only rail so the reader gets
-/// the room it needs.
-const double kShellCompactBreakpoint = 800;
+/// Width below which the sidebar collapses to icon-only.
+const double kSidebarCompactBreakpoint = 900;
 
 /// 3-column desktop shell driven by [SidebarBloc]:
 ///   [ SidebarShellPage ] [ Main content ] [ DisplaySettingsPanel? ]
@@ -94,31 +91,38 @@ class _DesktopShellState extends State<DesktopShell> {
                                 () => _settingsPanelOpen = !_settingsPanelOpen),
                           ),
                           Expanded(
-                            child: BlocBuilder<SidebarBloc, SidebarState>(
-                              builder: (context, sidebar) {
-                                return Row(
-                                  children: [
-                                    const SidebarShellPage(),
-                                    Expanded(
-                                      child: switch (sidebar.section) {
-                                        SidebarSection.reader => const MainColumn(),
-                                        SidebarSection.summarize =>
-                                          const SummarizePage(),
-                                        SidebarSection.define =>
-                                          const DefinePage(),
-                                        SidebarSection.professionalize =>
-                                          const ProfessionalizePage(),
-                                        _ => PlaceholderPanel(
-                                            section: sidebar.section,
+                            child: LayoutBuilder(
+                              builder: (context, constraints) {
+                                final compactSidebar = constraints.maxWidth <
+                                    kSidebarCompactBreakpoint;
+                                return BlocBuilder<SidebarBloc, SidebarState>(
+                                  builder: (context, sidebar) {
+                                    return Row(
+                                      children: [
+                                        SidebarShellPage(
+                                            compact: compactSidebar),
+                                        Expanded(
+                                          child: switch (sidebar.section) {
+                                            SidebarSection.reader => const MainColumn(),
+                                            SidebarSection.summarize =>
+                                              const SummarizePage(),
+                                            SidebarSection.define =>
+                                              const DefinePage(),
+                                            SidebarSection.professionalize =>
+                                              const ProfessionalizePage(),
+                                            _ => PlaceholderPanel(
+                                                section: sidebar.section,
+                                              ),
+                                          },
+                                        ),
+                                        if (_settingsPanelOpen && !compactSidebar)
+                                          DisplaySettingsPanel(
+                                            onClose: () => setState(
+                                                () => _settingsPanelOpen = false),
                                           ),
-                                      },
-                                    ),
-                                    if (_settingsPanelOpen)
-                                      DisplaySettingsPanel(
-                                        onClose: () => setState(
-                                            () => _settingsPanelOpen = false),
-                                      ),
-                                  ],
+                                      ],
+                                    );
+                                  },
                                 );
                               },
                             ),
