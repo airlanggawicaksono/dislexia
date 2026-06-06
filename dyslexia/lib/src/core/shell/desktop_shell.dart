@@ -25,7 +25,9 @@ import '../../features/sidebar/presentation/widgets/placeholder_panel.dart';
 import '../../features/auth/presentation/widgets/auth_user_menu.dart';
 
 /// Width below which the sidebar collapses to icon-only.
-const double kSidebarCompactBreakpoint = 900;
+const double kSidebarIconBreakpoint = 900;
+/// Width below which the sidebar is completely hidden.
+const double kSidebarHiddenBreakpoint = 700;
 
 /// 3-column desktop shell driven by [SidebarBloc]:
 ///   [ SidebarShellPage ] [ Main content ] [ DisplaySettingsPanel? ]
@@ -94,13 +96,16 @@ class _DesktopShellState extends State<DesktopShell> {
                             child: LayoutBuilder(
                               builder: (context, constraints) {
                                 final compactSidebar = constraints.maxWidth <
-                                    kSidebarCompactBreakpoint;
+                                    kSidebarIconBreakpoint;
+                                final hiddenSidebar = constraints.maxWidth <
+                                    kSidebarHiddenBreakpoint;
                                 return BlocBuilder<SidebarBloc, SidebarState>(
                                   builder: (context, sidebar) {
                                     return Row(
                                       children: [
-                                        SidebarShellPage(
-                                            compact: compactSidebar),
+                                        if (!hiddenSidebar)
+                                          SidebarShellPage(
+                                              compact: compactSidebar),
                                         Expanded(
                                           child: switch (sidebar.section) {
                                             SidebarSection.reader => const MainColumn(),
@@ -115,7 +120,7 @@ class _DesktopShellState extends State<DesktopShell> {
                                               ),
                                           },
                                         ),
-                                        if (_settingsPanelOpen && !compactSidebar)
+                                        if (_settingsPanelOpen && !compactSidebar && !hiddenSidebar)
                                           DisplaySettingsPanel(
                                             onClose: () => setState(
                                                 () => _settingsPanelOpen = false),
