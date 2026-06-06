@@ -69,8 +69,9 @@ class _DefineBodyState extends State<_DefineBody> {
       final text = await getIt<PdfExtractorService>().extractText(
         bytes,
         onProgress: (current, total) {
-          if (mounted)
+          if (mounted) {
             setState(() => _pdfProgress = (current: current, total: total));
+          }
         },
       );
       if (!mounted) return;
@@ -117,7 +118,8 @@ class _DefineBodyState extends State<_DefineBody> {
                   if (!context.mounted) return;
                   final text = data?.text?.trim() ?? '';
                   if (text.isEmpty) {
-                    showAdaptiveFeedback(context, 'Nothing found in clipboard');
+                    showAdaptiveFeedback(
+                        context, 'Nothing found in clipboard');
                     return;
                   }
                   _controller.text = text;
@@ -192,11 +194,18 @@ class _DefineBodyState extends State<_DefineBody> {
                   child: BlocBuilder<DefineBloc, DefineState>(
                     builder: (context, state) {
                       return switch (state) {
-                        DefineInitial() => const SizedBox(),
+                        DefineInitial() => _PlaceholderCard(
+                            icon: Icons.auto_awesome,
+                            title: 'Define',
+                            description:
+                                'Paste or type text above, then tap Define to generate a concise Definition.',
+                            fgColor: fg,
+                          ),
                         DefineLoading() => const Center(
                             child: CircularProgressIndicator(),
                           ),
-                        DefineResultState(:final result) => FeatureResultCard(
+                        DefineResultState(:final result) =>
+                          FeatureResultCard(
                             text: result,
                             title: 'Summary',
                             inputExpanded: _inputExpanded,
@@ -221,6 +230,53 @@ class _DefineBodyState extends State<_DefineBody> {
   }
 }
 
+class _PlaceholderCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String description;
+  final Color fgColor;
+
+  const _PlaceholderCard({
+    required this.icon,
+    required this.title,
+    required this.description,
+    required this.fgColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final fg = fgColor;
+    return Container(
+      decoration: BoxDecoration(
+        color: fg.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 48, color: fg.withValues(alpha: 0.3)),
+              const SizedBox(height: 16),
+              Text(title,
+                  style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: fg)),
+              const SizedBox(height: 8),
+              Text(description,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      fontSize: 13, color: fg.withValues(alpha: 0.6))),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _FeatureBarAction extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -232,7 +288,7 @@ class _FeatureBarAction extends StatelessWidget {
     required this.label,
     required this.color,
     this.backgroundColor,
-    required this.onTap,
+    this.onTap,
   });
 
   @override
