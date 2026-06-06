@@ -88,7 +88,11 @@ class _DesktopShellState extends State<DesktopShell> {
                     home: Scaffold(
                       body: Column(
                         children: [
-                          const _ShellHeaderBar(),
+                          _ShellHeaderBar(
+                            settingsPanelOpen: _settingsPanelOpen,
+                            onToggleSettings: () => setState(
+                                () => _settingsPanelOpen = !_settingsPanelOpen),
+                          ),
                           Expanded(
                             child: BlocBuilder<SidebarBloc, SidebarState>(
                               builder: (context, sidebar) {
@@ -97,15 +101,7 @@ class _DesktopShellState extends State<DesktopShell> {
                                     const SidebarShellPage(),
                                     Expanded(
                                       child: switch (sidebar.section) {
-                                        SidebarSection.reader => MainColumn(
-                                            settingsPanelOpen:
-                                                _settingsPanelOpen,
-                                            onToggleSettings: () =>
-                                                setState(
-                                              () => _settingsPanelOpen =
-                                                  !_settingsPanelOpen,
-                                            ),
-                                          ),
+                                        SidebarSection.reader => const MainColumn(),
                                         SidebarSection.summarize =>
                                           const SummarizePage(),
                                         SidebarSection.define =>
@@ -117,6 +113,11 @@ class _DesktopShellState extends State<DesktopShell> {
                                           ),
                                       },
                                     ),
+                                    if (_settingsPanelOpen)
+                                      DisplaySettingsPanel(
+                                        onClose: () => setState(
+                                            () => _settingsPanelOpen = false),
+                                      ),
                                   ],
                                 );
                               },
@@ -143,13 +144,7 @@ class _DesktopShellState extends State<DesktopShell> {
 /// BlocBuilder's the state. The auto-load of the sample text is dispatched
 /// on first frame.
 class MainColumn extends StatefulWidget {
-  final bool settingsPanelOpen;
-  final VoidCallback? onToggleSettings;
-  const MainColumn({
-    super.key,
-    this.settingsPanelOpen = true,
-    this.onToggleSettings,
-  });
+  const MainColumn({super.key});
 
   @override
   State<MainColumn> createState() => _MainColumnState();
@@ -185,36 +180,21 @@ class _MainColumnState extends State<MainColumn> {
   Widget build(BuildContext context) {
     return BlocBuilder<ReaderShellBloc, ReaderShellState>(
       builder: (context, state) {
-        return Row(
+        return Stack(
           children: [
-            Expanded(
-              child: Stack(
-                children: [
-                  if (state.showReader)
-                    ReaderPage(
-                      key: const ValueKey('reader'),
-                      text: state.text,
-                      sourceName: state.source,
-                      onBack: _onBack,
-                      settingsPanelOpen: widget.settingsPanelOpen,
-                      onToggleSettings: widget.onToggleSettings,
-                    )
-                  else
-                    const SizedBox.expand(),
-                  if (state.pdfProgress != null)
-                    _PdfProgressOverlay(
-                      current: state.pdfProgress!.current,
-                      total: state.pdfProgress!.total,
-                    ),
-                ],
-              ),
-            ),
-            // The settings panel is rendered inside the reader column
-            // so it only shows up when the Reader section is active.
-            // Toggled via the gear button in the reader's top bar.
-            if (widget.settingsPanelOpen)
-              DisplaySettingsPanel(
-                onClose: () => widget.onToggleSettings?.call(),
+            if (state.showReader)
+              ReaderPage(
+                key: const ValueKey('reader'),
+                text: state.text,
+                sourceName: state.source,
+                onBack: _onBack,
+              )
+            else
+              const SizedBox.expand(),
+            if (state.pdfProgress != null)
+              _PdfProgressOverlay(
+                current: state.pdfProgress!.current,
+                total: state.pdfProgress!.total,
               ),
           ],
         );
@@ -284,17 +264,25 @@ class _PdfProgressOverlay extends StatelessWidget {
 }
 
 /// Slim top bar that sits above the 3-column body. Hosts the
-/// [AuthUserMenu] on the right edge. The reader's own AppBar
-/// provides all input controls including the settings toggle.
+/// [DisplaySettingsPanel] toggle (gear icon) and the [AuthUserMenu]
+/// on the right edge.
 class _ShellHeaderBar extends StatelessWidget {
-  const _ShellHeaderBar();
+  final bool settingsPanelOpen;
+  final VoidCallback onToggleSettings;
+  const _ShellHeaderBar({
+    required this.settingsPanelOpen,
+    required this.onToggleSettings,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final muted = Theme.of(context)
+        .colorScheme
+        .onSurface
+        .withValues(alpha: 0.6);
     return Container(
       height: 40,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      alignment: Alignment.centerRight,
+      padding: const EdgeInsets.symmetric(horizontal: 8),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         border: Border(
@@ -303,7 +291,24 @@ class _ShellHeaderBar extends StatelessWidget {
           ),
         ),
       ),
-      child: const AuthUserMenu(),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          IconButton(
+            tooltip: settingsPanelOpen
+                ? 'Hide display settings'
+                : 'Show display settings',
+            icon: Icon(
+              settingsPanelOpen ? Icons.tune : Icons.tune_outlined,
+              color: muted,
+              size: 20,
+            ),
+            onPressed: onToggleSettings,
+          ),
+          const SizedBox(width: 4),
+          const AuthUserMenu(),
+        ],
+      ),
     );
   }
 }

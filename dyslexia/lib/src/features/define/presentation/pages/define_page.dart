@@ -5,6 +5,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../configs/injector/injector_conf.dart';
 import '../../../../core/widgets/adaptive/adaptive.dart';
+import '../../../../core/widgets/feature_result_card.dart';
+import '../../../display_settings/presentation/bloc/display_settings/display_settings_bloc.dart';
+import '../../../display_settings/presentation/theme/display_colors.dart';
 import '../../../upload/data/datasources/pdf_extractor_service.dart';
 import '../bloc/define_bloc.dart';
 import '../bloc/define_event.dart';
@@ -30,6 +33,9 @@ class _DefineBody extends StatefulWidget {
 
 class _DefineBodyState extends State<_DefineBody> {
   final _controller = TextEditingController();
+  bool _inputExpanded = true;
+  bool _isLoadingPdf = false;
+  ({int current, int total})? _pdfProgress;
 
   @override
   void dispose() {
@@ -38,173 +44,219 @@ class _DefineBodyState extends State<_DefineBody> {
   }
 
   Future<void> _pickPdf(BuildContext context) async {
+    setState(() {
+      _isLoadingPdf = true;
+      _pdfProgress = null;
+    });
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['pdf'],
         withData: true,
       );
-      if (result == null || result.files.isEmpty) return;
+      if (result == null || result.files.isEmpty) {
+        if (context.mounted) setState(() => _isLoadingPdf = false);
+        return;
+      }
       final file = result.files.first;
       final bytes = file.bytes;
       if (bytes == null) {
         if (!context.mounted) return;
+        setState(() => _isLoadingPdf = false);
         showAdaptiveFeedback(context, 'Could not read file data');
         return;
       }
-      final text = await getIt<PdfExtractorService>().extractText(bytes);
+      final text = await getIt<PdfExtractorService>().extractText(
+        bytes,
+        onProgress: (current, total) {
+          if (mounted)
+            setState(() => _pdfProgress = (current: current, total: total));
+        },
+      );
+      if (!mounted) return;
+      setState(() {
+        _isLoadingPdf = false;
+        _pdfProgress = null;
+      });
       if (text.trim().isEmpty) {
-        if (!context.mounted) return;
         showAdaptiveFeedback(
             context, 'PDF appears to be empty or contains only images');
         return;
       }
       _controller.text = text;
     } catch (e) {
-      if (!context.mounted) return;
+      if (!mounted) return;
+      setState(() {
+        _isLoadingPdf = false;
+        _pdfProgress = null;
+      });
       showAdaptiveFeedback(context, 'Failed to read PDF: $e');
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Scaffold(
-      backgroundColor: theme.colorScheme.surface,
-      appBar: AppBar(
-        backgroundColor: theme.colorScheme.surface,
-        elevation: 0,
-        title: const Text('Define'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            TextField(
-              controller: _controller,
-              maxLines: 8,
-              decoration: InputDecoration(
-                hintText: 'Type text to define…',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+    return BlocBuilder<DisplaySettingsBloc, DisplaySettingsState>(
+      builder: (context, ds) {
+        final s = ds.settings;
+        final bg = bgColor(s.colorTheme);
+        final fg = fgColor(s.colorTheme);
+        return Scaffold(
+          backgroundColor: bg,
+          appBar: AppBar(
+            backgroundColor: bg,
+            elevation: 0,
+            title: Text('Define', style: TextStyle(color: fg)),
+            actions: [
+              _FeatureBarAction(
+                icon: Icons.content_paste_rounded,
+                label: 'Paste',
+                color: fg,
+                onTap: () async {
+                  final data = await Clipboard.getData(Clipboard.kTextPlain);
+                  if (!context.mounted) return;
+                  final text = data?.text?.trim() ?? '';
+                  if (text.isEmpty) {
+                    showAdaptiveFeedback(context, 'Nothing found in clipboard');
+                    return;
+                  }
+                  _controller.text = text;
+                },
               ),
-            ),
-            const SizedBox(height: 12),
-            Row(
+              const SizedBox(width: 4),
+              _FeatureBarAction(
+                icon: Icons.upload_file_rounded,
+                label: 'PDF',
+                color: fg,
+                onTap: () => _pickPdf(context),
+              ),
+              const SizedBox(width: 12),
+              _FeatureBarAction(
+                icon: Icons.auto_awesome,
+                label: 'Define',
+                color: Colors.white,
+                backgroundColor: const Color(0xFF3D5A99),
+                onTap: () {
+                  final text = _controller.text.trim();
+                  if (text.isNotEmpty) {
+                    context.read<DefineBloc>().add(DefineTextEvent(text));
+                  }
+                },
+              ),
+              const SizedBox(width: 12),
+            ],
+          ),
+          body: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                AnimatedSize(
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeInOut,
+                  child: _inputExpanded
+                      ? Column(
+                          children: [
+                            TextField(
+                              controller: _controller,
+                              maxLines: 8,
+                              style: TextStyle(color: fg),
+                              decoration: InputDecoration(
+                                hintText: 'Type text to define…',
+                                hintStyle:
+                                    TextStyle(color: fg.withValues(alpha: 0.4)),
+                                fillColor: fg.withValues(alpha: 0.06),
+                                filled: true,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                      color: fg.withValues(alpha: 0.2)),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                      color: fg.withValues(alpha: 0.2)),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: fg, width: 1.5),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                          ],
+                        )
+                      : const SizedBox.shrink(),
+                ),
                 Expanded(
-                  child: FilledButton.icon(
-                    onPressed: () {
-                      final text = _controller.text.trim();
-                      if (text.isNotEmpty) {
-                        context
-                            .read<DefineBloc>()
-                            .add(DefineTextEvent(text));
-                      }
+                  child: BlocBuilder<DefineBloc, DefineState>(
+                    builder: (context, state) {
+                      return switch (state) {
+                        DefineInitial() => const SizedBox(),
+                        DefineLoading() => const Center(
+                            child: CircularProgressIndicator(),
+                          ),
+                        DefineResultState(:final result) => FeatureResultCard(
+                            text: result,
+                            title: 'Summary',
+                            inputExpanded: _inputExpanded,
+                            onToggleInput: () => setState(
+                                () => _inputExpanded = !_inputExpanded),
+                          ),
+                        DefineErrorState(:final message) => Center(
+                            child: Text(message,
+                                style: const TextStyle(color: Colors.red)),
+                          ),
+                        _ => const SizedBox(),
+                      };
                     },
-                    icon: const Icon(Icons.auto_awesome),
-                    label: const Text('Define'),
                   ),
-                ),
-                const SizedBox(width: 8),
-                OutlinedButton.icon(
-                  onPressed: () async {
-                    final data = await Clipboard.getData(Clipboard.kTextPlain);
-                    if (!context.mounted) return;
-                    final text = data?.text?.trim() ?? '';
-                    if (text.isEmpty) {
-                      showAdaptiveFeedback(
-                          context, 'Nothing found in clipboard');
-                      return;
-                    }
-                    _controller.text = text;
-                  },
-                  icon: const Icon(Icons.content_paste_rounded, size: 18),
-                  label: const Text('Paste'),
-                ),
-                const SizedBox(width: 8),
-                OutlinedButton.icon(
-                  onPressed: () => _pickPdf(context),
-                  icon: const Icon(Icons.picture_as_pdf_rounded, size: 18),
-                  label: const Text('PDF'),
                 ),
               ],
             ),
-            const SizedBox(height: 24),
-            Expanded(
-              child: BlocBuilder<DefineBloc, DefineState>(
-                builder: (context, state) {
-                  return switch (state) {
-                    DefineInitial() => const SizedBox(),
-                    DefineLoading() => const Center(
-                        child: CircularProgressIndicator(),
-                      ),
-                    DefineResultState(:final result) => _ResultCard(
-                        text: result,
-                        onClear: () => context
-                            .read<DefineBloc>()
-                            .add(ClearDefineEvent()),
-                      ),
-                    DefineErrorState(:final message) => Center(
-                        child: Text(message,
-                            style: const TextStyle(color: Colors.red)),
-                      ),
-                    _ => const SizedBox(),
-                  };
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }
 
-class _ResultCard extends StatelessWidget {
-  final String text;
-  final VoidCallback onClear;
-  const _ResultCard({required this.text, required this.onClear});
+class _FeatureBarAction extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final Color? backgroundColor;
+  final VoidCallback? onTap;
+  const _FeatureBarAction({
+    required this.icon,
+    required this.label,
+    required this.color,
+    this.backgroundColor,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.auto_awesome, size: 18),
-                const SizedBox(width: 8),
-                const Text('Summary',
-                    style:
-                        TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
-                const Spacer(),
-                IconButton(
-                  tooltip: 'Copy to clipboard',
-                  icon: const Icon(Icons.copy_rounded, size: 18),
-                  onPressed: () {
-                    Clipboard.setData(ClipboardData(text: text));
-                    showAdaptiveFeedback(context, 'Copied to clipboard');
-                  },
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close, size: 18),
-                  onPressed: onClear,
-                ),
-              ],
-            ),
-            const Divider(),
-            Expanded(
-              child: SingleChildScrollView(
-                child: Text(text, style: const TextStyle(height: 1.6)),
+    return Material(
+      color: backgroundColor ?? color.withValues(alpha: 0.08),
+      borderRadius: BorderRadius.circular(8),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 14, color: color),
+              const SizedBox(width: 4),
+              Text(
+                label,
+                style: TextStyle(
+                    fontSize: 11, fontWeight: FontWeight.w600, color: color),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
