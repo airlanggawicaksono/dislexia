@@ -102,6 +102,18 @@ class _DesktopShellState extends State<DesktopShell> {
                                 final touchMode = constraints.maxWidth < 800;
                                 return BlocBuilder<SidebarBloc, SidebarState>(
                                   builder: (context, sidebar) {
+                                    if (_settingsPanelOpen && hiddenSidebar) {
+                                      return Row(
+                                        children: [
+                                          Expanded(
+                                            child: DisplaySettingsPanel(
+                                              onClose: () => setState(
+                                                  () => _settingsPanelOpen = false),
+                                            ),
+                                          ),
+                                        ],
+                                      );
+                                    }
                                     return Row(
                                       children: [
                                         if (!hiddenSidebar)
