@@ -362,8 +362,7 @@ class _ReaderPageState extends State<ReaderPage> {
               children: [
                 MouseRegion(
                   onHover: s.rulerEnabled
-                      ? (e) => setState(
-                          () => _rulerY = e.localPosition.dy - rulerH / 2)
+                      ? (e) => setState(() => _rulerY = e.localPosition.dy)
                       : null,
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.symmetric(vertical: 28),
