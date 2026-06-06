@@ -46,5 +46,7 @@ enum SidebarSection {
   /// Whether this section is currently wired to a functional destination.
   /// Sections where this is false render a "Coming soon" placeholder.
   bool get isImplemented =>
-      this == SidebarSection.reader || this == SidebarSection.summarize;
+      this == SidebarSection.reader ||
+      this == SidebarSection.summarize ||
+      this == SidebarSection.define;
 }
