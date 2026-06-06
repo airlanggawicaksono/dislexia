@@ -8,6 +8,7 @@ import '../../../../core/utils/font_utils.dart';
 import '../../../../core/widgets/adaptive/adaptive.dart';
 import '../../../display_settings/presentation/bloc/display_settings/display_settings_bloc.dart';
 import '../../../display_settings/presentation/theme/display_colors.dart';
+import '../../../reader/data/syllabifier.dart';
 import '../../../upload/data/datasources/pdf_extractor_service.dart';
 import '../bloc/professionalize_bloc.dart';
 import '../bloc/professionalize_event.dart';
@@ -236,6 +237,7 @@ class _ResultCard extends StatelessWidget {
       builder: (context, ds) {
         final s = ds.settings;
         final fg = fgColor(s.colorTheme);
+        final displayText = s.syllablesEnabled ? syllabify(text) : text;
         return Container(
           decoration: BoxDecoration(
             color: fg.withValues(alpha: 0.06),
@@ -281,7 +283,7 @@ class _ResultCard extends StatelessWidget {
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.only(top: 12),
                     child: Text(
-                      text,
+                        displayText,
                       style: applyDyslexiaFont(
                         font: s.font,
                         baseStyle: TextStyle(
