@@ -115,15 +115,11 @@ class ReaderPage extends StatefulWidget {
   final String text;
   final String? sourceName;
   final VoidCallback? onBack;
-  final bool settingsPanelOpen;
-  final VoidCallback? onToggleSettings;
   const ReaderPage({
     super.key,
     required this.text,
     this.sourceName,
     this.onBack,
-    this.settingsPanelOpen = true,
-    this.onToggleSettings,
   });
 
   @override
@@ -357,21 +353,6 @@ class _ReaderPageState extends State<ReaderPage> {
                             );
                       },
                     ),
-                    const SizedBox(width: 4),
-                    if (widget.onToggleSettings != null)
-                      IconButton(
-                        tooltip: widget.settingsPanelOpen
-                            ? 'Hide display settings'
-                            : 'Show display settings',
-                        icon: Icon(
-                          widget.settingsPanelOpen
-                              ? Icons.tune
-                              : Icons.tune_outlined,
-                          color: fg,
-                          size: 20,
-                        ),
-                        onPressed: widget.onToggleSettings,
-                      ),
                   ],
                 ),
               ),
