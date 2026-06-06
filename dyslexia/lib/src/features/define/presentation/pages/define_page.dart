@@ -92,8 +92,7 @@ class _DefineBodyState extends State<_DefineBody> {
                   if (!context.mounted) return;
                   final text = data?.text?.trim() ?? '';
                   if (text.isEmpty) {
-                    showAdaptiveFeedback(
-                        context, 'Nothing found in clipboard');
+                    showAdaptiveFeedback(context, 'Nothing found in clipboard');
                     return;
                   }
                   _controller.text = text;
@@ -114,9 +113,7 @@ class _DefineBodyState extends State<_DefineBody> {
                 onTap: () {
                   final text = _controller.text.trim();
                   if (text.isNotEmpty) {
-                    context
-                        .read<DefineBloc>()
-                        .add(DefineTextEvent(text));
+                    context.read<DefineBloc>().add(DefineTextEvent(text));
                   }
                 },
               ),
@@ -202,9 +199,7 @@ class _FeatureBarAction extends StatelessWidget {
               Text(
                 label,
                 style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: color),
+                    fontSize: 11, fontWeight: FontWeight.w600, color: color),
               ),
             ],
           ),
@@ -227,6 +222,7 @@ class _ResultCard extends StatelessWidget {
         final fg = fgColor(s.colorTheme);
         return Card(
           color: fg.withValues(alpha: 0.06),
+          surfaceTintColor: Colors.transparent,
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
