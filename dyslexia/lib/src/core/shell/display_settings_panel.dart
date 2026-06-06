@@ -120,13 +120,6 @@ class DisplaySettingsPanel extends StatelessWidget {
                     onChanged: (v) => bloc.add(UpdateWordSpacingEvent(v)),
                     fgColor: fg),
                 const SizedBox(height: 12),
-                _Label(title: 'PRESETS', color: fg.withValues(alpha: 0.5)),
-                ...DisplayPreset.values.map((p) => _PresetChip(
-                    label: _presetName(p),
-                    selected: s.preset == p,
-                    onTap: () => bloc.add(ApplyPresetEvent(p)),
-                    surfaceColor: fg.withValues(alpha: 0.08))),
-                const SizedBox(height: 12),
                 _Label(
                     title: 'ACCESSIBILITY', color: fg.withValues(alpha: 0.5)),
                 _ToggleRow(
@@ -142,6 +135,14 @@ class DisplaySettingsPanel extends StatelessWidget {
                   onToggle: () => bloc.add(ToggleSyllablesEvent()),
                   fgColor: fg,
                 ),
+                const SizedBox(height: 12),
+                _Label(title: 'PRESETS', color: fg.withValues(alpha: 0.5)),
+                ...DisplayPreset.values.map((p) => _PresetChip(
+                    label: _presetName(p),
+                    selected: s.preset == p,
+                    onTap: () => bloc.add(ApplyPresetEvent(p)),
+                    surfaceColor: fg.withValues(alpha: 0.08))),
+                const SizedBox(height: 12),
               ],
             ),
           ),
@@ -310,7 +311,8 @@ class _MiniSlider extends StatelessWidget {
           SizedBox(
               width: 36,
               child: Text(label,
-                  style: TextStyle(fontSize: 10, color: fgColor.withValues(alpha: 0.6)))),
+                  style: TextStyle(
+                      fontSize: 10, color: fgColor.withValues(alpha: 0.6)))),
           Expanded(
             child: AdaptiveSlider(
               value: value.clamp(min, max),
