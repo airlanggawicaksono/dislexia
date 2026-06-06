@@ -82,6 +82,45 @@ class _DefineBodyState extends State<_DefineBody> {
             backgroundColor: bg,
             elevation: 0,
             title: Text('Define', style: TextStyle(color: fg)),
+            actions: [
+              _FeatureBarAction(
+                icon: Icons.content_paste_rounded,
+                label: 'Paste',
+                color: fg,
+                onTap: () async {
+                  final data = await Clipboard.getData(Clipboard.kTextPlain);
+                  if (!context.mounted) return;
+                  final text = data?.text?.trim() ?? '';
+                  if (text.isEmpty) {
+                    showAdaptiveFeedback(
+                        context, 'Nothing found in clipboard');
+                    return;
+                  }
+                  _controller.text = text;
+                },
+              ),
+              const SizedBox(width: 4),
+              _FeatureBarAction(
+                icon: Icons.picture_as_pdf_rounded,
+                label: 'PDF',
+                color: fg,
+                onTap: () => _pickPdf(context),
+              ),
+              const SizedBox(width: 4),
+              _FeatureBarAction(
+                icon: Icons.auto_awesome,
+                label: 'Define',
+                color: fg,
+                onTap: () {
+                  final text = _controller.text.trim();
+                  if (text.isNotEmpty) {
+                    context
+                        .read<DefineBloc>()
+                        .add(DefineTextEvent(text));
+                  }
+                },
+              ),
+            ],
           ),
           body: Padding(
             padding: const EdgeInsets.all(24),
@@ -97,48 +136,6 @@ class _DefineBodyState extends State<_DefineBody> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: FilledButton.icon(
-                        onPressed: () {
-                          final text = _controller.text.trim();
-                          if (text.isNotEmpty) {
-                            context
-                                .read<DefineBloc>()
-                                .add(DefineTextEvent(text));
-                          }
-                        },
-                        icon: const Icon(Icons.auto_awesome),
-                        label: const Text('Define'),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    OutlinedButton.icon(
-                      onPressed: () async {
-                        final data =
-                            await Clipboard.getData(Clipboard.kTextPlain);
-                        if (!context.mounted) return;
-                        final text = data?.text?.trim() ?? '';
-                        if (text.isEmpty) {
-                          showAdaptiveFeedback(
-                              context, 'Nothing found in clipboard');
-                          return;
-                        }
-                        _controller.text = text;
-                      },
-                      icon: const Icon(Icons.content_paste_rounded, size: 18),
-                      label: const Text('Paste'),
-                    ),
-                    const SizedBox(width: 8),
-                    OutlinedButton.icon(
-                      onPressed: () => _pickPdf(context),
-                      icon: const Icon(Icons.picture_as_pdf_rounded, size: 18),
-                      label: const Text('PDF'),
-                    ),
-                  ],
                 ),
                 const SizedBox(height: 24),
                 Expanded(
@@ -169,6 +166,50 @@ class _DefineBodyState extends State<_DefineBody> {
           ),
         );
       },
+    );
+  }
+}
+
+/// Compact icon-and-label button used inside feature AppBars.
+/// Mirrors the visual style of ReaderPage's _AppBarAction.
+class _FeatureBarAction extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+  const _FeatureBarAction({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: color.withValues(alpha: 0.08),
+      borderRadius: BorderRadius.circular(8),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 14, color: color),
+              const SizedBox(width: 4),
+              Text(
+                label,
+                style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: color),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
