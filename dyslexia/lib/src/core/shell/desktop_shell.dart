@@ -329,6 +329,7 @@ class _ShellHeaderBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenW = MediaQuery.of(context).size.width;
     return Container(
       height: 40,
       padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -343,7 +344,7 @@ class _ShellHeaderBar extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          if (showGear)
+          if (showGear && screenW >= kSidebarHiddenBreakpoint)
             IconButton(
               tooltip: 'Toggle display settings',
               icon: Icon(Icons.tune_outlined, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6), size: 20),
