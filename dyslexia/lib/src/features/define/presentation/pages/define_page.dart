@@ -104,6 +104,7 @@ class _DefineBodyState extends State<_DefineBody> {
           appBar: AppBar(
             backgroundColor: bg,
             elevation: 0,
+            centerTitle: false,
             title: Text('Define', style: TextStyle(color: fg)),
             actions: [
               _FeatureBarAction(

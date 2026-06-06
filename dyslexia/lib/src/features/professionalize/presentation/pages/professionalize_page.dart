@@ -104,6 +104,7 @@ class _ProfessionalizeBodyState extends State<_ProfessionalizeBody> {
           appBar: AppBar(
             backgroundColor: bg,
             elevation: 0,
+            centerTitle: false,
             title: Text('Professionalize', style: TextStyle(color: fg)),
             actions: [
               _FeatureBarAction(

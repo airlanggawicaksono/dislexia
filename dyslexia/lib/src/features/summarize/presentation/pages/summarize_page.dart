@@ -104,6 +104,7 @@ class _SummarizeBodyState extends State<_SummarizeBody> {
           appBar: AppBar(
             backgroundColor: bg,
             elevation: 0,
+            centerTitle: false,
             title: Text('Summarize', style: TextStyle(color: fg)),
             actions: [
               _FeatureBarAction(
