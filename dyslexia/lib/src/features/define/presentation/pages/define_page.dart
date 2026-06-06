@@ -143,6 +143,7 @@ class _DefineBodyState extends State<_DefineBody> {
                   }
                 },
               ),
+              const SizedBox(width: 12),
             ],
           ),
           body: Padding(
@@ -162,16 +163,19 @@ class _DefineBodyState extends State<_DefineBody> {
                               style: TextStyle(color: fg),
                               decoration: InputDecoration(
                                 hintText: 'Type text to define…',
-                                hintStyle: TextStyle(color: fg.withValues(alpha: 0.4)),
+                                hintStyle:
+                                    TextStyle(color: fg.withValues(alpha: 0.4)),
                                 fillColor: fg.withValues(alpha: 0.06),
                                 filled: true,
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(color: fg.withValues(alpha: 0.2)),
+                                  borderSide: BorderSide(
+                                      color: fg.withValues(alpha: 0.2)),
                                 ),
                                 enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(color: fg.withValues(alpha: 0.2)),
+                                  borderSide: BorderSide(
+                                      color: fg.withValues(alpha: 0.2)),
                                 ),
                                 focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
@@ -192,8 +196,7 @@ class _DefineBodyState extends State<_DefineBody> {
                         DefineLoading() => const Center(
                             child: CircularProgressIndicator(),
                           ),
-                        DefineResultState(:final result) =>
-                          FeatureResultCard(
+                        DefineResultState(:final result) => FeatureResultCard(
                             text: result,
                             title: 'Summary',
                             inputExpanded: _inputExpanded,

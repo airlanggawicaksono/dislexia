@@ -139,10 +139,13 @@ class _ProfessionalizeBodyState extends State<_ProfessionalizeBody> {
                 onTap: () {
                   final text = _controller.text.trim();
                   if (text.isNotEmpty) {
-                    context.read<ProfessionalizeBloc>().add(ProfessionalizeTextEvent(text));
+                    context
+                        .read<ProfessionalizeBloc>()
+                        .add(ProfessionalizeTextEvent(text));
                   }
                 },
               ),
+              const SizedBox(width: 12),
             ],
           ),
           body: Padding(
@@ -162,16 +165,19 @@ class _ProfessionalizeBodyState extends State<_ProfessionalizeBody> {
                               style: TextStyle(color: fg),
                               decoration: InputDecoration(
                                 hintText: 'Type text to professionalize…',
-                                hintStyle: TextStyle(color: fg.withValues(alpha: 0.4)),
+                                hintStyle:
+                                    TextStyle(color: fg.withValues(alpha: 0.4)),
                                 fillColor: fg.withValues(alpha: 0.06),
                                 filled: true,
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(color: fg.withValues(alpha: 0.2)),
+                                  borderSide: BorderSide(
+                                      color: fg.withValues(alpha: 0.2)),
                                 ),
                                 enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(color: fg.withValues(alpha: 0.2)),
+                                  borderSide: BorderSide(
+                                      color: fg.withValues(alpha: 0.2)),
                                 ),
                                 focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),

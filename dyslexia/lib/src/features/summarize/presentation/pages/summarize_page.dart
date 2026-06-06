@@ -143,6 +143,7 @@ class _SummarizeBodyState extends State<_SummarizeBody> {
                   }
                 },
               ),
+              const SizedBox(width: 12),
             ],
           ),
           body: Padding(
