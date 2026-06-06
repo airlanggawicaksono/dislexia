@@ -1,8 +1,8 @@
-class PersonalizeRequestModel {
+class ProfessionalizeRequestModel {
   final String text;
   final String? sessionId;
 
-  const PersonalizeRequestModel({required this.text, this.sessionId});
+  const ProfessionalizeRequestModel({required this.text, this.sessionId});
 
   Map<String, dynamic> toJson() => {
         'text': text,
@@ -10,21 +10,21 @@ class PersonalizeRequestModel {
       };
 }
 
-class PersonalizeResponseModel {
+class ProfessionalizeResponseModel {
   final String result;
   final String feature;
   final String sessionId;
   final String? historyId;
 
-  const PersonalizeResponseModel({
+  const ProfessionalizeResponseModel({
     required this.result,
     required this.feature,
     required this.sessionId,
     this.historyId,
   });
 
-  factory PersonalizeResponseModel.fromJson(Map<String, dynamic> json) =>
-      PersonalizeResponseModel(
+  factory ProfessionalizeResponseModel.fromJson(Map<String, dynamic> json) =>
+      ProfessionalizeResponseModel(
         result: json['result'] as String,
         feature: json['feature'] as String,
         sessionId: json['session_id'] as String,

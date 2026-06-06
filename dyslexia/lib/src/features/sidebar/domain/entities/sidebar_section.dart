@@ -22,8 +22,8 @@ enum SidebarSection {
     cupertinoIcon: CupertinoIcons.book_circle,
     materialIcon: Icons.translate_rounded,
   ),
-  personalize(
-    label: 'Personalize',
+  professionalize(
+    label: 'Professionalize',
     cupertinoIcon: CupertinoIcons.person_crop_circle,
     materialIcon: Icons.tune_rounded,
   ),
@@ -49,5 +49,5 @@ enum SidebarSection {
       this == SidebarSection.reader ||
       this == SidebarSection.summarize ||
       this == SidebarSection.define ||
-      this == SidebarSection.personalize;
+      this == SidebarSection.professionalize;
 }
