@@ -58,6 +58,7 @@ class DesktopShell extends StatefulWidget {
 
 class _DesktopShellState extends State<DesktopShell> {
   bool _bottomSettings = false;
+  bool _settingsPanelOpen = true;
 
   @override
   Widget build(BuildContext context) {
@@ -85,7 +86,11 @@ class _DesktopShellState extends State<DesktopShell> {
                     home: Scaffold(
                       body: Column(
                         children: [
-                          _ShellHeaderBar(),
+                          _ShellHeaderBar(
+                            showGear: true,
+                            onToggleSettings: () => setState(
+                                () => _settingsPanelOpen = !_settingsPanelOpen),
+                          ),
                           Expanded(
                             child: LayoutBuilder(
                               builder: (context, constraints) {
@@ -160,10 +165,10 @@ class _DesktopShellState extends State<DesktopShell> {
                                               ),
                                           },
                                         ),
-                                        if (!hiddenSidebar)
+                                        if (!hiddenSidebar && _settingsPanelOpen)
                                           DisplaySettingsPanel(
                                             onClose: () => setState(
-                                                () => _bottomSettings = false),
+                                                () => _settingsPanelOpen = false),
                                           ),
                                       ],
                                     );
@@ -312,17 +317,21 @@ class _PdfProgressOverlay extends StatelessWidget {
   }
 }
 
-/// Slim top bar that sits above the 3-column body. Hosts only the
-/// [AuthUserMenu] on the right edge.
+/// Slim top bar that sits above the 3-column body. Hosts the
+/// [DisplaySettingsPanel] toggle (gear icon) and the [AuthUserMenu]
+/// on the right edge. The gear button is only shown on wider screens
+/// (>= 700px) — on narrow screens the settings toggle lives in the
+/// bottom nav bar.
 class _ShellHeaderBar extends StatelessWidget {
-  const _ShellHeaderBar();
+  final bool showGear;
+  final VoidCallback? onToggleSettings;
+  const _ShellHeaderBar({this.showGear = false, this.onToggleSettings});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       height: 40,
       padding: const EdgeInsets.symmetric(horizontal: 8),
-      alignment: Alignment.centerRight,
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         border: Border(
@@ -331,7 +340,19 @@ class _ShellHeaderBar extends StatelessWidget {
           ),
         ),
       ),
-      child: const AuthUserMenu(),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          if (showGear)
+            IconButton(
+              tooltip: 'Toggle display settings',
+              icon: Icon(Icons.tune_outlined, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6), size: 20),
+              onPressed: onToggleSettings,
+            ),
+          const SizedBox(width: 4),
+          const AuthUserMenu(),
+        ],
+      ),
     );
   }
 }
