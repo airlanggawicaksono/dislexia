@@ -69,8 +69,9 @@ class _SummarizeBodyState extends State<_SummarizeBody> {
       final text = await getIt<PdfExtractorService>().extractText(
         bytes,
         onProgress: (current, total) {
-          if (mounted)
+          if (mounted) {
             setState(() => _pdfProgress = (current: current, total: total));
+          }
         },
       );
       if (!mounted) return;
@@ -143,7 +144,7 @@ class _SummarizeBodyState extends State<_SummarizeBody> {
                   }
                 },
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 24),
             ],
           ),
           body: Padding(
@@ -192,7 +193,13 @@ class _SummarizeBodyState extends State<_SummarizeBody> {
                   child: BlocBuilder<SummarizeBloc, SummarizeState>(
                     builder: (context, state) {
                       return switch (state) {
-                        SummarizeInitial() => const SizedBox(),
+                        SummarizeInitial() => _PlaceholderCard(
+                            icon: Icons.auto_awesome,
+                            title: 'Summarize',
+                            description:
+                                'Paste or type text above, then tap Summarize to generate a concise summary.',
+                            fgColor: fg,
+                          ),
                         SummarizeLoading() => const Center(
                             child: CircularProgressIndicator(),
                           ),
@@ -203,6 +210,13 @@ class _SummarizeBodyState extends State<_SummarizeBody> {
                             inputExpanded: _inputExpanded,
                             onToggleInput: () => setState(
                                 () => _inputExpanded = !_inputExpanded),
+                            onClear: () {
+                              setState(() => _inputExpanded = true);
+                              _controller.clear();
+                              context
+                                  .read<SummarizeBloc>()
+                                  .add(ClearSummarizeEvent());
+                            },
                           ),
                         SummarizeErrorState(:final message) => Center(
                             child: Text(message,
@@ -222,6 +236,51 @@ class _SummarizeBodyState extends State<_SummarizeBody> {
   }
 }
 
+class _PlaceholderCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String description;
+  final Color fgColor;
+
+  const _PlaceholderCard({
+    required this.icon,
+    required this.title,
+    required this.description,
+    required this.fgColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final fg = fgColor;
+    return Container(
+      decoration: BoxDecoration(
+        color: fg.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 48, color: fg.withValues(alpha: 0.3)),
+              const SizedBox(height: 16),
+              Text(title,
+                  style: TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.w600, color: fg)),
+              const SizedBox(height: 8),
+              Text(description,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      fontSize: 13, color: fg.withValues(alpha: 0.6))),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _FeatureBarAction extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -233,7 +292,7 @@ class _FeatureBarAction extends StatelessWidget {
     required this.label,
     required this.color,
     this.backgroundColor,
-    required this.onTap,
+    this.onTap,
   });
 
   @override
