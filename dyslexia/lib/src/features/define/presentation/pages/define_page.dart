@@ -4,7 +4,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../configs/injector/injector_conf.dart';
+import '../../../../core/utils/font_utils.dart';
 import '../../../../core/widgets/adaptive/adaptive.dart';
+import '../../../display_settings/presentation/bloc/display_settings/display_settings_bloc.dart';
+import '../../../display_settings/presentation/theme/display_colors.dart';
 import '../../../upload/data/datasources/pdf_extractor_service.dart';
 import '../bloc/define_bloc.dart';
 import '../bloc/define_event.dart';
@@ -201,7 +204,29 @@ class _ResultCard extends StatelessWidget {
             const Divider(),
             Expanded(
               child: SingleChildScrollView(
-                child: Text(text, style: const TextStyle(height: 1.6)),
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: BlocBuilder<DisplaySettingsBloc,
+                      DisplaySettingsState>(
+                    builder: (context, ds) {
+                      final s = ds.settings;
+                      final fg = fgColor(s.colorTheme);
+                      return Text(
+                        text,
+                        style: applyDyslexiaFont(
+                          font: s.font,
+                          baseStyle: TextStyle(
+                            fontSize: s.fontSize,
+                            color: fg,
+                            height: s.lineSpacing,
+                            letterSpacing: s.letterSpacing,
+                            wordSpacing: s.wordSpacing,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
               ),
             ),
           ],
