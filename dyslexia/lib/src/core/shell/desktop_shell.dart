@@ -121,7 +121,7 @@ class _DesktopShellState extends State<DesktopShell> {
                                               ),
                                           },
                                         ),
-                                        if (_settingsPanelOpen && !compactSidebar && !hiddenSidebar)
+                                        if (_settingsPanelOpen && !hiddenSidebar)
                                           DisplaySettingsPanel(
                                             onClose: () => setState(
                                                 () => _settingsPanelOpen = false),
