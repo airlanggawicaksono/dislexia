@@ -16,6 +16,7 @@ import '../../features/reader/presentation/pages/reader_page.dart';
 import '../../features/sidebar/domain/entities/sidebar_section.dart';
 import '../../features/summarize/presentation/pages/summarize_page.dart';
 import '../../features/define/presentation/pages/define_page.dart';
+import '../../features/personalize/presentation/pages/personalize_page.dart';
 import 'display_settings_panel.dart';
 import '../../features/sidebar/presentation/bloc/sidebar/sidebar_bloc.dart';
 import '../../features/sidebar/presentation/bloc/sidebar/sidebar_state.dart';
@@ -109,6 +110,8 @@ class _DesktopShellState extends State<DesktopShell> {
                                           const SummarizePage(),
                                         SidebarSection.define =>
                                           const DefinePage(),
+                                        SidebarSection.personalize =>
+                                          const PersonalizePage(),
                                         _ => PlaceholderPanel(
                                             section: sidebar.section,
                                           ),

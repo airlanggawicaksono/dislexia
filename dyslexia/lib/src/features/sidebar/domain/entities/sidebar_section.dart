@@ -48,5 +48,6 @@ enum SidebarSection {
   bool get isImplemented =>
       this == SidebarSection.reader ||
       this == SidebarSection.summarize ||
-      this == SidebarSection.define;
+      this == SidebarSection.define ||
+      this == SidebarSection.personalize;
 }
