@@ -4,29 +4,29 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../configs/injector/injector_conf.dart';
 import '../../../../core/widgets/adaptive/adaptive.dart';
-import '../bloc/personalize_bloc.dart';
-import '../bloc/personalize_event.dart';
-import '../bloc/personalize_state.dart';
+import '../bloc/professionalize_bloc.dart';
+import '../bloc/professionalize_event.dart';
+import '../bloc/professionalize_state.dart';
 
-class PersonalizePage extends StatelessWidget {
-  const PersonalizePage({super.key});
+class ProfessionalizePage extends StatelessWidget {
+  const ProfessionalizePage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => getIt<PersonalizeBloc>(),
-      child: const _PersonalizeBody(),
+      create: (_) => getIt<ProfessionalizeBloc>(),
+      child: const _ProfessionalizeBody(),
     );
   }
 }
 
-class _PersonalizeBody extends StatefulWidget {
-  const _PersonalizeBody();
+class _ProfessionalizeBody extends StatefulWidget {
+  const _ProfessionalizeBody();
   @override
-  State<_PersonalizeBody> createState() => _PersonalizeBodyState();
+  State<_ProfessionalizeBody> createState() => _ProfessionalizeBodyState();
 }
 
-class _PersonalizeBodyState extends State<_PersonalizeBody> {
+class _ProfessionalizeBodyState extends State<_ProfessionalizeBody> {
   final _controller = TextEditingController();
 
   @override
@@ -43,7 +43,7 @@ class _PersonalizeBodyState extends State<_PersonalizeBody> {
       appBar: AppBar(
         backgroundColor: theme.colorScheme.surface,
         elevation: 0,
-        title: const Text('Personalize'),
+        title: const Text('Professionalize'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(24),
@@ -54,7 +54,7 @@ class _PersonalizeBodyState extends State<_PersonalizeBody> {
               controller: _controller,
               maxLines: 8,
               decoration: InputDecoration(
-                hintText: 'Type text to personalize…',
+                hintText: 'Type text to professionalize…',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -69,12 +69,12 @@ class _PersonalizeBodyState extends State<_PersonalizeBody> {
                       final text = _controller.text.trim();
                       if (text.isNotEmpty) {
                         context
-                            .read<PersonalizeBloc>()
-                            .add(PersonalizeTextEvent(text));
+                            .read<ProfessionalizeBloc>()
+                            .add(ProfessionalizeTextEvent(text));
                       }
                     },
                     icon: const Icon(Icons.auto_awesome),
-                    label: const Text('Personalize'),
+                    label: const Text('Professionalize'),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -97,20 +97,20 @@ class _PersonalizeBodyState extends State<_PersonalizeBody> {
             ),
             const SizedBox(height: 24),
             Expanded(
-              child: BlocBuilder<PersonalizeBloc, PersonalizeState>(
+              child: BlocBuilder<ProfessionalizeBloc, ProfessionalizeState>(
                 builder: (context, state) {
                   return switch (state) {
-                    PersonalizeInitial() => const SizedBox(),
-                    PersonalizeLoading() => const Center(
+                    ProfessionalizeInitial() => const SizedBox(),
+                    ProfessionalizeLoading() => const Center(
                         child: CircularProgressIndicator(),
                       ),
-                    PersonalizeResultState(:final result) => _ResultCard(
+                    ProfessionalizeResultState(:final result) => _ResultCard(
                         text: result,
                         onClear: () => context
-                            .read<PersonalizeBloc>()
-                            .add(ClearPersonalizeEvent()),
+                            .read<ProfessionalizeBloc>()
+                            .add(ClearProfessionalizeEvent()),
                       ),
-                    PersonalizeErrorState(:final message) => Center(
+                    ProfessionalizeErrorState(:final message) => Center(
                         child: Text(message,
                             style: const TextStyle(color: Colors.red)),
                       ),
