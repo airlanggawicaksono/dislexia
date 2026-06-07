@@ -107,10 +107,7 @@ class _DesktopShellState extends State<DesktopShell> {
                                         children: [
                                           Expanded(
                                               child: _bottomSettings
-                                                  ? DisplaySettingsPanel(
-                                                      onClose: () => setState(
-                                                          () => _bottomSettings = false),
-                                                    )
+                                                  ? const DisplaySettingsPanel()
                                                 : switch (sidebar.section) {
                                                     SidebarSection.reader => const MainColumn(),
                                                     SidebarSection.summarize =>
@@ -138,10 +135,7 @@ class _DesktopShellState extends State<DesktopShell> {
                                       return Row(
                                         children: [
                                           Expanded(
-                                            child: DisplaySettingsPanel(
-                                              onClose: () => setState(
-                                                  () => _bottomSettings = false),
-                                            ),
+                                            child: const DisplaySettingsPanel(),
                                           ),
                                         ],
                                       );
@@ -166,10 +160,7 @@ class _DesktopShellState extends State<DesktopShell> {
                                           },
                                         ),
                                         if (!hiddenSidebar && _settingsPanelOpen)
-                                          DisplaySettingsPanel(
-                                            onClose: () => setState(
-                                                () => _settingsPanelOpen = false),
-                                          ),
+                                          const DisplaySettingsPanel(),
                                       ],
                                     );
                                   },

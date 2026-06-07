@@ -12,8 +12,7 @@ import '../widgets/settings/live_preview.dart';
 import '../widgets/settings/typography_sliders.dart';
 
 class DisplaySettingsPanel extends StatelessWidget {
-  final VoidCallback? onClose;
-  const DisplaySettingsPanel({super.key, this.onClose});
+  const DisplaySettingsPanel({super.key});
 
   static const _presetLabels = {
     DisplayPreset.defaultPreset: 'Default',
@@ -57,11 +56,6 @@ class DisplaySettingsPanel extends StatelessWidget {
                       children: [
                         Text('Settings',
                             style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: fg)),
-                        if (onClose != null)
-                          GestureDetector(
-                            onTap: onClose,
-                            child: Icon(Icons.close, size: 18, color: fg.withValues(alpha: 0.5)),
-                          ),
                       ],
                     ),
                     if (fullWidth) ...[
