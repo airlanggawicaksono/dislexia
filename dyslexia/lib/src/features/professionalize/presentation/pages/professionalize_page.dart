@@ -33,6 +33,7 @@ class _ProfessionalizeBody extends StatefulWidget {
 
 class _ProfessionalizeBodyState extends State<_ProfessionalizeBody> {
   final _controller = TextEditingController();
+  bool _inputExpanded = true;
   bool _isLoadingPdf = false;
 
   @override
@@ -112,31 +113,47 @@ class _ProfessionalizeBodyState extends State<_ProfessionalizeBody> {
               builder: (context, state) {
                 final hasResult = state is ProfessionalizeResultState;
                 if (hasResult) {
-                  final textField = TextField(
-                    controller: _controller,
-                    maxLines: null, expands: true,
-                    textAlignVertical: TextAlignVertical.top,
-                    style: TextStyle(color: fg, fontSize: 15),
-                    decoration: InputDecoration(
-                      hintText: 'Type text to professionalize…',
-                      hintStyle: TextStyle(color: fg.withValues(alpha: 0.4)),
-                      fillColor: fg.withValues(alpha: 0.06), filled: true,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: fg.withValues(alpha: 0.2))),
-                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: fg.withValues(alpha: 0.2))),
-                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: fg, width: 1.5)),
-                    ),
-                    onSubmitted: (_) => _submit(),
+                  final showInput = _inputExpanded;
+                  final resultCard = FeatureResultCard(
+                    text: state.result, title: 'Summary',
+                    inputExpanded: _inputExpanded,
+                    onToggleInput: () => setState(() => _inputExpanded = !_inputExpanded),
+                    onClear: () {
+                      setState(() => _inputExpanded = true);
+                      _controller.clear();
+                      context.read<ProfessionalizeBloc>().add(ClearProfessionalizeEvent());
+                    },
                   );
-                  final resultCard = FeatureResultCard(text: state.result, title: 'Summary', inputExpanded: true, onToggleInput: () {});
                   return LayoutBuilder(
                     builder: (context, constraints) {
                       final isNarrow = constraints.maxWidth < 700;
                       return Flex(
                         direction: isNarrow ? Axis.vertical : Axis.horizontal,
                         children: [
-                          Flexible(flex: 1, child: textField),
-                          isNarrow ? const SizedBox(height: 12) : const SizedBox(width: 12),
+                          if (showInput)
+                            Flexible(
+                              flex: 1,
+                              child: TextField(
+                                controller: _controller,
+                                maxLines: null, expands: true,
+                                textAlignVertical: TextAlignVertical.top,
+                                style: TextStyle(color: fg, fontSize: 15),
+                                decoration: InputDecoration(
+                                  hintText: 'Type text to professionalize…',
+                                  hintStyle: TextStyle(color: fg.withValues(alpha: 0.4)),
+                                  fillColor: fg.withValues(alpha: 0.06), filled: true,
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: fg.withValues(alpha: 0.2))),
+                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: fg.withValues(alpha: 0.2))),
+                                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: fg, width: 1.5)),
+                                ),
+                                onSubmitted: (_) => _submit(),
+                              ),
+                            ),
+                          if (showInput)
+                            isNarrow
+                                ? const SizedBox(height: 12)
+                                : const SizedBox(width: 12),
                           Flexible(flex: 1, child: resultCard),
                         ],
                       );
