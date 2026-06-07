@@ -119,11 +119,6 @@ class _ProfessionalizeBodyState extends State<_ProfessionalizeBody> {
                           text: state.result, title: 'Summary',
                           inputExpanded: _inputExpanded,
                           onToggleInput: () => setState(() => _inputExpanded = !_inputExpanded),
-                          onClear: () {
-                            setState(() => _inputExpanded = true);
-                            _controller.clear();
-                            context.read<ProfessionalizeBloc>().add(ClearProfessionalizeEvent());
-                          },
                         )
                       : const Center(child: CircularProgressIndicator());
                   return LayoutBuilder(

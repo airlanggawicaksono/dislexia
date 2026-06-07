@@ -119,11 +119,6 @@ class _DefineBodyState extends State<_DefineBody> {
                           text: state.result, title: 'Summary',
                           inputExpanded: _inputExpanded,
                           onToggleInput: () => setState(() => _inputExpanded = !_inputExpanded),
-                          onClear: () {
-                            setState(() => _inputExpanded = true);
-                            _controller.clear();
-                            context.read<DefineBloc>().add(ClearDefineEvent());
-                          },
                         )
                       : const Center(child: CircularProgressIndicator());
                   return LayoutBuilder(
@@ -219,6 +214,16 @@ class _FeatureBarAction extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           child: Row(mainAxisSize: MainAxisSize.min, children: [
+            Icon(icon, size: 14, color: color),
+            const SizedBox(width: 4),
+            Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color)),
+          ]),
+        ),
+      ),
+    );
+  }
+}
+isSize: MainAxisSize.min, children: [
             Icon(icon, size: 14, color: color),
             const SizedBox(width: 4),
             Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color)),

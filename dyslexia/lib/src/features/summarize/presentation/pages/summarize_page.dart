@@ -119,11 +119,6 @@ class _SummarizeBodyState extends State<_SummarizeBody> {
                           text: state.result, title: 'Summary',
                           inputExpanded: _inputExpanded,
                           onToggleInput: () => setState(() => _inputExpanded = !_inputExpanded),
-                          onClear: () {
-                            setState(() => _inputExpanded = true);
-                            _controller.clear();
-                            context.read<SummarizeBloc>().add(ClearSummarizeEvent());
-                          },
                         )
                       : const Center(child: CircularProgressIndicator());
                   return LayoutBuilder(
