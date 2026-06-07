@@ -122,9 +122,12 @@ class _DesktopShellState extends State<DesktopShell> {
                                           _BottomNavBar(
                                             currentSection: sidebar.section,
                                             showSettings: _bottomSettings,
-                                            onSectionSelected: (s) => context
-                                                .read<SidebarBloc>()
-                                                .add(SidebarSectionSelected(s)),
+                                            onSectionSelected: (s) {
+                                              setState(() => _bottomSettings = false);
+                                              context
+                                                  .read<SidebarBloc>()
+                                                  .add(SidebarSectionSelected(s));
+                                            },
                                             onToggleSettings: () => setState(
                                                 () => _bottomSettings = !_bottomSettings),
                                           ),
