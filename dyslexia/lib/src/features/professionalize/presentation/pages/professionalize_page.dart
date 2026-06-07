@@ -111,19 +111,21 @@ class _ProfessionalizeBodyState extends State<_ProfessionalizeBody> {
             padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 12 : 24),
             child: BlocBuilder<ProfessionalizeBloc, ProfessionalizeState>(
               builder: (context, state) {
-                final hasResult = state is ProfessionalizeResultState;
+                final hasResult = state is ProfessionalizeResultState || state is ProfessionalizeLoading;
                 if (hasResult) {
                   final showInput = _inputExpanded;
-                  final resultCard = FeatureResultCard(
-                    text: state.result, title: 'Summary',
-                    inputExpanded: _inputExpanded,
-                    onToggleInput: () => setState(() => _inputExpanded = !_inputExpanded),
-                    onClear: () {
-                      setState(() => _inputExpanded = true);
-                      _controller.clear();
-                      context.read<ProfessionalizeBloc>().add(ClearProfessionalizeEvent());
-                    },
-                  );
+                  final resultCard = state is ProfessionalizeResultState
+                      ? FeatureResultCard(
+                          text: state.result, title: 'Summary',
+                          inputExpanded: _inputExpanded,
+                          onToggleInput: () => setState(() => _inputExpanded = !_inputExpanded),
+                          onClear: () {
+                            setState(() => _inputExpanded = true);
+                            _controller.clear();
+                            context.read<ProfessionalizeBloc>().add(ClearProfessionalizeEvent());
+                          },
+                        )
+                      : const Center(child: CircularProgressIndicator());
                   return LayoutBuilder(
                     builder: (context, constraints) {
                       final isNarrow = constraints.maxWidth < 700;

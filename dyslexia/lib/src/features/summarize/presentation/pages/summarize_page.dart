@@ -111,19 +111,21 @@ class _SummarizeBodyState extends State<_SummarizeBody> {
             padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 12 : 24),
             child: BlocBuilder<SummarizeBloc, SummarizeState>(
               builder: (context, state) {
-                final hasResult = state is SummarizeResultState;
+                final hasResult = state is SummarizeResultState || state is SummarizeLoading;
                 if (hasResult) {
                   final showInput = _inputExpanded;
-                  final resultCard = FeatureResultCard(
-                    text: state.result, title: 'Summary',
-                    inputExpanded: _inputExpanded,
-                    onToggleInput: () => setState(() => _inputExpanded = !_inputExpanded),
-                    onClear: () {
-                      setState(() => _inputExpanded = true);
-                      _controller.clear();
-                      context.read<SummarizeBloc>().add(ClearSummarizeEvent());
-                    },
-                  );
+                  final resultCard = state is SummarizeResultState
+                      ? FeatureResultCard(
+                          text: state.result, title: 'Summary',
+                          inputExpanded: _inputExpanded,
+                          onToggleInput: () => setState(() => _inputExpanded = !_inputExpanded),
+                          onClear: () {
+                            setState(() => _inputExpanded = true);
+                            _controller.clear();
+                            context.read<SummarizeBloc>().add(ClearSummarizeEvent());
+                          },
+                        )
+                      : const Center(child: CircularProgressIndicator());
                   return LayoutBuilder(
                     builder: (context, constraints) {
                       final isNarrow = constraints.maxWidth < 700;

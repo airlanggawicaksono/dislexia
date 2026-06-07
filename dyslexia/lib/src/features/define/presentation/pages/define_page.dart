@@ -111,19 +111,21 @@ class _DefineBodyState extends State<_DefineBody> {
             padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 12 : 24),
             child: BlocBuilder<DefineBloc, DefineState>(
               builder: (context, state) {
-                final hasResult = state is DefineResultState;
+                final hasResult = state is DefineResultState || state is DefineLoading;
                 if (hasResult) {
                   final showInput = _inputExpanded;
-                  final resultCard = FeatureResultCard(
-                    text: state.result, title: 'Summary',
-                    inputExpanded: _inputExpanded,
-                    onToggleInput: () => setState(() => _inputExpanded = !_inputExpanded),
-                    onClear: () {
-                      setState(() => _inputExpanded = true);
-                      _controller.clear();
-                      context.read<DefineBloc>().add(ClearDefineEvent());
-                    },
-                  );
+                  final resultCard = state is DefineResultState
+                      ? FeatureResultCard(
+                          text: state.result, title: 'Summary',
+                          inputExpanded: _inputExpanded,
+                          onToggleInput: () => setState(() => _inputExpanded = !_inputExpanded),
+                          onClear: () {
+                            setState(() => _inputExpanded = true);
+                            _controller.clear();
+                            context.read<DefineBloc>().add(ClearDefineEvent());
+                          },
+                        )
+                      : const Center(child: CircularProgressIndicator());
                   return LayoutBuilder(
                     builder: (context, constraints) {
                       final isNarrow = constraints.maxWidth < 700;
