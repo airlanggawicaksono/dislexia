@@ -16,6 +16,8 @@ class _DefinePageState extends State<DefinePage> {
   final _bloc = getIt<DefineBloc>();
   final _controller = TextEditingController();
   bool _inputExpanded = true;
+  String? _viewResultText;
+  String? _viewResultTitle;
 
   @override
   void dispose() { _controller.dispose(); super.dispose(); }
@@ -31,14 +33,22 @@ class _DefinePageState extends State<DefinePage> {
           controller: _controller,
           title: 'Define', resultTitle: 'Definition', heroTag: 'define',
           resultText: hasResult ? state.result : '',
-          hasResult: hasResult || isLoading,
+          viewResultText: _viewResultText,
+          viewResultTitle: _viewResultTitle,
+          hasResult: hasResult || isLoading || _viewResultText != null,
           isLoading: isLoading,
           inputExpanded: _inputExpanded,
           onToggleInput: (v) => setState(() => _inputExpanded = v),
           onSubmit: () {
+            setState(() { _viewResultText = null; _viewResultTitle = null; });
             final t = _controller.text.trim();
             if (t.isNotEmpty) _bloc.add(DefineTextEvent(t));
           },
+          onViewResult: (text, result) => setState(() {
+            _controller.text = text;
+            _viewResultText = result;
+            _viewResultTitle = 'History';
+          }),
         );
       },
     ),

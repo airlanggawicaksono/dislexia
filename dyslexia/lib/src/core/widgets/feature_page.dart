@@ -9,6 +9,7 @@ import '../../features/display_settings/presentation/theme/display_colors.dart';
 import '../../features/upload/data/datasources/pdf_extractor_service.dart';
 import '../widgets/adaptive/adaptive.dart';
 import '../widgets/feature_result_card.dart';
+import '../widgets/history_panel.dart';
 
 class FeaturePage extends StatelessWidget {
   final String title;
@@ -16,11 +17,14 @@ class FeaturePage extends StatelessWidget {
   final String heroTag;
   final TextEditingController controller;
   final String resultText;
+  final String? viewResultText;
+  final String? viewResultTitle;
   final bool hasResult;
   final bool isLoading;
   final VoidCallback onSubmit;
   final bool inputExpanded;
   final ValueChanged<bool> onToggleInput;
+  final void Function(String text, String result)? onViewResult;
 
   const FeaturePage({
     super.key,
@@ -29,32 +33,51 @@ class FeaturePage extends StatelessWidget {
     required this.heroTag,
     required this.controller,
     required this.resultText,
+    this.viewResultText,
+    this.viewResultTitle,
     required this.hasResult,
     required this.isLoading,
     required this.onSubmit,
     required this.inputExpanded,
     required this.onToggleInput,
+    this.onViewResult,
   });
 
   void _onPaste(BuildContext context) async {
     final data = await Clipboard.getData(Clipboard.kTextPlain);
     if (!context.mounted) return;
     final t = data?.text?.trim() ?? '';
-    if (t.isEmpty) { showAdaptiveFeedback(context, 'Nothing found in clipboard'); return; }
+    if (t.isEmpty) {
+      showAdaptiveFeedback(context, 'Nothing found in clipboard');
+      return;
+    }
     controller.text = t;
   }
 
   Future<void> _pickPdf(BuildContext context) async {
     try {
-      final result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['pdf'], withData: true);
+      final result = await FilePicker.platform.pickFiles(
+          type: FileType.custom, allowedExtensions: ['pdf'], withData: true);
       if (result == null || result.files.isEmpty) return;
-      final file = result.files.first; final bytes = file.bytes;
-      if (bytes == null) { if (!context.mounted) return; showAdaptiveFeedback(context, 'Could not read file data'); return; }
+      final file = result.files.first;
+      final bytes = file.bytes;
+      if (bytes == null) {
+        if (!context.mounted) return;
+        showAdaptiveFeedback(context, 'Could not read file data');
+        return;
+      }
       final text = await getIt<PdfExtractorService>().extractText(bytes);
       if (!context.mounted) return;
-      if (text.trim().isEmpty) { showAdaptiveFeedback(context, 'PDF appears empty or contains only images'); return; }
+      if (text.trim().isEmpty) {
+        showAdaptiveFeedback(
+            context, 'PDF appears empty or contains only images');
+        return;
+      }
       controller.text = text;
-    } catch (e) { if (!context.mounted) return; showAdaptiveFeedback(context, 'Failed to read PDF: $e'); }
+    } catch (e) {
+      if (!context.mounted) return;
+      showAdaptiveFeedback(context, 'Failed to read PDF: $e');
+    }
   }
 
   @override
@@ -79,19 +102,51 @@ class FeaturePage extends StatelessWidget {
                 )
               : null,
           appBar: AppBar(
-            backgroundColor: bg, elevation: 0, centerTitle: false,
+            backgroundColor: bg,
+            elevation: 0,
+            centerTitle: false,
             title: Text(title, style: TextStyle(color: fg)),
             actions: narrow
                 ? [
-                    _FeatureBarAction(icon: Icons.auto_awesome, label: title, color: Colors.white, backgroundColor: const Color(0xFF3D5A99), onTap: onSubmit),
+                    _FeatureBarAction(
+                        icon: Icons.history_rounded,
+                        label: 'History',
+                        color: fg,
+                        onTap: () => _showHistory(context)),
+                    const SizedBox(width: 4),
+                    _FeatureBarAction(
+                        icon: Icons.auto_awesome,
+                        label: title,
+                        color: Colors.white,
+                        backgroundColor: const Color(0xFF3D5A99),
+                        onTap: onSubmit),
                     const SizedBox(width: 12),
                   ]
                 : [
-                    _FeatureBarAction(icon: Icons.content_paste_rounded, label: 'Paste', color: fg, onTap: () => _onPaste(context)),
+                    _FeatureBarAction(
+                        icon: Icons.history_rounded,
+                        label: 'History',
+                        color: fg,
+                        onTap: () => _showHistory(context)),
                     const SizedBox(width: 4),
-                    _FeatureBarAction(icon: Icons.upload_file_rounded, label: 'PDF', color: fg, onTap: () => _pickPdf(context)),
+                    _FeatureBarAction(
+                        icon: Icons.content_paste_rounded,
+                        label: 'Paste',
+                        color: fg,
+                        onTap: () => _onPaste(context)),
+                    const SizedBox(width: 4),
+                    _FeatureBarAction(
+                        icon: Icons.upload_file_rounded,
+                        label: 'PDF',
+                        color: fg,
+                        onTap: () => _pickPdf(context)),
                     const SizedBox(width: 12),
-                    _FeatureBarAction(icon: Icons.auto_awesome, label: title, color: Colors.white, backgroundColor: const Color(0xFF3D5A99), onTap: onSubmit),
+                    _FeatureBarAction(
+                        icon: Icons.auto_awesome,
+                        label: title,
+                        color: Colors.white,
+                        backgroundColor: const Color(0xFF3D5A99),
+                        onTap: onSubmit),
                     const SizedBox(width: 12),
                   ],
           ),
@@ -107,16 +162,22 @@ class FeaturePage extends StatelessWidget {
                           children: [
                             if (inputExpanded) ...[
                               Flexible(flex: 2, child: _inputField(fg)),
-                              narrow ? const SizedBox(height: 12) : const SizedBox(width: 12),
+                              narrow
+                                  ? const SizedBox(height: 12)
+                                  : const SizedBox(width: 12),
                             ],
-                            Flexible(flex: 3, child: isLoading
-                                ? const Center(child: CircularProgressIndicator())
-                                : FeatureResultCard(
-                                    text: resultText,
-                                    title: resultTitle,
-                                    inputExpanded: inputExpanded,
-                                    onToggleInput: () => onToggleInput(!inputExpanded),
-                                  )),
+                            Flexible(
+                                flex: 3,
+                                child: isLoading
+                                    ? const Center(
+                                        child: CircularProgressIndicator())
+                                    : FeatureResultCard(
+                                        text: viewResultText ?? resultText,
+                                        title: viewResultTitle ?? resultTitle,
+                                        inputExpanded: inputExpanded,
+                                        onToggleInput: () =>
+                                            onToggleInput(!inputExpanded),
+                                      )),
                           ],
                         )
                       : _inputField(fg),
@@ -130,28 +191,69 @@ class FeaturePage extends StatelessWidget {
   }
 
   Widget _inputField(Color fg) => TextField(
-    controller: controller, maxLines: null, expands: true,
-    textAlignVertical: TextAlignVertical.top,
-    style: TextStyle(color: fg, fontSize: 15),
-    decoration: InputDecoration(
-      hintText: 'Type text to ${title.toLowerCase()}…',
-      hintStyle: TextStyle(color: fg.withValues(alpha: 0.4)),
-      fillColor: fg.withValues(alpha: 0.06), filled: true,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: fg.withValues(alpha: 0.2))),
-      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: fg.withValues(alpha: 0.2))),
-      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: fg, width: 1.5)),
-    ),
-    onSubmitted: (_) => onSubmit(),
-  );
+        controller: controller,
+        maxLines: null,
+        expands: true,
+        textAlignVertical: TextAlignVertical.top,
+        style: TextStyle(color: fg, fontSize: 15),
+        decoration: InputDecoration(
+          hintText: 'Type text to ${title.toLowerCase()}…',
+          hintStyle: TextStyle(color: fg.withValues(alpha: 0.4)),
+          fillColor: fg.withValues(alpha: 0.06),
+          filled: true,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: fg.withValues(alpha: 0.2))),
+          enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: fg.withValues(alpha: 0.2))),
+          focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: fg, width: 1.5)),
+        ),
+        onSubmitted: (_) => onSubmit(),
+      );
+
+  void _showHistory(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => HistoryPanel(
+        feature: title.toLowerCase(),
+        onSelectInput: (text) {
+          Navigator.pop(ctx);
+          controller.text = text;
+        },
+        onSelectResult: (item) {
+          Navigator.pop(ctx);
+          controller.text = item.inputText;
+          onViewResult?.call(item.inputText, item.outputText);
+        },
+      ),
+    );
+  }
 
   void _showQuickActions(BuildContext context) {
     showModalBottomSheet(
       context: context,
       builder: (ctx) => SafeArea(
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          ListTile(leading: const Icon(Icons.content_paste_rounded), title: const Text('Paste from clipboard'), onTap: () { Navigator.pop(ctx); _onPaste(context); }),
-          ListTile(leading: const Icon(Icons.upload_file_rounded), title: const Text('Upload PDF'), onTap: () { Navigator.pop(ctx); _pickPdf(context); }),
+          ListTile(
+              leading: const Icon(Icons.content_paste_rounded),
+              title: const Text('Paste from clipboard'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _onPaste(context);
+              }),
+          ListTile(
+              leading: const Icon(Icons.upload_file_rounded),
+              title: const Text('Upload PDF'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _pickPdf(context);
+              }),
         ]),
       ),
     );
@@ -159,18 +261,34 @@ class FeaturePage extends StatelessWidget {
 }
 
 class _FeatureBarAction extends StatelessWidget {
-  final IconData icon; final String label; final Color color; final Color? backgroundColor; final VoidCallback? onTap;
-  const _FeatureBarAction({required this.icon, required this.label, required this.color, this.backgroundColor, this.onTap});
+  final IconData icon;
+  final String label;
+  final Color color;
+  final Color? backgroundColor;
+  final VoidCallback? onTap;
+  const _FeatureBarAction(
+      {required this.icon,
+      required this.label,
+      required this.color,
+      this.backgroundColor,
+      this.onTap});
   @override
   Widget build(BuildContext context) => Material(
-    color: backgroundColor ?? color.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(8),
-    child: InkWell(onTap: onTap, borderRadius: BorderRadius.circular(8),
-      child: Padding(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Icon(icon, size: 14, color: color), const SizedBox(width: 4),
-          Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color)),
-        ]),
-      ),
-    ),
-  );
+        color: backgroundColor ?? color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(8),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              Icon(icon, size: 14, color: color),
+              const SizedBox(width: 4),
+              Text(label,
+                  style: TextStyle(
+                      fontSize: 11, fontWeight: FontWeight.w600, color: color)),
+            ]),
+          ),
+        ),
+      );
 }
