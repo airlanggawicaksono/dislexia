@@ -134,7 +134,7 @@ class _DefineBodyState extends State<_DefineBody> {
                         children: [
                           if (showInput)
                             Flexible(
-                              flex: 1,
+                              flex: 2,
                               child: TextField(
                                 controller: _controller,
                                 maxLines: null, expands: true,
@@ -156,7 +156,7 @@ class _DefineBodyState extends State<_DefineBody> {
                             isNarrow
                                 ? const SizedBox(height: 12)
                                 : const SizedBox(width: 12),
-                          Flexible(flex: 1, child: resultCard),
+                          Flexible(flex: 3, child: resultCard),
                         ],
                       );
                     },
