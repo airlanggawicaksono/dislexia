@@ -117,7 +117,7 @@ class _ProfessionalizeBodyState extends State<_ProfessionalizeBody> {
                   children: [
                     TextField(
                       controller: _controller,
-                      maxLines: 1,
+                      maxLines: constraints.maxWidth < 600 ? 4 : 8,
                       style: TextStyle(color: fg, fontSize: 15),
                       decoration: InputDecoration(
                         hintText: 'Type text to professionalize…',
