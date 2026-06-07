@@ -108,41 +108,60 @@ class _SummarizeBodyState extends State<_SummarizeBody> {
           ),
           body: Padding(
             padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 12 : 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                TextField(
-                  controller: _controller,
-                  minLines: 1,
-                  maxLines: 8,
-                  style: TextStyle(color: fg, fontSize: 15),
-                  decoration: InputDecoration(
-                    hintText: 'Type text to summarize…',
-                    hintStyle: TextStyle(color: fg.withValues(alpha: 0.4)),
-                    fillColor: fg.withValues(alpha: 0.06), filled: true,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: fg.withValues(alpha: 0.2))),
-                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: fg.withValues(alpha: 0.2))),
-                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: fg, width: 1.5)),
-                  ),
-                  onSubmitted: (_) => _submit(),
-                ),
-                const SizedBox(height: 12),
-                Expanded(
-                  child: BlocBuilder<SummarizeBloc, SummarizeState>(
-                    builder: (context, state) {
-                      return switch (state) {
-                        SummarizeInitial() => const SizedBox(),
-                        SummarizeLoading() => const Center(child: CircularProgressIndicator()),
-                        SummarizeResultState(:final result) =>
-                          FeatureResultCard(text: result, title: 'Summary', inputExpanded: true, onToggleInput: () {}),
-                        SummarizeErrorState(:final message) => Center(child: Text(message, style: const TextStyle(color: Colors.red))),
-                        _ => const SizedBox(),
-                      };
-                    },
-                  ),
-                ),
-              ],
+            child: BlocBuilder<SummarizeBloc, SummarizeState>(
+              builder: (context, state) {
+                final hasResult = state is SummarizeResultState;
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (hasResult)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: TextField(
+                          controller: _controller,
+                          maxLines: 3,
+                          style: TextStyle(color: fg, fontSize: 15),
+                          decoration: InputDecoration(
+                            hintText: 'Type text to summarize…',
+                            hintStyle: TextStyle(color: fg.withValues(alpha: 0.4)),
+                            fillColor: fg.withValues(alpha: 0.06), filled: true,
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: fg.withValues(alpha: 0.2))),
+                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: fg.withValues(alpha: 0.2))),
+                            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: fg, width: 1.5)),
+                          ),
+                          onSubmitted: (_) => _submit(),
+                        ),
+                      ),
+                    Expanded(
+                      child: hasResult
+                          ? FeatureResultCard(text: state.result, title: 'Summary', inputExpanded: true, onToggleInput: () {})
+                          : Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                TextField(
+                                  controller: _controller,
+                                  maxLines: null,
+                                  expands: true,
+                                  textAlignVertical: TextAlignVertical.top,
+                                  style: TextStyle(color: fg, fontSize: 15),
+                                  decoration: InputDecoration(
+                                    hintText: 'Type text to summarize…',
+                                    hintStyle: TextStyle(color: fg.withValues(alpha: 0.4)),
+                                    fillColor: fg.withValues(alpha: 0.06), filled: true,
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: fg.withValues(alpha: 0.2))),
+                                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: fg.withValues(alpha: 0.2))),
+                                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: fg, width: 1.5)),
+                                  ),
+                                  onSubmitted: (_) => _submit(),
+                                ),
+                              ],
+                            ),
+                    ),
+                  ],
+                );
+              },
             ),
           ),
         );
