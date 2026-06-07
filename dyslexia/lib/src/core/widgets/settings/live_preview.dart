@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../features/display_settings/domain/entities/display_settings_entity.dart';
 import '../../../features/display_settings/presentation/bloc/display_settings/display_settings_bloc.dart';
 import '../../../features/display_settings/presentation/theme/display_colors.dart';
+import '../../../features/reader/data/syllabifier.dart';
 import '../../utils/font_utils.dart';
 
 class LivePreview extends StatelessWidget {
@@ -28,8 +28,11 @@ class LivePreview extends StatelessWidget {
           ),
           child: Center(
             child: Text(
-              'The quick brown fox jumps over the lazy dog. '
-              'Reading should feel comfortable and natural for everyone.',
+              s.syllablesEnabled
+                  ? syllabify('The quick brown fox jumps over the lazy dog. '
+                      'Reading should feel comfortable and natural for everyone.')
+                  : 'The quick brown fox jumps over the lazy dog. '
+                      'Reading should feel comfortable and natural for everyone.',
               textAlign: TextAlign.center,
               maxLines: 3,
               style: applyDyslexiaFont(
