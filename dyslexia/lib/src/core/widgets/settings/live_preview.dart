@@ -5,6 +5,7 @@ import '../../../features/display_settings/presentation/bloc/display_settings/di
 import '../../../features/display_settings/presentation/theme/display_colors.dart';
 import '../../../features/reader/data/syllabifier.dart';
 import '../../utils/font_utils.dart';
+import '../word_highlight_text.dart';
 
 class LivePreview extends StatelessWidget {
   const LivePreview({super.key});
@@ -27,14 +28,12 @@ class LivePreview extends StatelessWidget {
             border: Border.all(color: borderColor),
           ),
           child: Center(
-            child: Text(
-              s.syllablesEnabled
+            child: WordHighlightText(
+              text: s.syllablesEnabled
                   ? syllabify('The quick brown fox jumps over the lazy dog. '
                       'Reading should feel comfortable and natural for everyone.')
                   : 'The quick brown fox jumps over the lazy dog. '
                       'Reading should feel comfortable and natural for everyone.',
-              textAlign: TextAlign.center,
-              maxLines: 3,
               style: applyDyslexiaFont(
                 font: s.font,
                 baseStyle: TextStyle(
@@ -45,6 +44,7 @@ class LivePreview extends StatelessWidget {
                   color: fg,
                 ),
               ),
+              maxWidth: double.infinity,
             ),
           ),
         );
