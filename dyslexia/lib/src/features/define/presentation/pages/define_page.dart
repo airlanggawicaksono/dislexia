@@ -92,6 +92,42 @@ class _DefineBodyState extends State<_DefineBody> {
     }
   }
 
+  void _showQuickActions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.content_paste_rounded),
+              title: const Text('Paste from clipboard'),
+              onTap: () async {
+                Navigator.pop(ctx);
+                final data = await Clipboard.getData(Clipboard.kTextPlain);
+                if (!context.mounted) return;
+                final text = data?.text?.trim() ?? '';
+                if (text.isEmpty) {
+                  showAdaptiveFeedback(context, 'Nothing found in clipboard');
+                  return;
+                }
+                _controller.text = text;
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.upload_file_rounded),
+              title: const Text('Upload PDF'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _pickPdf(context);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<DisplaySettingsBloc, DisplaySettingsState>(
@@ -99,51 +135,76 @@ class _DefineBodyState extends State<_DefineBody> {
         final s = ds.settings;
         final bg = bgColor(s.colorTheme);
         final fg = fgColor(s.colorTheme);
+        final narrow = MediaQuery.of(context).size.width < 700;
         return Scaffold(
           backgroundColor: bg,
+          floatingActionButton: narrow
+              ? FloatingActionButton.small(
+                  heroTag: 'define',
+                  backgroundColor: const Color(0xFF3D5A99),
+                  onPressed: () => _showQuickActions(context),
+                  child: const Icon(Icons.add_rounded, color: Colors.white),
+                )
+              : null,
           appBar: AppBar(
             backgroundColor: bg,
             elevation: 0,
             centerTitle: false,
             title: Text('Define', style: TextStyle(color: fg)),
-            actions: [
-              _FeatureBarAction(
-                icon: Icons.content_paste_rounded,
-                label: 'Paste',
-                color: fg,
-                onTap: () async {
-                  final data = await Clipboard.getData(Clipboard.kTextPlain);
-                  if (!context.mounted) return;
-                  final text = data?.text?.trim() ?? '';
-                  if (text.isEmpty) {
-                    showAdaptiveFeedback(context, 'Nothing found in clipboard');
-                    return;
-                  }
-                  _controller.text = text;
-                },
-              ),
-              const SizedBox(width: 4),
-              _FeatureBarAction(
-                icon: Icons.upload_file_rounded,
-                label: 'PDF',
-                color: fg,
-                onTap: () => _pickPdf(context),
-              ),
-              const SizedBox(width: 12),
-              _FeatureBarAction(
-                icon: Icons.auto_awesome,
-                label: 'Define',
-                color: Colors.white,
-                backgroundColor: const Color(0xFF3D5A99),
-                onTap: () {
-                  final text = _controller.text.trim();
-                  if (text.isNotEmpty) {
-                    context.read<DefineBloc>().add(DefineTextEvent(text));
-                  }
-                },
-              ),
-              const SizedBox(width: 12),
-            ],
+            actions: narrow
+                ? [
+                    _FeatureBarAction(
+                      icon: Icons.auto_awesome,
+                      label: 'Define',
+                      color: Colors.white,
+                      backgroundColor: const Color(0xFF3D5A99),
+                      onTap: () {
+                        final text = _controller.text.trim();
+                        if (text.isNotEmpty) {
+                          context.read<DefineBloc>().add(DefineTextEvent(text));
+                        }
+                      },
+                    ),
+                    const SizedBox(width: 12),
+                  ]
+                : [
+                    _FeatureBarAction(
+                      icon: Icons.content_paste_rounded,
+                      label: 'Paste',
+                      color: fg,
+                      onTap: () async {
+                        final data = await Clipboard.getData(Clipboard.kTextPlain);
+                        if (!context.mounted) return;
+                        final text = data?.text?.trim() ?? '';
+                        if (text.isEmpty) {
+                          showAdaptiveFeedback(context, 'Nothing found in clipboard');
+                          return;
+                        }
+                        _controller.text = text;
+                      },
+                    ),
+                    const SizedBox(width: 4),
+                    _FeatureBarAction(
+                      icon: Icons.upload_file_rounded,
+                      label: 'PDF',
+                      color: fg,
+                      onTap: () => _pickPdf(context),
+                    ),
+                    const SizedBox(width: 12),
+                    _FeatureBarAction(
+                      icon: Icons.auto_awesome,
+                      label: 'Define',
+                      color: Colors.white,
+                      backgroundColor: const Color(0xFF3D5A99),
+                      onTap: () {
+                        final text = _controller.text.trim();
+                        if (text.isNotEmpty) {
+                          context.read<DefineBloc>().add(DefineTextEvent(text));
+                        }
+                      },
+                    ),
+                    const SizedBox(width: 12),
+                  ],
           ),
           body: LayoutBuilder(
             builder: (context, constraints) {
@@ -258,12 +319,9 @@ class _PlaceholderCard extends StatelessWidget {
             children: [
               Icon(icon, size: 48, color: fg.withValues(alpha: 0.3)),
               const SizedBox(height: 16),
-              Text(title,
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: fg)),
+              Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: fg)),
               const SizedBox(height: 8),
-              Text(description,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 13, color: fg.withValues(alpha: 0.6))),
+              Text(description, textAlign: TextAlign.center, style: TextStyle(fontSize: 13, color: fg.withValues(alpha: 0.6))),
             ],
           ),
         ),
@@ -301,10 +359,7 @@ class _FeatureBarAction extends StatelessWidget {
             children: [
               Icon(icon, size: 14, color: color),
               const SizedBox(width: 4),
-              Text(
-                label,
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color),
-              ),
+              Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color)),
             ],
           ),
         ),
