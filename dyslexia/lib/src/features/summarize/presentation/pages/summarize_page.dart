@@ -111,31 +111,49 @@ class _SummarizeBodyState extends State<_SummarizeBody> {
             child: BlocBuilder<SummarizeBloc, SummarizeState>(
               builder: (context, state) {
                 final hasResult = state is SummarizeResultState;
+                final narrow = MediaQuery.of(context).size.width < 700;
                 if (hasResult) {
-                  return Row(
+                  return narrow ? Column(
                     children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _controller,
-                          maxLines: null, expands: true,
-                          textAlignVertical: TextAlignVertical.top,
-                          style: TextStyle(color: fg, fontSize: 15),
-                          decoration: InputDecoration(
-                            hintText: 'Type text to summarize…',
-                            hintStyle: TextStyle(color: fg.withValues(alpha: 0.4)),
-                            fillColor: fg.withValues(alpha: 0.06), filled: true,
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: fg.withValues(alpha: 0.2))),
-                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: fg.withValues(alpha: 0.2))),
-                            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: fg, width: 1.5)),
-                          ),
-                          onSubmitted: (_) => _submit(),
+                      Expanded(child: TextField(
+                        controller: _controller,
+                        maxLines: null, expands: true,
+                        textAlignVertical: TextAlignVertical.top,
+                        style: TextStyle(color: fg, fontSize: 15),
+                        decoration: InputDecoration(
+                          hintText: 'Type text to summarize…',
+                          hintStyle: TextStyle(color: fg.withValues(alpha: 0.4)),
+                          fillColor: fg.withValues(alpha: 0.06), filled: true,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: fg.withValues(alpha: 0.2))),
+                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: fg.withValues(alpha: 0.2))),
+                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: fg, width: 1.5)),
                         ),
-                      ),
+                        onSubmitted: (_) => _submit(),
+                      )),
+                      const SizedBox(height: 12),
+                      Expanded(child: FeatureResultCard(text: state.result, title: 'Summary', inputExpanded: true, onToggleInput: () {})),
+                    ],
+                  ) : Row(
+                    children: [
+                      Expanded(child: TextField(
+                        controller: _controller,
+                        maxLines: null, expands: true,
+                        textAlignVertical: TextAlignVertical.top,
+                        style: TextStyle(color: fg, fontSize: 15),
+                        decoration: InputDecoration(
+                          hintText: 'Type text to summarize…',
+                          hintStyle: TextStyle(color: fg.withValues(alpha: 0.4)),
+                          fillColor: fg.withValues(alpha: 0.06), filled: true,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: fg.withValues(alpha: 0.2))),
+                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: fg.withValues(alpha: 0.2))),
+                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: fg, width: 1.5)),
+                        ),
+                        onSubmitted: (_) => _submit(),
+                      )),
                       const SizedBox(width: 12),
-                      Expanded(
-                        child: FeatureResultCard(text: state.result, title: 'Summary', inputExpanded: true, onToggleInput: () {}),
-                      ),
+                      Expanded(child: FeatureResultCard(text: state.result, title: 'Summary', inputExpanded: true, onToggleInput: () {})),
                     ],
                   );
                 }
