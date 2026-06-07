@@ -111,21 +111,20 @@ class _ProfessionalizeBodyState extends State<_ProfessionalizeBody> {
             child: BlocBuilder<ProfessionalizeBloc, ProfessionalizeState>(
               builder: (context, state) {
                 final hasResult = state is ProfessionalizeResultState;
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    if (hasResult)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
+                if (hasResult) {
+                  return Row(
+                    children: [
+                      Expanded(
                         child: TextField(
                           controller: _controller,
-                          maxLines: 3,
+                          maxLines: null, expands: true,
+                          textAlignVertical: TextAlignVertical.top,
                           style: TextStyle(color: fg, fontSize: 15),
                           decoration: InputDecoration(
                             hintText: 'Type text to professionalize…',
                             hintStyle: TextStyle(color: fg.withValues(alpha: 0.4)),
                             fillColor: fg.withValues(alpha: 0.06), filled: true,
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: fg.withValues(alpha: 0.2))),
                             enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: fg.withValues(alpha: 0.2))),
                             focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: fg, width: 1.5)),
@@ -133,33 +132,28 @@ class _ProfessionalizeBodyState extends State<_ProfessionalizeBody> {
                           onSubmitted: (_) => _submit(),
                         ),
                       ),
-                    Expanded(
-                      child: hasResult
-                          ? FeatureResultCard(text: state.result, title: 'Summary', inputExpanded: true, onToggleInput: () {})
-                          : Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                TextField(
-                                  controller: _controller,
-                                  maxLines: null,
-                                  expands: true,
-                                  textAlignVertical: TextAlignVertical.top,
-                                  style: TextStyle(color: fg, fontSize: 15),
-                                  decoration: InputDecoration(
-                                    hintText: 'Type text to professionalize…',
-                                    hintStyle: TextStyle(color: fg.withValues(alpha: 0.4)),
-                                    fillColor: fg.withValues(alpha: 0.06), filled: true,
-                                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: fg.withValues(alpha: 0.2))),
-                                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: fg.withValues(alpha: 0.2))),
-                                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: fg, width: 1.5)),
-                                  ),
-                                  onSubmitted: (_) => _submit(),
-                                ),
-                              ],
-                            ),
-                    ),
-                  ],
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: FeatureResultCard(text: state.result, title: 'Summary', inputExpanded: true, onToggleInput: () {}),
+                      ),
+                    ],
+                  );
+                }
+                return TextField(
+                  controller: _controller,
+                  maxLines: null, expands: true,
+                  textAlignVertical: TextAlignVertical.top,
+                  style: TextStyle(color: fg, fontSize: 15),
+                  decoration: InputDecoration(
+                    hintText: 'Type text to professionalize…',
+                    hintStyle: TextStyle(color: fg.withValues(alpha: 0.4)),
+                    fillColor: fg.withValues(alpha: 0.06), filled: true,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: fg.withValues(alpha: 0.2))),
+                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: fg.withValues(alpha: 0.2))),
+                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: fg, width: 1.5)),
+                  ),
+                  onSubmitted: (_) => _submit(),
                 );
               },
             ),
