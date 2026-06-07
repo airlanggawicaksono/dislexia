@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:silky_scroll/silky_scroll.dart';
 
 import '../../core/utils/font_utils.dart';
 import '../../core/widgets/adaptive/adaptive.dart';
@@ -64,15 +65,23 @@ class DisplaySettingsPanel extends StatelessWidget {
                   _Label(title: 'FONT', color: fg.withValues(alpha: 0.5)),
                   SizedBox(
                     height: 88,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      children: _fontOptions
-                          .map((f) => _FontChip(
-                              font: f,
-                              selected: s.font == f,
-                              onTap: () => bloc.add(UpdateFontEvent(f)),
-                              surfaceColor: fg.withValues(alpha: 0.08)))
-                          .toList(),
+                    child: SilkyScroll(
+                      direction: Axis.horizontal,
+                      mouseWheelVerticalDeltaBehavior:
+                          MouseWheelVerticalDeltaBehavior.always,
+                      builder: (context, controller, physics, deviceKind) =>
+                          ListView(
+                        controller: controller,
+                        physics: physics,
+                        scrollDirection: Axis.horizontal,
+                        children: _fontOptions
+                            .map((f) => _FontChip(
+                                font: f,
+                                selected: s.font == f,
+                                onTap: () => bloc.add(UpdateFontEvent(f)),
+                                surfaceColor: fg.withValues(alpha: 0.08)))
+                            .toList(),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 12),
