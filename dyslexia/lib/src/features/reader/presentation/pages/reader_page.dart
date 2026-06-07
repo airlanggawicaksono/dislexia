@@ -41,6 +41,57 @@ class _ReaderPageState extends State<ReaderPage> {
     super.dispose();
   }
 
+  void _showQuickActions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.content_paste_rounded),
+              title: const Text('Paste from clipboard'),
+              onTap: () async {
+                Navigator.pop(ctx);
+                try {
+                  final data = await Clipboard.getData(Clipboard.kTextPlain);
+                  if (!context.mounted) return;
+                  final text = data?.text?.trim() ?? '';
+                  if (text.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                          content: Text('Nothing found in clipboard')),
+                    );
+                    return;
+                  }
+                  _topbarController.text = text;
+                  context.read<ReaderShellBloc>().add(
+                        LoadTextEvent(text, source: 'Clipboard'),
+                      );
+                } catch (_) {
+                  if (!context.mounted) return;
+                  _topbarFocusNode.requestFocus();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                        content: Text('Press Ctrl+V (or Cmd+V) to paste')),
+                  );
+                }
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.upload_file_rounded),
+              title: const Text('Upload PDF'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _pickPdf(context);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _pickPdf(BuildContext context) async {
     try {
       final result = await FilePicker.platform.pickFiles(
@@ -114,6 +165,14 @@ class _ReaderPageState extends State<ReaderPage> {
 
           return Scaffold(
             backgroundColor: bg,
+            floatingActionButton: MediaQuery.of(context).size.width < 700
+                ? FloatingActionButton.small(
+                    heroTag: 'reader',
+                    backgroundColor: const Color(0xFF3D5A99),
+                    onPressed: () => _showQuickActions(context),
+                    child: const Icon(Icons.add_rounded, color: Colors.white),
+                  )
+                : null,
             appBar: PreferredSize(
               preferredSize: const Size.fromHeight(56),
               child: Container(
@@ -157,7 +216,7 @@ class _ReaderPageState extends State<ReaderPage> {
                           focusNode: _topbarFocusNode,
                           style: TextStyle(fontSize: 13, color: fg),
                           decoration: InputDecoration(
-                            hintText: 'Type or paste text, then press Format…',
+                            hintText: 'Type or paste text here',
                             hintStyle: TextStyle(
                                 fontSize: 13, color: fg.withValues(alpha: 0.5)),
                             filled: true,
@@ -175,11 +234,6 @@ class _ReaderPageState extends State<ReaderPage> {
                             ),
                           ),
                           onChanged: (text) {
-                            // Live-format: every keystroke dispatches
-                            // a LoadTextEvent so the reader body
-                            // updates immediately, no Format button
-                            // required. Empty input → reload the
-                            // sample so the reader never sits empty.
                             final trimmed = text.trim();
                             if (trimmed.isEmpty) {
                               context.read<ReaderShellBloc>().add(
@@ -198,59 +252,62 @@ class _ReaderPageState extends State<ReaderPage> {
                     ),
                     const SizedBox(width: 8),
                     // Action buttons
-                    const SizedBox(width: 4),
-                    _AppBarAction(
-                      icon: Icons.content_paste_rounded,
-                      label: 'Paste',
-                      color: fg,
-                      onTap: () async {
-                        try {
-                          final data =
-                              await Clipboard.getData(Clipboard.kTextPlain);
-                          if (!context.mounted) return;
-                          final text = data?.text?.trim() ?? '';
-                          if (text.isEmpty) {
+                    if (MediaQuery.of(context).size.width >= 700) ...[
+                      const SizedBox(width: 4),
+                      _AppBarAction(
+                        icon: Icons.content_paste_rounded,
+                        label: 'Paste',
+                        color: fg,
+                        onTap: () async {
+                          try {
+                            final data =
+                                await Clipboard.getData(Clipboard.kTextPlain);
+                            if (!context.mounted) return;
+                            final text = data?.text?.trim() ?? '';
+                            if (text.isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                    content:
+                                        Text('Nothing found in clipboard')),
+                              );
+                              return;
+                            }
+                            _topbarController.text = text;
+                            context.read<ReaderShellBloc>().add(
+                                  LoadTextEvent(text, source: 'Clipboard'),
+                                );
+                          } catch (_) {
+                            if (!context.mounted) return;
+                            _topbarFocusNode.requestFocus();
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                  content: Text('Nothing found in clipboard')),
+                                  content:
+                                      Text('Press Ctrl+V (or Cmd+V) to paste')),
                             );
-                            return;
                           }
-                          _topbarController.text = text;
+                        },
+                      ),
+                      const SizedBox(width: 4),
+                      _AppBarAction(
+                        icon: Icons.upload_file_rounded,
+                        label: 'PDF',
+                        color: fg,
+                        onTap: () => _pickPdf(context),
+                      ),
+                      const SizedBox(width: 4),
+                      _AppBarAction(
+                        icon: Icons.menu_book_rounded,
+                        label: 'Sample',
+                        color: fg,
+                        onTap: () {
+                          _topbarController.clear();
                           context.read<ReaderShellBloc>().add(
-                                LoadTextEvent(text, source: 'Clipboard'),
+                                const LoadTextEvent(kDyslexiaSampleText,
+                                    source: 'Sample'),
                               );
-                        } catch (_) {
-                          if (!context.mounted) return;
-                          _topbarFocusNode.requestFocus();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content:
-                                    Text('Press Ctrl+V (or Cmd+V) to paste')),
-                          );
-                        }
-                      },
-                    ),
-                    const SizedBox(width: 4),
-                    _AppBarAction(
-                      icon: Icons.upload_file_rounded,
-                      label: 'PDF',
-                      color: fg,
-                      onTap: () => _pickPdf(context),
-                    ),
-                    const SizedBox(width: 4),
-                    _AppBarAction(
-                      icon: Icons.menu_book_rounded,
-                      label: 'Sample',
-                      color: fg,
-                      onTap: () {
-                        _topbarController.clear();
-                        context.read<ReaderShellBloc>().add(
-                              const LoadTextEvent(kDyslexiaSampleText,
-                                  source: 'Sample'),
-                            );
-                      },
-                    ),
+                        },
+                      ),
+                    ],
                   ],
                 ),
               ),

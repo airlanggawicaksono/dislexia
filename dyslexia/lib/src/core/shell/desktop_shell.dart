@@ -107,10 +107,7 @@ class _DesktopShellState extends State<DesktopShell> {
                                         children: [
                                           Expanded(
                                               child: _bottomSettings
-                                                  ? DisplaySettingsPanel(
-                                                      onClose: () => setState(
-                                                          () => _bottomSettings = false),
-                                                    )
+                                                  ? const DisplaySettingsPanel()
                                                 : switch (sidebar.section) {
                                                     SidebarSection.reader => const MainColumn(),
                                                     SidebarSection.summarize =>
@@ -125,9 +122,12 @@ class _DesktopShellState extends State<DesktopShell> {
                                           _BottomNavBar(
                                             currentSection: sidebar.section,
                                             showSettings: _bottomSettings,
-                                            onSectionSelected: (s) => context
-                                                .read<SidebarBloc>()
-                                                .add(SidebarSectionSelected(s)),
+                                            onSectionSelected: (s) {
+                                              setState(() => _bottomSettings = false);
+                                              context
+                                                  .read<SidebarBloc>()
+                                                  .add(SidebarSectionSelected(s));
+                                            },
                                             onToggleSettings: () => setState(
                                                 () => _bottomSettings = !_bottomSettings),
                                           ),
@@ -138,10 +138,7 @@ class _DesktopShellState extends State<DesktopShell> {
                                       return Row(
                                         children: [
                                           Expanded(
-                                            child: DisplaySettingsPanel(
-                                              onClose: () => setState(
-                                                  () => _bottomSettings = false),
-                                            ),
+                                            child: const DisplaySettingsPanel(),
                                           ),
                                         ],
                                       );
@@ -166,10 +163,7 @@ class _DesktopShellState extends State<DesktopShell> {
                                           },
                                         ),
                                         if (!hiddenSidebar && _settingsPanelOpen)
-                                          DisplaySettingsPanel(
-                                            onClose: () => setState(
-                                                () => _settingsPanelOpen = false),
-                                          ),
+                                          const DisplaySettingsPanel(),
                                       ],
                                     );
                                   },
@@ -384,7 +378,7 @@ class _BottomNavBar extends StatelessWidget {
       child: Row(
         children: [
           ...SidebarSection.values.map((section) {
-            final selected = currentSection == section;
+            final selected = !showSettings && currentSection == section;
             final fg = selected ? accent : muted;
             return Expanded(
               child: InkWell(

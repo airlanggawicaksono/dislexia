@@ -25,7 +25,7 @@ enum SidebarSection {
   professionalize(
     label: 'Professionalize',
     cupertinoIcon: CupertinoIcons.person_crop_circle,
-    materialIcon: Icons.tune_rounded,
+    materialIcon: Icons.auto_fix_high_rounded,
   ),
   screening(
     label: 'Screening',
