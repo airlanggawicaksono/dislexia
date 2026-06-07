@@ -4,7 +4,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../features/display_settings/domain/entities/display_settings_entity.dart';
 import '../../features/display_settings/presentation/bloc/display_settings/display_settings_bloc.dart';
 import '../../features/display_settings/presentation/theme/display_colors.dart';
-import '../widgets/adaptive/adaptive.dart';
 import '../widgets/settings/accessibility_toggles.dart';
 import '../widgets/settings/color_selector.dart';
 import '../widgets/settings/font_selector.dart';
