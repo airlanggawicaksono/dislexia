@@ -223,13 +223,3 @@ class _FeatureBarAction extends StatelessWidget {
     );
   }
 }
-isSize: MainAxisSize.min, children: [
-            Icon(icon, size: 14, color: color),
-            const SizedBox(width: 4),
-            Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color)),
-          ]),
-        ),
-      ),
-    );
-  }
-}

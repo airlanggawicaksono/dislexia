@@ -378,7 +378,7 @@ class _BottomNavBar extends StatelessWidget {
       child: Row(
         children: [
           ...SidebarSection.values.map((section) {
-            final selected = currentSection == section;
+            final selected = !showSettings && currentSection == section;
             final fg = selected ? accent : muted;
             return Expanded(
               child: InkWell(
