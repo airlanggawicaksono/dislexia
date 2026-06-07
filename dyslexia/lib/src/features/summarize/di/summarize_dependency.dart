@@ -19,7 +19,7 @@ class SummarizeDependency {
     getIt.registerLazySingleton(
       () => SummarizeUseCase(getIt<SummarizeRepository>()),
     );
-    getIt.registerFactory(
+    getIt.registerLazySingleton(
       () => SummarizeBloc(summarize: getIt<SummarizeUseCase>()),
     );
   }

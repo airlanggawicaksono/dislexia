@@ -19,7 +19,7 @@ class DefineDependency {
     getIt.registerLazySingleton(
       () => DefineUseCase(getIt<DefineRepository>()),
     );
-    getIt.registerFactory(
+    getIt.registerLazySingleton(
       () => DefineBloc(define: getIt<DefineUseCase>()),
     );
   }

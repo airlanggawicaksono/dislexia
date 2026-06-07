@@ -26,7 +26,7 @@ class SidebarItem extends StatelessWidget {
     final icon = isCupertino ? section.cupertinoIcon : section.materialIcon;
     final theme = Theme.of(context);
     final accent = const Color(0xFF3D5A99);
-    final idleFg = theme.colorScheme.onSurface.withValues(alpha: 0.6);
+    final idleFg = theme.colorScheme.onSurface.withValues(alpha: 0.75);
     final selectedFg = accent;
     final idleBg = Colors.transparent;
     final selectedBg = accent.withValues(alpha: 0.12);

@@ -19,7 +19,7 @@ class ProfessionalizeDependency {
     getIt.registerLazySingleton(
       () => ProfessionalizeUseCase(getIt<ProfessionalizeRepository>()),
     );
-    getIt.registerFactory(
+    getIt.registerLazySingleton(
       () => ProfessionalizeBloc(professionalize: getIt<ProfessionalizeUseCase>()),
     );
   }
