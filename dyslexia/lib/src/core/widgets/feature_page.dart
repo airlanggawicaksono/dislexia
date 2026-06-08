@@ -88,8 +88,9 @@ class FeaturePage extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final narrow = constraints.maxWidth < 700;
-        final pad = constraints.maxWidth < 600 ? 12.0 : 24.0;
+        final w = MediaQuery.of(context).size.width;
+        final narrow = w < 800;
+        final pad = w < 800 ? 12.0 : 24.0;
 
         return Scaffold(
           backgroundColor: bg,

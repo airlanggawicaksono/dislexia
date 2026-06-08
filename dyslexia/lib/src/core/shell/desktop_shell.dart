@@ -17,6 +17,7 @@ import '../../features/sidebar/domain/entities/sidebar_section.dart';
 import '../../features/summarize/presentation/pages/summarize_page.dart';
 import '../../features/define/presentation/pages/define_page.dart';
 import '../../features/professionalize/presentation/pages/professionalize_page.dart';
+import '../../features/screening/presentation/pages/screening_page.dart';
 import 'display_settings_panel.dart';
 import '../../features/sidebar/presentation/bloc/sidebar/sidebar_bloc.dart';
 import '../../features/sidebar/presentation/bloc/sidebar/sidebar_event.dart';
@@ -116,6 +117,8 @@ class _DesktopShellState extends State<DesktopShell> {
                                                       const DefinePage(),
                                                     SidebarSection.professionalize =>
                                                       const ProfessionalizePage(),
+                                                    SidebarSection.screening =>
+                                                      const ScreeningPage(),
                                                     _ => PlaceholderPanel(section: sidebar.section),
                                                   },
                                           ),
@@ -157,6 +160,8 @@ class _DesktopShellState extends State<DesktopShell> {
                                               const DefinePage(),
                                             SidebarSection.professionalize =>
                                               const ProfessionalizePage(),
+                                            SidebarSection.screening =>
+                                              const ScreeningPage(),
                                             _ => PlaceholderPanel(
                                                 section: sidebar.section,
                                               ),
