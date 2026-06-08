@@ -8,6 +8,7 @@ import '../../features/scan_paste/di/scan_dependency.dart';
 import '../../features/summarize/di/summarize_dependency.dart';
 import '../../features/professionalize/di/professionalize_dependency.dart';
 import '../../features/define/di/define_dependency.dart';
+import '../../features/screening/di/screening_dependency.dart';
 import '../../features/upload/di/upload_dependency.dart';
 import '../../core/blocs/theme/theme_bloc.dart';
 import '../../routes/app_route_conf.dart';
@@ -22,6 +23,7 @@ void configureDepedencies() {
   SummarizeDependency.init();
   DefineDependency.init();
   ProfessionalizeDependency.init();
+  ScreeningDependency.init();
   ScanDependency.init();
   LensDependency.init();
   ReaderDependency.init();

@@ -10,12 +10,14 @@ class ReaderTextDisplay extends StatefulWidget {
   final String text;
   final DisplaySettingsEntity settings;
   final Color fgColor;
+  final bool scrollable;
 
   const ReaderTextDisplay({
     super.key,
     required this.text,
     required this.settings,
     required this.fgColor,
+    this.scrollable = true,
   });
 
   @override
@@ -24,6 +26,7 @@ class ReaderTextDisplay extends StatefulWidget {
 
 class _ReaderTextDisplayState extends State<ReaderTextDisplay> {
   double _rulerY = 120.0;
+  bool _isHovering = false;
 
   @override
   Widget build(BuildContext context) {
@@ -45,41 +48,19 @@ class _ReaderTextDisplayState extends State<ReaderTextDisplay> {
         return Stack(
           children: [
             MouseRegion(
+              onEnter: (_) => setState(() => _isHovering = true),
+              onExit: (_) => setState(() => _isHovering = false),
               onHover: s.rulerEnabled
                   ? (e) => setState(() => _rulerY = e.localPosition.dy)
                   : null,
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(vertical: 28),
-                child: Center(
-                  child: SizedBox(
-                    width: contentWidth,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: paragraphs
-                          .map((para) => Padding(
-                                padding: const EdgeInsets.only(bottom: 20),
-                                child: WordHighlightText(
-                                  text: para.trim(),
-                                  style: applyDyslexiaFont(
-                                    font: s.font,
-                                    baseStyle: TextStyle(
-                                      fontSize: s.fontSize,
-                                      color: fg,
-                                      height: s.lineSpacing,
-                                      letterSpacing: s.letterSpacing,
-                                      wordSpacing: s.wordSpacing,
-                                    ),
-                                  ),
-                                  maxWidth: contentWidth,
-                                ),
-                              ))
-                          .toList(),
-                    ),
-                  ),
-                ),
-              ),
+              child: widget.scrollable
+                  ? SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(vertical: 28),
+                      child: _content(contentWidth, paragraphs, fg, s),
+                    )
+                  : _content(contentWidth, paragraphs, fg, s),
             ),
-            if (s.rulerEnabled)
+            if (s.rulerEnabled && _isHovering)
               ReadingRuler(
                 height: rulerH,
                 foregroundColor: fg,
@@ -89,6 +70,36 @@ class _ReaderTextDisplayState extends State<ReaderTextDisplay> {
           ],
         );
       },
+    );
+  }
+
+  Widget _content(double contentWidth, List<String> paragraphs, Color fg, DisplaySettingsEntity s) {
+    return Center(
+      child: SizedBox(
+        width: contentWidth,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: paragraphs
+              .map((para) => Padding(
+                    padding: const EdgeInsets.only(bottom: 20),
+                    child: WordHighlightText(
+                      text: para.trim(),
+                      style: applyDyslexiaFont(
+                        font: s.font,
+                        baseStyle: TextStyle(
+                          fontSize: s.fontSize,
+                          color: fg,
+                          height: s.lineSpacing,
+                          letterSpacing: s.letterSpacing,
+                          wordSpacing: s.wordSpacing,
+                        ),
+                      ),
+                      maxWidth: contentWidth,
+                    ),
+                  ))
+              .toList(),
+        ),
+      ),
     );
   }
 }

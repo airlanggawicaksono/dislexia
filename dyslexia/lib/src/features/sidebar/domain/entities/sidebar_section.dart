@@ -49,5 +49,6 @@ enum SidebarSection {
       this == SidebarSection.reader ||
       this == SidebarSection.summarize ||
       this == SidebarSection.define ||
-      this == SidebarSection.professionalize;
+      this == SidebarSection.professionalize ||
+      this == SidebarSection.screening;
 }

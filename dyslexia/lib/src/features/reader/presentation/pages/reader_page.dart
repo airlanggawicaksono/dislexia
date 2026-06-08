@@ -165,7 +165,7 @@ class _ReaderPageState extends State<ReaderPage> {
 
           return Scaffold(
             backgroundColor: bg,
-            floatingActionButton: MediaQuery.of(context).size.width < 700
+            floatingActionButton: MediaQuery.of(context).size.width < 800
                 ? FloatingActionButton.small(
                     heroTag: 'reader',
                     backgroundColor: const Color(0xFF3D5A99),
@@ -216,7 +216,7 @@ class _ReaderPageState extends State<ReaderPage> {
                           focusNode: _topbarFocusNode,
                           style: TextStyle(fontSize: 13, color: fg),
                           decoration: InputDecoration(
-                            hintText: 'Type or paste text here',
+                            hintText: 'Type text here',
                             hintStyle: TextStyle(
                                 fontSize: 13, color: fg.withValues(alpha: 0.5)),
                             filled: true,
@@ -252,7 +252,7 @@ class _ReaderPageState extends State<ReaderPage> {
                     ),
                     const SizedBox(width: 8),
                     // Action buttons
-                    if (MediaQuery.of(context).size.width >= 700) ...[
+                    if (MediaQuery.of(context).size.width >= 800) ...[
                       const SizedBox(width: 4),
                       _AppBarAction(
                         icon: Icons.content_paste_rounded,
