@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 from uuid import UUID
 
 from pydantic import BaseModel, Field, ConfigDict
@@ -47,3 +47,21 @@ class AdminCreateResponseDTO(BaseModel):
     admin_id: UUID
     username: str
     temporary_password: str = Field(..., description="One-time password. Admin must change on first login.")
+
+
+class AdminListItemDTO(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    admin_id: UUID
+    username: str
+    is_active: bool
+    must_change_password: bool
+    created_at: datetime
+    last_login: Optional[datetime] = None
+
+
+class AdminListDTO(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    items: List[AdminListItemDTO]
+    total: int
