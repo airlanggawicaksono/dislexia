@@ -6,7 +6,7 @@ from app.policies import ACCOUNT_NUMBER_LENGTH, ACCOUNT_NUMBER_PATTERN
 class GenerateResponseDTO(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
-    account_number: str = Field(..., description="16-digit account number — save this, it's your only key")
+    account_number: str = Field(..., description="6-digit account number — save this, it's your only key")
     display_name: str = Field(..., description="Auto-generated adjective-animal nickname (e.g. 'amusing-bee')")
     access_token: str
     token_type: str = "bearer"
@@ -21,5 +21,5 @@ class LoginRequestDTO(BaseModel):
         min_length=ACCOUNT_NUMBER_LENGTH,
         max_length=ACCOUNT_NUMBER_LENGTH,
         pattern=ACCOUNT_NUMBER_PATTERN,
-        description="16-digit account number (digits only)",
+        description="6-digit account number (digits only)",
     )

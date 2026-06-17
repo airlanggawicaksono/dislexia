@@ -21,7 +21,7 @@ class User(Base):
         SQLAlchemyUUID(as_uuid=True), primary_key=True, default=uuid4, nullable=False
     )
     account_number: Mapped[str] = mapped_column(
-        String(16), unique=True, nullable=False, index=True
+        String(6), unique=True, nullable=False, index=True
     )
     display_name: Mapped[str] = mapped_column(
         String(64), nullable=False, index=True

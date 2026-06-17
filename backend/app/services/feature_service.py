@@ -7,7 +7,7 @@ from app.services.llm_service import LmIoNoStream, LmIoStream
 from app.policies.retry import LLMRetryPolicy
 from app.dto.feature.chat.enums import FeatureType, ChatRoleType
 from app.dto.feature.chat.base import ChatSessionDTO, FeatureHistoryListDTO
-from app.dto.feature.llm import LLMRequestDTO, LLMChunkDTO, LLMHistoryMessageDTO
+from app.dto.feature.llm import LLMRequestDTO, LLMChunkDTO, LLMHistoryMessageDTO, LLMGenerationConfigDTO
 from app.dto.feature.process import FeatureResponseDTO
 
 
@@ -32,12 +32,18 @@ class FeatureService:
         user_id: UUID,
         db: AsyncSession,
         session_id: Optional[UUID] = None,
+        generation_config: Optional[LLMGenerationConfigDTO] = None,
     ) -> FeatureResponseDTO:
         session = await _resolve_session(session_id, user_id, feature, db)
         history = _to_llm_history(session)
         await ChatHistoryService.append_message(session.session_id, user_id, ChatRoleType.USER, text, db)
 
-        llm_req = LLMRequestDTO(prompt=text, system_prompt=system_prompt, history=history)
+        llm_req = LLMRequestDTO(
+            prompt=text,
+            system_prompt=system_prompt,
+            history=history,
+            **({"generation_config": generation_config} if generation_config else {}),
+        )
         llm_res = await LLMRetryPolicy.execute(LmIoNoStream.invoke, llm_req)
 
         await ChatHistoryService.append_message(session.session_id, user_id, ChatRoleType.ASSISTANT, llm_res.content, db)
@@ -64,12 +70,18 @@ class FeatureService:
         user_id: UUID,
         db: AsyncSession,
         session_id: Optional[UUID] = None,
+        generation_config: Optional[LLMGenerationConfigDTO] = None,
     ) -> AsyncGenerator[LLMChunkDTO, None]:
         session = await _resolve_session(session_id, user_id, feature, db)
         history = _to_llm_history(session)
         await ChatHistoryService.append_message(session.session_id, user_id, ChatRoleType.USER, text, db)
 
-        llm_req = LLMRequestDTO(prompt=text, system_prompt=system_prompt, history=history)
+        llm_req = LLMRequestDTO(
+            prompt=text,
+            system_prompt=system_prompt,
+            history=history,
+            **({"generation_config": generation_config} if generation_config else {}),
+        )
         collected = []
         async for chunk in LmIoStream.stream(llm_req):
             collected.append(chunk.content)

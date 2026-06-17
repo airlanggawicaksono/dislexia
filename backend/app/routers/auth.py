@@ -10,8 +10,7 @@ from app.openapi import AUTH_RESPONSES
 TAG = {
     "name": "Authentication",
     "description": (
-        "Mullvad-style account auth. No email, no password. "
-        "Generate a 16-digit account number, log in with it, receive a JWT."
+        "Account login. Accounts are created by admins — contact your administrator to get your 6-digit code."
     ),
 }
 
@@ -26,19 +25,9 @@ def get_user_service(db: AsyncSession = Depends(get_db)) -> UserService:
     "/generate",
     response_model=GenerateResponseDTO,
     status_code=status.HTTP_201_CREATED,
-    summary="Generate new account",
-    responses={
-        201: {"description": "Account created. Save the account_number — it is the only way to log back in."},
-    },
+    include_in_schema=False,
 )
 async def generate(user_service: UserService = Depends(get_user_service)):
-    """
-    Create a new account.
-
-    Returns a randomly generated 16-digit `account_number` plus an access token.
-    **No email or password is required.** Save the account number — it is the
-    only credential for this account.
-    """
     return await user_service.generate()
 
 
@@ -55,8 +44,9 @@ async def generate(user_service: UserService = Depends(get_user_service)):
 )
 async def login(request: LoginRequestDTO, user_service: UserService = Depends(get_user_service)):
     """
-    Log in using a 16-digit account number.
+    Log in using your 6-digit account number.
 
-    Returns an access token and the current user profile.
+    Account numbers are issued by an administrator — you cannot self-register.
+    Returns an access token and your user profile.
     """
     return await user_service.login(request.account_number)
