@@ -1,22 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:provider/provider.dart';
 
 import '../../configs/injector/injector_conf.dart';
 import '../blocs/theme/theme_bloc.dart';
 import '../themes/app_theme.dart';
+import '../../core/api/api_helper.dart';
 import '../../core/constants/sample_text.dart';
 import '../../features/display_settings/presentation/bloc/display_settings/display_settings_bloc.dart';
-import '../../features/display_settings/presentation/theme/display_colors.dart';
+import '../../features/upload/data/datasources/pdf_extractor_service.dart';
 import '../../features/reader/presentation/bloc/reader/reader_bloc.dart';
 import '../../features/reader/presentation/bloc/reader_shell/reader_shell_bloc.dart';
 import '../../features/reader/presentation/bloc/reader_shell/reader_shell_event.dart';
 import '../../features/reader/presentation/bloc/reader_shell/reader_shell_state.dart';
 import '../../features/reader/presentation/pages/reader_page.dart';
 import '../../features/sidebar/domain/entities/sidebar_section.dart';
+import '../../features/summarize/presentation/bloc/summarize_bloc.dart';
 import '../../features/summarize/presentation/pages/summarize_page.dart';
+import '../../features/define/presentation/bloc/define_bloc.dart';
 import '../../features/define/presentation/pages/define_page.dart';
+import '../../features/professionalize/presentation/bloc/professionalize_bloc.dart';
 import '../../features/professionalize/presentation/pages/professionalize_page.dart';
+import '../../features/screening/presentation/bloc/screening_bloc.dart';
 import '../../features/screening/presentation/pages/screening_page.dart';
 import 'display_settings_panel.dart';
 import '../../features/sidebar/presentation/bloc/sidebar/sidebar_bloc.dart';
@@ -73,9 +79,15 @@ class _DesktopShellState extends State<DesktopShell> {
           providers: [
             BlocProvider(create: (_) => getIt<ThemeBloc>()),
             BlocProvider(create: (_) => getIt<DisplaySettingsBloc>()),
+            BlocProvider(create: (_) => getIt<SummarizeBloc>()),
+            BlocProvider(create: (_) => getIt<DefineBloc>()),
+            BlocProvider(create: (_) => getIt<ProfessionalizeBloc>()),
+            BlocProvider(create: (_) => getIt<ScreeningBloc>()),
             BlocProvider(create: (_) => getIt<ReaderBloc>()),
             BlocProvider(create: (_) => SidebarBloc()),
             BlocProvider(create: (_) => ReaderShellBloc()),
+            Provider.value(value: getIt<PdfExtractorService>()),
+            Provider.value(value: getIt<ApiHelper>()),
           ],
           child: BlocBuilder<DisplaySettingsBloc, DisplaySettingsState>(
             builder: (context, displayState) {
@@ -266,15 +278,14 @@ class _PdfProgressOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final pct = total == 0 ? 0.0 : current / total;
-    final ds = context.read<DisplaySettingsBloc>().state.settings;
-    final bg = bgColor(ds.colorTheme);
-    final fg = fgColor(ds.colorTheme);
+    final theme = Theme.of(context);
+    final fg = theme.colorScheme.onSurface;
     return Positioned.fill(
       child: Container(
-        color: fg.withValues(alpha: 0.4),
+        color: fg.withValues(alpha: 0.3),
         child: Center(
           child: Card(
-            color: bg,
+            color: theme.colorScheme.surface,
             margin: const EdgeInsets.symmetric(horizontal: 48),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 32),

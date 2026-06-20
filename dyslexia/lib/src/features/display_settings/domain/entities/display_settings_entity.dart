@@ -65,6 +65,29 @@ class DisplaySettingsEntity extends Equatable {
     required this.syllablesEnabled,
   });
 
+  DisplaySettingsEntity copyWith({
+    double? fontSize,
+    double? lineSpacing,
+    double? letterSpacing,
+    double? wordSpacing,
+    DyslexiaFont? font,
+    AppColorTheme? colorTheme,
+    DisplayPreset? preset,
+    bool? rulerEnabled,
+    bool? syllablesEnabled,
+  }) =>
+      DisplaySettingsEntity(
+        fontSize: fontSize ?? this.fontSize,
+        lineSpacing: lineSpacing ?? this.lineSpacing,
+        letterSpacing: letterSpacing ?? this.letterSpacing,
+        wordSpacing: wordSpacing ?? this.wordSpacing,
+        font: font ?? this.font,
+        colorTheme: colorTheme ?? this.colorTheme,
+        preset: preset ?? this.preset,
+        rulerEnabled: rulerEnabled ?? this.rulerEnabled,
+        syllablesEnabled: syllablesEnabled ?? this.syllablesEnabled,
+      );
+
   @override
   List<Object?> get props => [
         fontSize,

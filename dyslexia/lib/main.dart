@@ -4,9 +4,6 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:hive_flutter/hive_flutter.dart';
-import 'package:hydrated_bloc/hydrated_bloc.dart';
-import 'package:path_provider/path_provider.dart';
 
 import 'src/app.dart';
 import 'src/configs/adapter/adapter_conf.dart';
@@ -25,17 +22,10 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await EasyLocalization.ensureInitialized();
 
-  await Hive.initFlutter();
-  if (kIsWeb) {
-    HydratedBloc.storage = await HydratedStorage.build(
-      storageDirectory: HydratedStorageDirectory.web,
-    );
-  } else {
-    final path = await getTemporaryDirectory();
-    HydratedBloc.storage = await HydratedStorage.build(
-      storageDirectory: HydratedStorageDirectory(path.path),
-    );
-  }
+  // Hive and HydratedBloc are no longer initialised — no bloc uses
+  // HydratedBloc (DisplaySettingsBloc was migrated to a regular Bloc
+  // with a SharedPreferences-backed repository). Hive's IndexedDB
+  // implementation is not wasm-compatible.
 
   // Apply any build-time / env-time base URL override before the DI
   // container (and therefore the Dio client) is constructed, so the

@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../features/display_settings/presentation/bloc/display_settings/display_settings_bloc.dart';
 import '../../../features/display_settings/presentation/theme/display_colors.dart';
-import '../../../features/reader/data/syllabifier.dart';
+import '../../../features/reader/data/datasources/local_syllabifier_datasource.dart';
 import '../../utils/font_utils.dart';
 import '../word_highlight_text.dart';
 
@@ -30,7 +30,7 @@ class LivePreview extends StatelessWidget {
           child: Center(
             child: WordHighlightText(
               text: s.syllablesEnabled
-                  ? syllabify('The quick brown fox jumps over the lazy dog. '
+                  ? LocalSyllabifierDatasource().syllabify('The quick brown fox jumps over the lazy dog. '
                       'Reading should feel comfortable and natural for everyone.')
                   : 'The quick brown fox jumps over the lazy dog. '
                       'Reading should feel comfortable and natural for everyone.',

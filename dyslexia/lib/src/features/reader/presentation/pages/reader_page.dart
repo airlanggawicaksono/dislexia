@@ -3,9 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../configs/injector/injector_conf.dart';
 import '../../../../core/constants/sample_text.dart';
-import '../../../../core/utils/font_utils.dart';
 import '../../../../core/widgets/reader_text_display.dart';
 import '../../../display_settings/presentation/bloc/display_settings/display_settings_bloc.dart';
 import '../../../display_settings/presentation/theme/display_colors.dart';
@@ -114,7 +112,7 @@ class _ReaderPageState extends State<ReaderPage> {
       context
           .read<ReaderShellBloc>()
           .add(const SetPdfProgressEvent(current: 0, total: 1));
-      final text = await getIt<PdfExtractorService>().extractText(
+      final text = await context.read<PdfExtractorService>().extractText(
         bytes,
         onProgress: (current, total) {
           if (!context.mounted) return;
@@ -160,11 +158,12 @@ class _ReaderPageState extends State<ReaderPage> {
       child: BlocBuilder<DisplaySettingsBloc, DisplaySettingsState>(
         builder: (context, displayState) {
           final s = displayState.settings;
+          final theme = Theme.of(context);
           final bg = bgColor(s.colorTheme);
           final fg = fgColor(s.colorTheme);
 
           return Scaffold(
-            backgroundColor: bg,
+            backgroundColor: theme.colorScheme.surface,
             floatingActionButton: MediaQuery.of(context).size.width < 800
                 ? FloatingActionButton.small(
                     heroTag: 'reader',
@@ -177,9 +176,9 @@ class _ReaderPageState extends State<ReaderPage> {
               preferredSize: const Size.fromHeight(56),
               child: Container(
                 decoration: BoxDecoration(
-                  color: bg,
+                  color: theme.colorScheme.surface,
                   border: Border(
-                    bottom: BorderSide(color: fg.withValues(alpha: 0.08)),
+                    bottom: BorderSide(color: theme.colorScheme.onSurface.withValues(alpha: 0.08)),
                   ),
                 ),
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
@@ -188,7 +187,7 @@ class _ReaderPageState extends State<ReaderPage> {
                     // Leading: back button (hidden for sample source)
                     if (widget.sourceName != 'Sample')
                       IconButton(
-                        icon: Icon(Icons.arrow_back, color: fg),
+                        icon: Icon(Icons.arrow_back, color: theme.colorScheme.onSurface),
                         tooltip: 'Back',
                         onPressed: widget.onBack ??
                             () => Navigator.of(context).maybePop(),
@@ -203,7 +202,7 @@ class _ReaderPageState extends State<ReaderPage> {
                         style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
-                            color: fg),
+                            color: theme.colorScheme.onSurface),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -214,13 +213,13 @@ class _ReaderPageState extends State<ReaderPage> {
                         child: TextField(
                           controller: _topbarController,
                           focusNode: _topbarFocusNode,
-                          style: TextStyle(fontSize: 13, color: fg),
+                          style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurface),
                           decoration: InputDecoration(
                             hintText: 'Type text here',
                             hintStyle: TextStyle(
-                                fontSize: 13, color: fg.withValues(alpha: 0.5)),
+                                fontSize: 13, color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
                             filled: true,
-                            fillColor: fg.withValues(alpha: 0.06),
+                            fillColor: theme.colorScheme.onSurface.withValues(alpha: 0.06),
                             contentPadding:
                                 const EdgeInsets.symmetric(horizontal: 12),
                             border: OutlineInputBorder(
@@ -257,7 +256,7 @@ class _ReaderPageState extends State<ReaderPage> {
                       _AppBarAction(
                         icon: Icons.content_paste_rounded,
                         label: 'Paste',
-                        color: fg,
+                        color: theme.colorScheme.onSurface,
                         onTap: () async {
                           try {
                             final data =
@@ -291,14 +290,14 @@ class _ReaderPageState extends State<ReaderPage> {
                       _AppBarAction(
                         icon: Icons.upload_file_rounded,
                         label: 'PDF',
-                        color: fg,
+                        color: theme.colorScheme.onSurface,
                         onTap: () => _pickPdf(context),
                       ),
                       const SizedBox(width: 4),
                       _AppBarAction(
                         icon: Icons.menu_book_rounded,
                         label: 'Sample',
-                        color: fg,
+                        color: theme.colorScheme.onSurface,
                         onTap: () {
                           _topbarController.clear();
                           context.read<ReaderShellBloc>().add(
@@ -316,6 +315,7 @@ class _ReaderPageState extends State<ReaderPage> {
               text: widget.text,
               settings: s,
               fgColor: fg,
+              bgColor: bg,
             ),
           );
         },

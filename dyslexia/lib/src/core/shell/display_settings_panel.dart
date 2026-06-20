@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../features/display_settings/domain/entities/display_settings_entity.dart';
 import '../../features/display_settings/presentation/bloc/display_settings/display_settings_bloc.dart';
-import '../../features/display_settings/presentation/theme/display_colors.dart';
 import '../widgets/settings/accessibility_toggles.dart';
 import '../widgets/settings/color_selector.dart';
 import '../widgets/settings/font_selector.dart';
@@ -31,11 +30,9 @@ class DisplaySettingsPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<DisplaySettingsBloc, DisplaySettingsState>(
       builder: (context, state) {
-        final bg = bgColor(state.settings.colorTheme);
-        final fg = fgColor(state.settings.colorTheme);
         final s = state.settings;
+        final theme = Theme.of(context);
         final bloc = context.read<DisplaySettingsBloc>();
-        final borderColor = fg.withValues(alpha: 0.08);
 
         return LayoutBuilder(
           builder: (context, constraints) {
@@ -43,8 +40,8 @@ class DisplaySettingsPanel extends StatelessWidget {
             return Container(
               width: fullWidth ? double.infinity : 248,
               decoration: BoxDecoration(
-                color: bg,
-                border: Border(right: BorderSide(color: borderColor)),
+                color: theme.colorScheme.surface,
+                border: Border(right: BorderSide(color: theme.dividerColor.withValues(alpha: 0.5))),
               ),
               child: SafeArea(
                 child: ListView(
@@ -54,33 +51,33 @@ class DisplaySettingsPanel extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text('Settings',
-                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: fg)),
+                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: theme.colorScheme.onSurface)),
                       ],
                     ),
                     if (fullWidth) ...[
                       const SizedBox(height: 12),
-                      _SectionLabel(title: 'LIVE PREVIEW', color: fg.withValues(alpha: 0.5)),
+                      _SectionLabel(title: 'LIVE PREVIEW', color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
                       const LivePreview(),
                       const SizedBox(height: 12),
                     ],
-                    _SectionLabel(title: 'FONT', color: fg.withValues(alpha: 0.5)),
+                    _SectionLabel(title: 'FONT', color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
                     FontSelector(compact: !fullWidth),
                     const SizedBox(height: 12),
-                    _SectionLabel(title: 'COLOR', color: fg.withValues(alpha: 0.5)),
+                    _SectionLabel(title: 'BACKGROUND COLOR', color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
                     ColorSelector(compact: !fullWidth),
                     const SizedBox(height: 12),
-                    _SectionLabel(title: 'TYPOGRAPHY', color: fg.withValues(alpha: 0.5)),
+                    _SectionLabel(title: 'TYPOGRAPHY', color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
                     TypographySliders(compact: !fullWidth),
                     const SizedBox(height: 8),
-                    _SectionLabel(title: 'ACCESSIBILITY', color: fg.withValues(alpha: 0.5)),
+                    _SectionLabel(title: 'ACCESSIBILITY', color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
                     const AccessibilityToggles(),
                     const SizedBox(height: 12),
-                    _SectionLabel(title: 'PRESETS', color: fg.withValues(alpha: 0.5)),
+                    _SectionLabel(title: 'PRESETS', color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
                     ...DisplayPreset.values.map((p) => _PresetChip(
                         label: _presetLabels[p] ?? '',
                         selected: s.preset == p,
                         onTap: () => bloc.add(ApplyPresetEvent(p)),
-                        surfaceColor: fg.withValues(alpha: 0.08))),
+                        surfaceColor: theme.colorScheme.onSurface.withValues(alpha: 0.08))),
                     const SizedBox(height: 12),
                   ],
                 ),

@@ -2,8 +2,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:stream_transform/stream_transform.dart';
 import '../../../../../core/utils/font_utils.dart';
 import '../../../data/models/reader_model.dart';
-import '../../../data/syllabifier.dart';
 import '../../../domain/entities/reader_entity.dart';
+import '../../../domain/repositories/reader_repository.dart';
 import 'reader_event.dart';
 import 'reader_state.dart';
 
@@ -12,7 +12,9 @@ EventTransformer<T> debounce<T>(Duration duration) {
 }
 
 class ReaderBloc extends Bloc<ReaderEvent, ReaderState> {
-  ReaderBloc() : super(const ReaderState()) {
+  final ReaderRepository _repository;
+
+  ReaderBloc(this._repository) : super(const ReaderState()) {
     on<SetTextEvent>(
       _onSetText,
       transformer: debounce(const Duration(milliseconds: 300)),
@@ -22,7 +24,8 @@ class ReaderBloc extends Bloc<ReaderEvent, ReaderState> {
     on<UpdateRulerHeightEvent>(_onUpdateRulerHeight);
   }
 
-  void _onSetText(SetTextEvent event, Emitter<ReaderState> emit) {
+  Future<void> _onSetText(
+      SetTextEvent event, Emitter<ReaderState> emit) async {
     if (event.text.isEmpty) {
       emit(state.copyWith(reader: null, displayText: ''));
       return;
@@ -34,19 +37,20 @@ class ReaderBloc extends Bloc<ReaderEvent, ReaderState> {
       rulerPosition: 0.0,
       rulerHeight: 48.0,
     );
-    final display = syllabify(reader.text);
-    emit(state.copyWith(reader: reader, displayText: display));
+    final display = await _repository.syllabify(reader.text);
+    if (!isClosed) emit(state.copyWith(reader: reader, displayText: display));
   }
 
-  void _onToggleSyllabify(
-      ToggleSyllabifyEvent event, Emitter<ReaderState> emit) {
+  Future<void> _onToggleSyllabify(
+      ToggleSyllabifyEvent event, Emitter<ReaderState> emit) async {
     if (state.reader == null) return;
     final updated = ReaderModel.fromEntity(state.reader!).copyWith(
       syllabifyEnabled: !state.reader!.syllabifyEnabled,
     );
-    final display =
-        updated.syllabifyEnabled ? syllabify(updated.text) : updated.text;
-    emit(state.copyWith(reader: updated, displayText: display));
+    final display = updated.syllabifyEnabled
+        ? await _repository.syllabify(updated.text)
+        : updated.text;
+    if (!isClosed) emit(state.copyWith(reader: updated, displayText: display));
   }
 
   void _onUpdateRulerPosition(

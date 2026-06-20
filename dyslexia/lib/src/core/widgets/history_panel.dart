@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../configs/injector/injector_conf.dart' show getIt;
 import '../api/api_helper.dart';
 import '../api/feature_history_datasource.dart';
 
@@ -21,13 +21,14 @@ class HistoryPanel extends StatefulWidget {
 }
 
 class _HistoryPanelState extends State<HistoryPanel> {
-  final _ds = FeatureHistoryDatasource(getIt<ApiHelper>());
+  late final FeatureHistoryDatasource _ds;
   List<FeatureHistoryItem>? _items;
   bool _loading = false;
 
   @override
   void initState() {
     super.initState();
+    _ds = FeatureHistoryDatasource(context.read<ApiHelper>());
     _load();
   }
 

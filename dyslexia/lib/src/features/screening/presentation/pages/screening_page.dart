@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../configs/injector/injector_conf.dart';
 import '../../../../core/widgets/history_panel.dart';
 import '../../../../core/widgets/reader_text_display.dart';
-import '../../../display_settings/data/models/display_settings_model.dart';
+import '../../../display_settings/domain/entities/display_settings_entity.dart';
 import '../../../display_settings/presentation/bloc/display_settings/display_settings_bloc.dart';
 import '../../../display_settings/presentation/theme/display_colors.dart';
 import '../bloc/screening_bloc.dart';
@@ -18,14 +17,18 @@ class ScreeningPage extends StatefulWidget {
 }
 
 class _ScreeningPageState extends State<ScreeningPage> {
-  final _bloc = getIt<ScreeningBloc>();
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
-    _bloc.add(StartScreeningEvent());
+    // Only start screening if the session hasn't already begun.
+    // This preserves the conversation when navigating away and back.
+    final bloc = context.read<ScreeningBloc>();
+    if (bloc.state is ScreeningInitial) {
+      bloc.add(StartScreeningEvent());
+    }
   }
 
   @override
@@ -39,7 +42,7 @@ class _ScreeningPageState extends State<ScreeningPage> {
     final t = _controller.text.trim();
     if (t.isEmpty) return;
     _controller.clear();
-    _bloc.add(ReplyScreeningEvent(t));
+    context.read<ScreeningBloc>().add(ReplyScreeningEvent(t));
   }
 
   void _scrollToBottom() {
@@ -67,141 +70,140 @@ class _ScreeningPageState extends State<ScreeningPage> {
   }
 
   void _reset() {
-    _bloc.add(ResetScreeningEvent());
+    context.read<ScreeningBloc>().add(ResetScreeningEvent());
     _controller.clear();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _bloc.add(StartScreeningEvent());
+      context.read<ScreeningBloc>().add(StartScreeningEvent());
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final ds = context.watch<DisplaySettingsBloc>().state;
     final s = ds.settings;
     final bg = bgColor(s.colorTheme);
     final fg = fgColor(s.colorTheme);
 
     return Scaffold(
-      backgroundColor: bg,
+      backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
-        backgroundColor: bg,
+        backgroundColor: theme.colorScheme.surface,
         elevation: 0,
         centerTitle: false,
-        title: Text('Screening', style: TextStyle(color: fg)),
+        title: Text('Screening', style: TextStyle(color: theme.colorScheme.onSurface)),
         actions: [
           _BarAction(
             icon: Icons.history_rounded,
             label: 'History',
-            color: fg,
+            color: theme.colorScheme.onSurface,
             onTap: _showHistory,
           ),
           const SizedBox(width: 4),
           _BarAction(
             icon: Icons.refresh_rounded,
             label: 'Restart',
-            color: fg,
+            color: theme.colorScheme.onSurface,
             onTap: _reset,
           ),
           const SizedBox(width: 12),
         ],
       ),
-      body: BlocProvider.value(
-        value: _bloc,
-        child: BlocConsumer<ScreeningBloc, ScreeningState>(
-          listener: (ctx, state) {
-            if (state is ScreeningQuestionState || state is ScreeningLoading) {
-              _scrollToBottom();
-            }
-          },
-          builder: (ctx, state) {
-            if (state is ScreeningInitial) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            if (state is ScreeningErrorState && state.messages.isEmpty) {
-              return Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.error_outline,
-                          size: 48, color: fg.withValues(alpha: 0.5)),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Failed to start screening: ${state.message}',
-                        style: TextStyle(color: fg),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 16),
-                      FilledButton.icon(
-                        onPressed: () => _bloc.add(StartScreeningEvent()),
-                        icon: const Icon(Icons.refresh),
-                        label: const Text('Retry'),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }
-
-            final messages = state is ScreeningQuestionState
-                ? state.messages
-                : state is ScreeningLoading
-                    ? state.messages
-                    : state is ScreeningErrorState
-                        ? state.messages
-                        : <ChatMessage>[];
-
-            final isComplete =
-                state is ScreeningQuestionState && state.isComplete;
-            final isLoading = state is ScreeningLoading;
-
-            return Column(
-              children: [
-                Expanded(
-                  child: messages.isEmpty
-                      ? Center(
-                          child: Text('Starting screening…',
-                              style: TextStyle(color: fg)))
-                      : ListView.builder(
-                          controller: _scrollController,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 12),
-                          itemCount: messages.length,
-                          itemBuilder: (ctx, i) {
-                            final msg = messages[i];
-                            if (msg.isUser) {
-                              return _UserBubble(text: msg.text, fg: fg);
-                            }
-                            return _AssistantCard(
-                              text: msg.text,
-                              isSummary: msg.isSummary,
-                              fg: fg,
-                              settings: s,
-                            );
-                          },
-                        ),
-                ),
-                if (isComplete)
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                    child: FilledButton.icon(
-                      onPressed: _reset,
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('Start New Screening'),
+      body: BlocConsumer<ScreeningBloc, ScreeningState>(
+        listener: (ctx, state) {
+          if (state is ScreeningQuestionState || state is ScreeningLoading) {
+            _scrollToBottom();
+          }
+        },
+        builder: (ctx, state) {
+          if (state is ScreeningInitial) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (state is ScreeningErrorState && state.messages.isEmpty) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.error_outline,
+                        size: 48, color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Failed to start screening: ${state.message}',
+                      style: TextStyle(color: theme.colorScheme.onSurface),
+                      textAlign: TextAlign.center,
                     ),
-                  ),
-                if (!isComplete)
-                  _InputBar(
-                    controller: _controller,
-                    enabled: !isLoading,
-                    fg: fg,
-                    onSend: _send,
-                  ),
-              ],
+                    const SizedBox(height: 16),
+                    FilledButton.icon(
+                      onPressed: () =>
+                          context.read<ScreeningBloc>().add(StartScreeningEvent()),
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              ),
             );
-          },
-        ),
+          }
+
+          final messages = state is ScreeningQuestionState
+              ? state.messages
+              : state is ScreeningLoading
+                  ? state.messages
+                  : state is ScreeningErrorState
+                      ? state.messages
+                      : <ChatMessage>[];
+
+          final isComplete =
+              state is ScreeningQuestionState && state.isComplete;
+          final isLoading = state is ScreeningLoading;
+
+          return Column(
+            children: [
+              Expanded(
+                child: messages.isEmpty
+                    ? Center(
+                        child: Text('Starting screening…',
+                            style: TextStyle(color: theme.colorScheme.onSurface)))                      : ListView.builder(
+                        controller: _scrollController,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
+                        itemCount: messages.length,
+                        itemBuilder: (ctx, i) {
+                          final msg = messages[i];
+                          if (msg.isUser) {
+                            return _UserBubble(text: msg.text);
+                          }
+                          return _AssistantCard(
+                            text: msg.text,
+                            isSummary: msg.isSummary,
+                            bg: bg,
+                            fg: fg,
+                            settings: s,
+                          );
+                        },
+                      ),
+              ),
+              if (isComplete)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  child: FilledButton.icon(
+                    onPressed: _reset,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Start New Screening'),
+                  ),
+                ),
+              if (!isComplete)
+                _InputBar(
+                  controller: _controller,
+                  enabled: !isLoading,
+                  theme: theme,
+                  onSend: _send,
+                ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -209,8 +211,7 @@ class _ScreeningPageState extends State<ScreeningPage> {
 
 class _UserBubble extends StatelessWidget {
   final String text;
-  final Color fg;
-  const _UserBubble({required this.text, required this.fg});
+  const _UserBubble({required this.text});
 
   @override
   Widget build(BuildContext context) {
@@ -240,12 +241,14 @@ class _UserBubble extends StatelessWidget {
 class _AssistantCard extends StatelessWidget {
   final String text;
   final bool isSummary;
+  final Color bg;
   final Color fg;
-  final DisplaySettingsModel settings;
+  final DisplaySettingsEntity settings;
 
   const _AssistantCard({
     required this.text,
     required this.isSummary,
+    required this.bg,
     required this.fg,
     required this.settings,
   });
@@ -256,7 +259,7 @@ class _AssistantCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: fg.withValues(alpha: 0.06),
+        color: bg,
         borderRadius: BorderRadius.circular(18).copyWith(
           bottomLeft: Radius.zero,
         ),
@@ -287,6 +290,7 @@ class _AssistantCard extends StatelessWidget {
             text: text,
             settings: settings,
             fgColor: fg,
+            bgColor: bg,
             scrollable: false,
           ),
         ],
@@ -298,18 +302,19 @@ class _AssistantCard extends StatelessWidget {
 class _InputBar extends StatelessWidget {
   final TextEditingController controller;
   final bool enabled;
-  final Color fg;
+  final ThemeData theme;
   final VoidCallback onSend;
 
   const _InputBar({
     required this.controller,
     required this.enabled,
-    required this.fg,
+    required this.theme,
     required this.onSend,
   });
 
   @override
   Widget build(BuildContext context) {
+    final fg = theme.colorScheme.onSurface;
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 8, 8, 12),
       decoration: BoxDecoration(

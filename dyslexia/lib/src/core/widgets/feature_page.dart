@@ -3,9 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../configs/injector/injector_conf.dart';
-import '../../features/display_settings/presentation/bloc/display_settings/display_settings_bloc.dart';
-import '../../features/display_settings/presentation/theme/display_colors.dart';
 import '../../features/upload/data/datasources/pdf_extractor_service.dart';
 import '../widgets/adaptive/adaptive.dart';
 import '../widgets/feature_result_card.dart';
@@ -66,7 +63,7 @@ class FeaturePage extends StatelessWidget {
         showAdaptiveFeedback(context, 'Could not read file data');
         return;
       }
-      final text = await getIt<PdfExtractorService>().extractText(bytes);
+      final text = await context.read<PdfExtractorService>().extractText(bytes);
       if (!context.mounted) return;
       if (text.trim().isEmpty) {
         showAdaptiveFeedback(
@@ -82,9 +79,7 @@ class FeaturePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ds = context.watch<DisplaySettingsBloc>().state;
-    final bg = bgColor(ds.settings.colorTheme);
-    final fg = fgColor(ds.settings.colorTheme);
+    final theme = Theme.of(context);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -93,7 +88,7 @@ class FeaturePage extends StatelessWidget {
         final pad = w < 800 ? 12.0 : 24.0;
 
         return Scaffold(
-          backgroundColor: bg,
+          backgroundColor: theme.colorScheme.surface,
           floatingActionButton: narrow
               ? FloatingActionButton.small(
                   heroTag: heroTag,
@@ -103,16 +98,16 @@ class FeaturePage extends StatelessWidget {
                 )
               : null,
           appBar: AppBar(
-            backgroundColor: bg,
+            backgroundColor: theme.colorScheme.surface,
             elevation: 0,
             centerTitle: false,
-            title: Text(title, style: TextStyle(color: fg)),
+            title: Text(title, style: TextStyle(color: theme.colorScheme.onSurface)),
             actions: narrow
                 ? [
                     _FeatureBarAction(
                         icon: Icons.history_rounded,
                         label: 'History',
-                        color: fg,
+                        color: theme.colorScheme.onSurface,
                         onTap: () => _showHistory(context)),
                     const SizedBox(width: 4),
                     _FeatureBarAction(
@@ -127,19 +122,19 @@ class FeaturePage extends StatelessWidget {
                     _FeatureBarAction(
                         icon: Icons.history_rounded,
                         label: 'History',
-                        color: fg,
+                        color: theme.colorScheme.onSurface,
                         onTap: () => _showHistory(context)),
                     const SizedBox(width: 4),
                     _FeatureBarAction(
                         icon: Icons.content_paste_rounded,
                         label: 'Paste',
-                        color: fg,
+                        color: theme.colorScheme.onSurface,
                         onTap: () => _onPaste(context)),
                     const SizedBox(width: 4),
                     _FeatureBarAction(
                         icon: Icons.upload_file_rounded,
                         label: 'PDF',
-                        color: fg,
+                        color: theme.colorScheme.onSurface,
                         onTap: () => _pickPdf(context)),
                     const SizedBox(width: 12),
                     _FeatureBarAction(
@@ -162,7 +157,7 @@ class FeaturePage extends StatelessWidget {
                           direction: narrow ? Axis.vertical : Axis.horizontal,
                           children: [
                             if (inputExpanded) ...[
-                              Flexible(flex: 2, child: _inputField(fg)),
+                              Flexible(flex: 2, child: _inputField(theme)),
                               narrow
                                   ? const SizedBox(height: 12)
                                   : const SizedBox(width: 12),
@@ -181,38 +176,37 @@ class FeaturePage extends StatelessWidget {
                                       )),
                           ],
                         )
-                      : _inputField(fg),
+                      : _inputField(theme),
                 ),
               ],
             ),
           ),
         );
-      },
-    );
+      },      );
   }
 
-  Widget _inputField(Color fg) => TextField(
+  Widget _inputField(ThemeData theme) => TextField(
         controller: controller,
         maxLines: null,
         expands: true,
         textAlignVertical: TextAlignVertical.top,
-        style: TextStyle(color: fg, fontSize: 15),
+        style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 15),
         decoration: InputDecoration(
           hintText: 'Type text to ${title.toLowerCase()}…',
-          hintStyle: TextStyle(color: fg.withValues(alpha: 0.4)),
-          fillColor: fg.withValues(alpha: 0.06),
+          hintStyle: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.4)),
+          fillColor: theme.colorScheme.onSurface.withValues(alpha: 0.06),
           filled: true,
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: fg.withValues(alpha: 0.2))),
+              borderSide: BorderSide(color: theme.colorScheme.onSurface.withValues(alpha: 0.2))),
           enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: fg.withValues(alpha: 0.2))),
+              borderSide: BorderSide(color: theme.colorScheme.onSurface.withValues(alpha: 0.2))),
           focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: fg, width: 1.5)),
+              borderSide: BorderSide(color: theme.colorScheme.onSurface, width: 1.5)),
         ),
         onSubmitted: (_) => onSubmit(),
       );

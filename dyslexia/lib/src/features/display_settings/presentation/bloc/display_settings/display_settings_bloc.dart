@@ -1,16 +1,23 @@
+import 'dart:async';
+
 import 'package:equatable/equatable.dart';
-import 'package:hydrated_bloc/hydrated_bloc.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../../features/display_settings/data/models/display_settings_model.dart';
 import '../../../../../features/display_settings/domain/entities/display_settings_entity.dart';
+import '../../../domain/repositories/display_settings_repository.dart';
 
 part 'display_settings_event.dart';
 part 'display_settings_state.dart';
 
 class DisplaySettingsBloc
-    extends HydratedBloc<DisplaySettingsEvent, DisplaySettingsState> {
-  DisplaySettingsBloc()
+    extends Bloc<DisplaySettingsEvent, DisplaySettingsState> {
+  final DisplaySettingsRepository _repository;
+  Timer? _saveDebounce;
+
+  DisplaySettingsBloc(this._repository)
       : super(DisplaySettingsState(settings: DisplaySettingsModel.defaults())) {
+    _load();
     on<UpdateFontSizeEvent>(_updateFontSize);
     on<UpdateLineSpacingEvent>(_updateLineSpacing);
     on<UpdateLetterSpacingEvent>(_updateLetterSpacing);
@@ -22,38 +29,75 @@ class DisplaySettingsBloc
     on<ToggleSyllablesEvent>(_toggleSyllables);
   }
 
+  Future<void> _load() async {
+    try {
+      final settings = await _repository.load();
+      // Only apply loaded settings if the state hasn't been mutated yet
+      // (still at defaults). This prevents the async load from overwriting
+      // a user-initiated change that arrived before load completed.
+      if (!isClosed && state.settings == DisplaySettingsModel.defaults()) {
+        emit(DisplaySettingsState(settings: settings));
+      }
+    } catch (_) {
+      // Keep defaults on load failure
+    }
+  }
+
+  @override
+  Future<void> close() {
+    _saveDebounce?.cancel();
+    return super.close();
+  }
+
+  /// Debounced save: emits immediately for responsive UI, persists
+  /// after a 300ms pause to avoid blocking slider drags with Hive writes.
+  void _debouncedSave(DisplaySettingsEntity settings) {
+    _saveDebounce?.cancel();
+    _saveDebounce = Timer(const Duration(milliseconds: 300), () {
+      _repository.save(settings).catchError((_) {});
+    });
+  }
+
   void _updateFontSize(
       UpdateFontSizeEvent event, Emitter<DisplaySettingsState> emit) {
-    emit(state.copyWith(
-        settings: state.settings.copyWith(fontSize: event.fontSize)));
+    final updated = state.settings.copyWith(fontSize: event.fontSize);
+    emit(state.copyWith(settings: updated));
+    _debouncedSave(updated);
   }
 
   void _updateLineSpacing(
       UpdateLineSpacingEvent event, Emitter<DisplaySettingsState> emit) {
-    emit(state.copyWith(
-        settings: state.settings.copyWith(lineSpacing: event.lineSpacing)));
+    final updated = state.settings.copyWith(lineSpacing: event.lineSpacing);
+    emit(state.copyWith(settings: updated));
+    _debouncedSave(updated);
   }
 
   void _updateLetterSpacing(
       UpdateLetterSpacingEvent event, Emitter<DisplaySettingsState> emit) {
-    emit(state.copyWith(
-        settings: state.settings.copyWith(letterSpacing: event.letterSpacing)));
+    final updated = state.settings.copyWith(letterSpacing: event.letterSpacing);
+    emit(state.copyWith(settings: updated));
+    _debouncedSave(updated);
   }
 
   void _updateWordSpacing(
       UpdateWordSpacingEvent event, Emitter<DisplaySettingsState> emit) {
-    emit(state.copyWith(
-        settings: state.settings.copyWith(wordSpacing: event.wordSpacing)));
+    final updated = state.settings.copyWith(wordSpacing: event.wordSpacing);
+    emit(state.copyWith(settings: updated));
+    _debouncedSave(updated);
   }
 
-  void _updateFont(UpdateFontEvent event, Emitter<DisplaySettingsState> emit) {
-    emit(state.copyWith(settings: state.settings.copyWith(font: event.font)));
+  void _updateFont(
+      UpdateFontEvent event, Emitter<DisplaySettingsState> emit) {
+    final updated = state.settings.copyWith(font: event.font);
+    emit(state.copyWith(settings: updated));
+    _debouncedSave(updated);
   }
 
   void _updateColorTheme(
       UpdateColorThemeEvent event, Emitter<DisplaySettingsState> emit) {
-    emit(state.copyWith(
-        settings: state.settings.copyWith(colorTheme: event.colorTheme)));
+    final updated = state.settings.copyWith(colorTheme: event.colorTheme);
+    emit(state.copyWith(settings: updated));
+    _debouncedSave(updated);
   }
 
   void _applyPreset(
@@ -63,31 +107,33 @@ class DisplaySettingsBloc
     // so switching presets never silently turns the reader's
     // assistive features on or off.
     final presetModel = _presetToModel(event.preset);
-    emit(state.copyWith(
-      settings: state.settings.copyWith(
-        fontSize: presetModel.fontSize,
-        lineSpacing: presetModel.lineSpacing,
-        letterSpacing: presetModel.letterSpacing,
-        wordSpacing: presetModel.wordSpacing,
-        font: presetModel.font,
-        colorTheme: presetModel.colorTheme,
-        preset: presetModel.preset,
-      ),
-    ));
+    final updated = state.settings.copyWith(
+      fontSize: presetModel.fontSize,
+      lineSpacing: presetModel.lineSpacing,
+      letterSpacing: presetModel.letterSpacing,
+      wordSpacing: presetModel.wordSpacing,
+      font: presetModel.font,
+      colorTheme: presetModel.colorTheme,
+      preset: presetModel.preset,
+    );
+    emit(state.copyWith(settings: updated));
+    _debouncedSave(updated);
   }
 
   void _toggleRuler(
       ToggleRulerEvent event, Emitter<DisplaySettingsState> emit) {
-    emit(state.copyWith(
-        settings: state.settings
-            .copyWith(rulerEnabled: !state.settings.rulerEnabled)));
+    final updated =
+        state.settings.copyWith(rulerEnabled: !state.settings.rulerEnabled);
+    emit(state.copyWith(settings: updated));
+    _debouncedSave(updated);
   }
 
   void _toggleSyllables(
       ToggleSyllablesEvent event, Emitter<DisplaySettingsState> emit) {
-    emit(state.copyWith(
-        settings: state.settings
-            .copyWith(syllablesEnabled: !state.settings.syllablesEnabled)));
+    final updated = state.settings
+        .copyWith(syllablesEnabled: !state.settings.syllablesEnabled);
+    emit(state.copyWith(settings: updated));
+    _debouncedSave(updated);
   }
 
   DisplaySettingsModel _presetToModel(DisplayPreset preset) {
@@ -204,23 +250,5 @@ class DisplaySettingsBloc
           syllablesEnabled: true,
         ),
     };
-  }
-
-  @override
-  DisplaySettingsState? fromJson(Map<String, dynamic> json) {
-    try {
-      return DisplaySettingsState(settings: DisplaySettingsModel.fromMap(json));
-    } catch (_) {
-      return null;
-    }
-  }
-
-  @override
-  Map<String, dynamic>? toJson(DisplaySettingsState state) {
-    try {
-      return state.settings.toMap();
-    } catch (_) {
-      return null;
-    }
   }
 }

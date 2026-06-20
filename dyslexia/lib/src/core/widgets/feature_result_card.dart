@@ -25,11 +25,12 @@ class FeatureResultCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final ds = context.watch<DisplaySettingsBloc>().state;
     final s = ds.settings;
+    final bg = bgColor(s.colorTheme);
     final fg = fgColor(s.colorTheme);
 
     return Container(
       decoration: BoxDecoration(
-        color: fg.withValues(alpha: 0.06),
+        color: bg,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Padding(
@@ -72,6 +73,7 @@ class FeatureResultCard extends StatelessWidget {
                 text: text,
                 settings: s,
                 fgColor: fg,
+                bgColor: bg,
               ),
             ),
           ],

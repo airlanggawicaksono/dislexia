@@ -1,11 +1,11 @@
 part of 'display_settings_bloc.dart';
 
 class DisplaySettingsState extends Equatable {
-  final DisplaySettingsModel settings;
+  final DisplaySettingsEntity settings;
 
   const DisplaySettingsState({required this.settings});
 
-  DisplaySettingsState copyWith({DisplaySettingsModel? settings}) =>
+  DisplaySettingsState copyWith({DisplaySettingsEntity? settings}) =>
       DisplaySettingsState(settings: settings ?? this.settings);
 
   @override
