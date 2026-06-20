@@ -9,6 +9,7 @@ from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from app.config.database import async_session_maker, close_db, init_db
 from app.config.settings import settings
 from app.scripts.seed_admin import ensure_seed_admin
+from app.middleware.flutter_wasm_cors import FlutterWasmCorsMiddleware
 from app.routers import auth, admin, admin_auth
 from app.routers.features import summarize, professionalize, define, me, screen
 
@@ -103,6 +104,9 @@ app.add_middleware(
     max_age=settings.CORS_MAX_AGE,
 )
 
+# Flutter WASM — add headers for multi-threaded rendering support
+app.add_middleware(FlutterWasmCorsMiddleware)
+
 if settings.SWAGGER_DOCS_ENABLED:
 
     @app.get("/docs", include_in_schema=False)
@@ -124,6 +128,7 @@ if settings.SWAGGER_DOCS_ENABLED:
             openapi_url="/openapi.json",
             title=f"{app.title} – ReDoc",
         )
+
 
 app.include_router(auth.router)
 app.include_router(summarize.router)
