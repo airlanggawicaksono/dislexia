@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -14,28 +16,16 @@ import '../../features/upload/data/datasources/pdf_extractor_service.dart';
 class ReaderLandingView extends StatelessWidget {
   const ReaderLandingView({super.key});
 
-  Future<void> _pickPdf(BuildContext context) async {
+  Future<void> _processPdfBytes(
+    BuildContext context,
+    Uint8List bytes,
+    String fileName,
+  ) async {
+    if (!context.mounted) return;
+    context
+        .read<ReaderShellBloc>()
+        .add(const SetPdfProgressEvent(current: 0, total: 1));
     try {
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['pdf'],
-        withData: true,
-      );
-      if (result == null || result.files.isEmpty) return;
-      final file = result.files.first;
-      final bytes = file.bytes;
-      if (bytes == null) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Could not read file data')),
-          );
-        }
-        return;
-      }
-      if (!context.mounted) return;
-      context
-          .read<ReaderShellBloc>()
-          .add(const SetPdfProgressEvent(current: 0, total: 1));
       final text = await context.read<PdfExtractorService>().extractText(
         bytes,
         onProgress: (current, total) {
@@ -45,23 +35,47 @@ class ReaderLandingView extends StatelessWidget {
               .add(SetPdfProgressEvent(current: current, total: total));
         },
       );
+      if (!context.mounted) return;
       if (text.trim().isEmpty) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content:
-                    Text('PDF appears to be empty or contains only images')),
-          );
-          context
-              .read<ReaderShellBloc>()
-              .add(const SetPdfProgressEvent(current: 1, total: 1));
-        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content:
+                  Text('PDF appears to be empty or contains only images')),
+        );
+        context
+            .read<ReaderShellBloc>()
+            .add(const SetPdfProgressEvent(current: 1, total: 1));
         return;
       }
-      if (!context.mounted) return;
       context
           .read<ReaderShellBloc>()
-          .add(LoadTextEvent(text, source: file.name));
+          .add(LoadTextEvent(text, source: fileName));
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to read PDF: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _pickPdf(BuildContext context) async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf'],
+        withData: true,
+      );
+      if (result == null || result.files.isEmpty || !context.mounted) return;
+      final file = result.files.first;
+      final bytes = file.bytes;
+      if (bytes == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not read file data')),
+        );
+        return;
+      }
+      await _processPdfBytes(context, bytes, file.name);
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -76,113 +90,115 @@ class ReaderLandingView extends StatelessWidget {
     final theme = Theme.of(context);
     final muted = theme.colorScheme.onSurface.withValues(alpha: 0.5);
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
-      child: Column(
-        children: [
-          const Spacer(),
-          // PDF drop zone
-          GestureDetector(
-            onTap: () => _pickPdf(context),
-            child: Container(
-              width: double.infinity,
-              constraints: const BoxConstraints(maxWidth: 560),
-              padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 32),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest
-                    .withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.15),
-                  width: 2,
-                  style: BorderStyle.solid,
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // PDF drop zone
+            GestureDetector(
+              onTap: () => _pickPdf(context),
+              child: MouseRegion(
+                cursor: SystemMouseCursors.click,
+                child: Container(
+                  width: double.infinity,
+                  constraints: const BoxConstraints(maxWidth: 560),
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 40, horizontal: 32),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceContainerHighest
+                        .withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.15),
+                      width: 2,
+                    ),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.cloud_upload_rounded,
+                        size: 48,
+                        color: muted,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Drop a PDF here',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: theme.colorScheme.onSurface
+                              .withValues(alpha: 0.6),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Drag and drop any PDF file to start\nreading with your preferred settings',
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: muted,
+                          height: 1.5,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'or browse your files',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
+            ),
+            const SizedBox(height: 20),
+            // Paste Text and Load Sample cards
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 560),
+              child: Row(
                 children: [
-                  Icon(
-                    Icons.cloud_upload_rounded,
-                    size: 48,
-                    color: muted,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Drop a PDF here',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                      fontWeight: FontWeight.w600,
+                  Expanded(
+                    child: _ActionCard(
+                      icon: Icons.description_rounded,
+                      label: 'Paste Text',
+                      subtitle: 'From clipboard or type',
+                      onTap: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                                'Type in the top bar or press Ctrl+V to paste'),
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                      },
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Drag and drop any PDF file to start\nreading with your preferred settings',
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: muted,
-                      height: 1.5,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  GestureDetector(
-                    onTap: () => _pickPdf(context),
-                    child: Text(
-                      'or browse your files',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.primary,
-                        fontWeight: FontWeight.w600,
-                      ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _ActionCard(
+                      icon: Icons.menu_book_rounded,
+                      label: 'Load Sample',
+                      subtitle: 'See how it looks first',
+                      onTap: () {
+                        context.read<ReaderShellBloc>().add(
+                              const LoadTextEvent(
+                                kDyslexiaSampleText,
+                                source: 'Sample',
+                              ),
+                            );
+                      },
                     ),
                   ),
                 ],
               ),
             ),
-          ),
-          const SizedBox(height: 20),
-          // Paste Text and Load Sample cards
-          ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 560),
-            child: Row(
-              children: [
-                Expanded(
-                  child: _ActionCard(
-                    icon: Icons.description_rounded,
-                    label: 'Paste Text',
-                    subtitle: 'From clipboard or type',
-                    onTap: () {
-                      // Focus the topbar input — the user can type there
-                      // or use Ctrl+V. We show a hint snackbar.
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                              'Type in the top bar or press Ctrl+V to paste'),
-                          duration: Duration(seconds: 2),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _ActionCard(
-                    icon: Icons.menu_book_rounded,
-                    label: 'Load Sample',
-                    subtitle: 'See how it looks first',
-                    onTap: () {
-                      context.read<ReaderShellBloc>().add(
-                            const LoadTextEvent(
-                              kDyslexiaSampleText,
-                              source: 'Sample',
-                            ),
-                          );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const Spacer(),
-        ],
+          ],
+        ),
       ),
     );
   }
