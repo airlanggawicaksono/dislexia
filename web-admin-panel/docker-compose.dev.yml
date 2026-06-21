@@ -1,20 +1,19 @@
-# Production docker-compose for admin panel
-# Usage: docker compose -f docker-compose.prod.yml up
+# Dev docker-compose for admin panel
+# Usage: docker compose -f docker-compose.dev.yml up
+# All values come from .env via ${VAR} substitution.
 
 services:
   admin-panel:
-    image: ${ADMIN_PANEL_IMAGE:-dyslexia-admin:latest}
-    container_name: prod-admin-panel
+    image: dev-dyslexia-admin:latest
+    container_name: dev-admin-panel
     ports:
       - "${ADMIN_PORT:-3000}:${PORT:-3000}"
     environment:
-      NODE_ENV: ${NODE_ENV:-production}
+      NODE_ENV: ${NODE_ENV:-development}
       PORT: ${PORT:-3000}
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://api.dyslexic.app}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://dev-api.dyslexic.app}
       NEXT_PUBLIC_ADMIN_USERNAME: ${NEXT_PUBLIC_ADMIN_USERNAME}
       NEXT_PUBLIC_ADMIN_PASSWORD: ${NEXT_PUBLIC_ADMIN_PASSWORD}
-    depends_on:
-      - backend
     restart: always
     networks:
       - dislexia_network
@@ -27,5 +26,5 @@ services:
 
 networks:
   dislexia_network:
-    name: prod_dislexia_network
+    name: dev_dislexia_network
     external: true

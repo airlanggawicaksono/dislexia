@@ -1,4 +1,4 @@
-name: Deploy Web Admin Panel
+name: Deploy Dev Admin Panel
 
 on:
   push:
@@ -11,6 +11,7 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    environment: DEV-ENV
 
     steps:
       - name: Checkout
@@ -20,63 +21,68 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Build image
-        run: |
-          docker build -t dyslexia-admin:latest ./web-admin-panel
+        run: docker build -t dev-dyslexia-admin:latest ./web-admin-panel
 
-      - name: Save image as tar
+      - name: Generate .env
+        env:
+          NEXT_PUBLIC_ADMIN_USERNAME: ${{ secrets.NEXT_PUBLIC_ADMIN_USERNAME }}
+          NEXT_PUBLIC_ADMIN_PASSWORD: ${{ secrets.NEXT_PUBLIC_ADMIN_PASSWORD }}
         run: |
-          docker save dyslexia-admin:latest -o /tmp/dyslexia-admin.tar
-          ls -la /tmp/dyslexia-admin.tar
+          {
+            echo "NODE_ENV=${{ vars.NODE_ENV }}"
+            echo "PORT=${{ vars.PORT }}"
+            echo "ADMIN_PORT=${{ vars.ADMIN_PORT }}"
+            echo "NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }}"
+            esc() { printf '%s' "$1" | sed 's/\$/$$/g'; }
+            printf "NEXT_PUBLIC_ADMIN_USERNAME=%s\n" "$(esc "$NEXT_PUBLIC_ADMIN_USERNAME")"
+            printf "NEXT_PUBLIC_ADMIN_PASSWORD=%s\n" "$(esc "$NEXT_PUBLIC_ADMIN_PASSWORD")"
+          } > /tmp/dev-admin.env
 
-      - name: Copy image to VPS via SCP
+      - name: Save artifacts
+        run: |
+          docker save dev-dyslexia-admin:latest -o /tmp/dev-dyslexia-admin.tar
+          cp ./web-admin-panel/docker-compose.dev.yml /tmp/docker-compose.dev.yml
+
+      - name: Setup SSH
         run: |
           echo "${{ secrets.VPS_SSH_KEY }}" > /tmp/vps_key
           chmod 600 /tmp/vps_key
-          scp -o StrictHostKeyChecking=no -i /tmp/vps_key /tmp/dyslexia-admin.tar ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/tmp/dyslexia-admin.tar
+
+      - name: Copy to VPS
+        run: |
+          VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          scp -o StrictHostKeyChecking=no -i /tmp/vps_key /tmp/dev-dyslexia-admin.tar ${VPS}:/tmp/
+          scp -o StrictHostKeyChecking=no -i /tmp/vps_key /tmp/docker-compose.dev.yml ${VPS}:/tmp/
+          scp -o StrictHostKeyChecking=no -i /tmp/vps_key /tmp/dev-admin.env ${VPS}:/tmp/
 
       - name: Deploy on VPS
         run: |
-          ssh -o StrictHostKeyChecking=no -i /tmp/vps_key ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "
-            set -e
+          VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          KEY="/tmp/vps_key"
 
-            echo '=== Deploying admin panel on VPS ==='
+          ssh -o StrictHostKeyChecking=no -i ${KEY} ${VPS} "
+            # Create deploy directory and drop .env + compose file into place
+            mkdir -p /opt/dislexia/dev-admin
+            cp /tmp/dev-admin.env /opt/dislexia/dev-admin/.env
+            cp /tmp/docker-compose.dev.yml /opt/dislexia/dev-admin/
 
-            echo '=== Load image ==='
-            docker load -i /tmp/dyslexia-admin.tar
-
-            echo '=== Stop old container ==='
-            docker stop prod-admin-panel 2>/dev/null || true
-            docker rm prod-admin-panel 2>/dev/null || true
-
-            echo '=== Start container ==='
-            docker run -d --name prod-admin-panel --restart unless-stopped \
-              -p ${ADMIN_PORT:-3000}:3000 \
-              -e NODE_ENV=production \
-              -e PORT=3000 \
-              -e NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-https://api.dyslexic.app} \
-              -e NEXT_PUBLIC_ADMIN_USERNAME=${NEXT_PUBLIC_ADMIN_USERNAME} \
-              -e NEXT_PUBLIC_ADMIN_PASSWORD=${NEXT_PUBLIC_ADMIN_PASSWORD} \
-              --network prod_dislexia_network \
-              dyslexia-admin:latest
-
-            echo '=== Cleanup ==='
-            rm -f /tmp/dyslexia-admin.tar
-            docker image prune -f
-
-            echo '=== Done ==='
-            docker ps | grep admin-panel
+            # Deploy
+            cd /opt/dislexia/dev-admin
+            docker load -i /tmp/dev-dyslexia-admin.tar
+            docker compose -f docker-compose.dev.yml down 2>/dev/null || true
+            docker compose -f docker-compose.dev.yml up -d --no-build
           "
 
       - name: Health check
         run: |
-          ssh -o StrictHostKeyChecking=no -i /tmp/vps_key ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "
-            set -e
-            sleep 5
-            curl -f http://127.0.0.1:${ADMIN_PORT:-3000}/ || exit 1
-            echo '=== Admin panel deployed successfully ==='
-          "
+          sleep 10
+          VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          ssh -o StrictHostKeyChecking=no -i /tmp/vps_key ${VPS} '
+            docker ps
+            docker compose -f /opt/dislexia/dev-admin/docker-compose.dev.yml logs --tail=30
+            curl -f http://127.0.0.1:3000/ || echo "Health check failed"
+          '
 
       - name: Notify failure
         if: failure()
-        run: |
-          echo "Deployment failed! Check VPS at ${{ secrets.VPS_HOST }}"
+        run: echo "Dev admin panel deployment failed! Check ${{ secrets.VPS_HOST }}:3000"
