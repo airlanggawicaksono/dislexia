@@ -1,8 +1,7 @@
-import 'dart:typed_data';
-
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dropzone/flutter_dropzone.dart';
 
@@ -94,12 +93,14 @@ class _ReaderLandingViewState extends State<ReaderLandingView> {
       if (result == null || result.files.isEmpty || !context.mounted) return;
       final file = result.files.first;
       final bytes = file.bytes;
+      // ignore: use_build_context_synchronously
       if (bytes == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Could not read file data')),
         );
         return;
       }
+      // ignore: use_build_context_synchronously — mounted is checked on line above
       await _processPdfBytes(bytes, file.name);
     } catch (e) {
       if (mounted) {
@@ -269,14 +270,32 @@ class _ReaderLandingViewState extends State<ReaderLandingView> {
                       icon: Icons.description_rounded,
                       label: 'Paste Text',
                       subtitle: 'From clipboard or type',
-                      onTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                                'Type in the top bar or press Ctrl+V to paste'),
-                            duration: Duration(seconds: 2),
-                          ),
-                        );
+                      onTap: () async {
+                        try {
+                          final data = await Clipboard.getData(Clipboard.kTextPlain);
+                          final text = data?.text;
+                          if (!context.mounted) return;
+                          if (text != null && text.isNotEmpty) {
+                            context.read<ReaderShellBloc>().add(
+                                  LoadTextEvent(text, source: 'Pasted'),
+                                );
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Clipboard is empty'),
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
+                          }
+                        } catch (_) {
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Unable to read clipboard'),
+                              duration: Duration(seconds: 2),
+                            ),
+                          );
+                        }
                       },
                     ),
                   ),
