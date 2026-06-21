@@ -169,8 +169,10 @@ class _ReaderLandingViewState extends State<ReaderLandingView> {
     final muted = theme.colorScheme.onSurface.withValues(alpha: 0.5);
 
     return Center(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+      child: SizedBox(
+        width: double.infinity,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -185,6 +187,7 @@ class _ReaderLandingViewState extends State<ReaderLandingView> {
                   width: double.infinity,
                   height: 260,
                   child: Stack(
+                    alignment: Alignment.center,
                     children: [
                       // HTML drop zone in the background — handles native drag events (web only)
                       if (kIsWeb)
@@ -292,7 +295,8 @@ class _ReaderLandingViewState extends State<ReaderLandingView> {
             ),
             const SizedBox(height: 20),
             // Paste Text and Load Sample cards
-            ConstrainedBox(
+            Center(
+              child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 560),
               child: Row(
                 children: [
@@ -349,7 +353,9 @@ class _ReaderLandingViewState extends State<ReaderLandingView> {
                 ],
               ),
             ),
+            ),
           ],
+        ),
         ),
       ),
     );
