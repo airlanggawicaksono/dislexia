@@ -50,31 +50,32 @@ class _ReaderTextDisplayState extends State<ReaderTextDisplay> {
         final contentWidth = maxW < 800.0 ? maxW - 32 : 740.0.clamp(400.0, maxW - 64);
         return ColoredBox(
           color: widget.bgColor ?? Colors.transparent,
-          child: SizedBox.expand(
-          child: Stack(
-          children: [
-            MouseRegion(
-              onEnter: (_) => setState(() => _isHovering = true),
-              onExit: (_) => setState(() => _isHovering = false),
-              onHover: s.rulerEnabled
-                  ? (e) => setState(() => _rulerY = e.localPosition.dy)
-                  : null,
-              child: widget.scrollable
-                  ? SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(vertical: 28),
-                      child: _content(contentWidth, paragraphs, fg, s),
-                    )
-                  : _content(contentWidth, paragraphs, fg, s),
+          child: SizedBox(
+            width: double.infinity,
+            child: Stack(
+              children: [
+                MouseRegion(
+                  onEnter: (_) => setState(() => _isHovering = true),
+                  onExit: (_) => setState(() => _isHovering = false),
+                  onHover: s.rulerEnabled
+                      ? (e) => setState(() => _rulerY = e.localPosition.dy)
+                      : null,
+                  child: widget.scrollable
+                      ? SingleChildScrollView(
+                          padding: const EdgeInsets.symmetric(vertical: 28),
+                          child: _content(contentWidth, paragraphs, fg, s),
+                        )
+                      : _content(contentWidth, paragraphs, fg, s),
+                ),
+                if (s.rulerEnabled && _isHovering)
+                  ReadingRuler(
+                    height: rulerH,
+                    rulerY: _rulerY,
+                    onPositionChanged: (y) => setState(() => _rulerY = y),
+                  ),
+              ],
             ),
-            if (s.rulerEnabled && _isHovering)
-              ReadingRuler(
-                height: rulerH,
-                rulerY: _rulerY,
-                onPositionChanged: (y) => setState(() => _rulerY = y              ),
-            ),
-          ],
-        ),
-        ),
+          ),
         );
       },
     );
