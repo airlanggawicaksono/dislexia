@@ -41,11 +41,21 @@ class TypographySliders extends StatelessWidget {
 
 Widget _miniSlider(String label, double value, double min, double max, ValueChanged<double> onChanged, String displayValue) {
   return Padding(
-    padding: const EdgeInsets.only(bottom: 8),
-    child: Row(
+    padding: const EdgeInsets.only(bottom: 10),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(width: 36, child: Text(label, style: const TextStyle(fontSize: 10, color: Colors.black45))),
-        Expanded(child: AdaptiveSlider(value: value.clamp(min, max), min: min, max: max, onChanged: onChanged, activeColor: Color(0xFF3D5A99))),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(label,
+                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Colors.black87)),
+            Text(displayValue,
+                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF3D5A99))),
+          ],
+        ),
+        const SizedBox(height: 4),
+        AdaptiveSlider(value: value.clamp(min, max), min: min, max: max, onChanged: onChanged, activeColor: Color(0xFF3D5A99)),
       ],
     ),
   );
