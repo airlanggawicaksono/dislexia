@@ -5,8 +5,6 @@ import '../../../../../core/errors/failures.dart';
 import '../../../../../core/usecases/usecase.dart';
 import '../../../../../core/utils/failure_converter.dart';
 import '../../../domain/entities/auth_session_entity.dart';
-import '../../../domain/entities/generated_account_entity.dart';
-import '../../../domain/usecases/generate_account_usecase.dart';
 import '../../../domain/usecases/login_usecase.dart';
 import '../../../domain/usecases/logout_usecase.dart';
 import '../../../domain/usecases/restore_session_usecase.dart';
@@ -25,7 +23,6 @@ part 'auth_state.dart';
 ///   AuthLoading (success)            ─> Authenticated
 ///   AuthLoading (no session)         ─> Unauthenticated
 ///   Unauthenticated ─LoginEvent─> AuthLoading
-///   Unauthenticated ─GenerateAccountEvent─> AuthLoading
 ///   Authenticated    ─LogoutEvent─> Unauthenticated
 ///
 /// On every transition the bloc also keeps two side-channels in sync:
@@ -40,23 +37,19 @@ part 'auth_state.dart';
 ///                     how an expired session funnels back through the
 ///                     same state machine the user would use.
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
-  final GenerateAccountUseCase _generateAccount;
   final LoginUseCase _login;
   final LogoutUseCase _logout;
   final RestoreSessionUseCase _restoreSession;
 
   AuthBloc({
-    required GenerateAccountUseCase generateAccount,
     required LoginUseCase login,
     required LogoutUseCase logout,
     required RestoreSessionUseCase restoreSession,
-  })  : _generateAccount = generateAccount,
-        _login = login,
+  })  : _login = login,
         _logout = logout,
         _restoreSession = restoreSession,
         super(const AuthInitial()) {
     on<RestoreSessionEvent>(_onRestoreSession);
-    on<GenerateAccountEvent>(_onGenerateAccount);
     on<LoginEvent>(_onLogin);
     on<LogoutEvent>(_onLogout);
   }
@@ -119,28 +112,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         } else {
           emit(Authenticated(session));
         }
-      },
-    );
-  }
-
-  Future<void> _onGenerateAccount(
-      GenerateAccountEvent event, Emitter<AuthState> emit) async {
-    emit(const AuthLoading());
-    final result = await _generateAccount.call(const NoParams());
-    result.fold(
-      (failure) {
-        emit(Unauthenticated(errorMessage: mapFailureToMessage(failure)));
-      },
-      (GeneratedAccountEntity generated) {
-        // Don't auto-authenticate after generate — the user must see
-        // and confirm they've saved the account number first. The auth
-        // page stays in Unauthenticated with the pending account number
-        // visible, and dispatches a `RestoreSessionEvent` once the user
-        // taps "I've saved it".
-        emit(Unauthenticated(
-          pendingAccountNumber: generated.accountNumber,
-          pendingDisplayName: generated.displayName,
-        ));
       },
     );
   }

@@ -9,7 +9,6 @@ import '../data/datasources/auth_local_datasource.dart';
 import '../data/datasources/auth_remote_datasource.dart';
 import '../data/repositories/auth_repository_impl.dart';
 import '../domain/repositories/auth_repository.dart';
-import '../domain/usecases/generate_account_usecase.dart';
 import '../domain/usecases/login_usecase.dart';
 import '../domain/usecases/logout_usecase.dart';
 import '../domain/usecases/restore_session_usecase.dart';
@@ -73,9 +72,6 @@ class AuthDependency {
 
     // ---- auth use cases -----------------------------------------
     getIt.registerLazySingleton(
-      () => GenerateAccountUseCase(getIt<AuthRepository>()),
-    );
-    getIt.registerLazySingleton(
       () => LoginUseCase(getIt<AuthRepository>()),
     );
     getIt.registerLazySingleton(
@@ -96,7 +92,6 @@ class AuthDependency {
     // naturally.
     getIt.registerFactory<AuthBloc>(
       () => AuthBloc(
-        generateAccount: getIt<GenerateAccountUseCase>(),
         login: getIt<LoginUseCase>(),
         logout: getIt<LogoutUseCase>(),
         restoreSession: getIt<RestoreSessionUseCase>(),

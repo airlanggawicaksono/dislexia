@@ -3,13 +3,9 @@ import 'package:fpdart/fpdart.dart';
 import '../../../../core/api/api_exception.dart';
 import '../../../../core/errors/failures.dart';
 import '../../domain/entities/auth_session_entity.dart';
-import '../../domain/entities/generated_account_entity.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../datasources/auth_local_datasource.dart';
 import '../datasources/auth_remote_datasource.dart';
-import '../models/auth_session_model.dart';
-import '../models/auth_user_model.dart';
-import '../models/generated_account_model.dart';
 
 /// Server failure that carries the human-readable message from the API
 /// (e.g. "Invalid account number"). Distinct from the empty
@@ -32,33 +28,6 @@ class AuthRepositoryImpl implements AuthRepository {
     required AuthLocalDatasource local,
   })  : _remote = remote,
         _local = local;
-
-  @override
-  Future<Either<Failure, GeneratedAccountEntity>> generateAccount() async {
-    try {
-      final generated = await _remote.generateAccount();
-      // Auto-persist the freshly issued token so the user lands in an
-      // authenticated state on the next launch.
-      final session = AuthSessionModel(
-        accessToken: generated.accessToken,
-        tokenType: generated.tokenType,
-        expiresIn: generated.expiresIn,
-        user: AuthUserModel(
-          userId: '',
-          accountNumber: generated.accountNumber,
-          displayName: generated.displayName,
-        ),
-      );
-      await _local.writeSession(session);
-      return Right(generated);
-    } on UnauthorizedException catch (_) {
-      return const Left(CredentialFailure());
-    } on ApiException catch (e) {
-      return Left(ServerFailureWithMessage(e.message));
-    } catch (_) {
-      return const Left(ServerFailure());
-    }
-  }
 
   @override
   Future<Either<Failure, AuthSessionEntity>> login(

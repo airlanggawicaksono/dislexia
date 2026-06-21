@@ -40,37 +40,20 @@ class Unauthenticated extends AuthState {
   /// Set to a non-null message when the most recent attempt failed so
   /// the auth page can surface the error.
   final String? errorMessage;
-  /// Set to the freshly generated account number right after a
-  /// successful `GenerateAccountEvent` — the user must save it before
-  /// the auth page is dismissed.
-  final String? pendingAccountNumber;
-  final String? pendingDisplayName;
 
   const Unauthenticated({
     this.errorMessage,
-    this.pendingAccountNumber,
-    this.pendingDisplayName,
   });
 
   @override
-  List<Object?> get props =>
-      [errorMessage, pendingAccountNumber, pendingDisplayName];
+  List<Object?> get props => [errorMessage];
 
   Unauthenticated copyWith({
     String? errorMessage,
-    String? pendingAccountNumber,
-    String? pendingDisplayName,
     bool clearError = false,
-    bool clearPending = false,
   }) {
     return Unauthenticated(
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
-      pendingAccountNumber: clearPending
-          ? null
-          : (pendingAccountNumber ?? this.pendingAccountNumber),
-      pendingDisplayName: clearPending
-          ? null
-          : (pendingDisplayName ?? this.pendingDisplayName),
     );
   }
 }

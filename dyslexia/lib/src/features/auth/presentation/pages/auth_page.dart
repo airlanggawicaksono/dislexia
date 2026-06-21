@@ -3,16 +3,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../bloc/auth/auth_bloc.dart';
-import '../widgets/account_number_card.dart';
-import '../widgets/auth_mode_switcher.dart';
 import '../widgets/auth_text_field.dart';
 
-enum AuthMode { login, generate }
-
 /// Desktop auth page. Rendered in place of the main shell when the
-/// user has no active session. The same widget handles both
-/// \“log in with existing account number\“ and \“generate a new
-/// account\“ via the [AuthModeSwitcher] tabs.
+/// user has no active session. Allows the user to log in with their
+/// 6-digit account number.
 class AuthPage extends StatefulWidget {
   const AuthPage({super.key});
 
@@ -23,7 +18,6 @@ class AuthPage extends StatefulWidget {
 class _AuthPageState extends State<AuthPage> {
   final _formKey = GlobalKey<FormState>();
   final _accountController = TextEditingController();
-  AuthMode _mode = AuthMode.login;
 
   @override
   void dispose() {
@@ -33,15 +27,7 @@ class _AuthPageState extends State<AuthPage> {
 
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
-    final bloc = context.read<AuthBloc>();
-    switch (_mode) {
-      case AuthMode.login:
-        bloc.add(LoginEvent(_accountController.text));
-        break;
-      case AuthMode.generate:
-        bloc.add(const GenerateAccountEvent());
-        break;
-    }
+    context.read<AuthBloc>().add(LoginEvent(_accountController.text));
   }
 
   @override
@@ -63,49 +49,8 @@ class _AuthPageState extends State<AuthPage> {
               }
             },
             builder: (context, state) {
-              final unauth = state is Unauthenticated ? state : null;
               final isLoading = state is AuthLoading;
 
-              if (unauth?.pendingAccountNumber != null) {
-                // After generating an account, show the number and a button
-                // to continue, simplifying the UI to prevent confusion.
-                return Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    AccountNumberCard(
-                      accountNumber: unauth!.pendingAccountNumber!,
-                      displayName: unauth.pendingDisplayName,
-                    ),
-                    const SizedBox(height: 24),
-                    FilledButton(
-                      onPressed: isLoading
-                          ? null
-                          : () => context
-                              .read<AuthBloc>()
-                              .add(const RestoreSessionEvent()),
-                      style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                      child: isLoading
-                          ? const SizedBox(
-                              height: 18,
-                              width: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Text(
-                              'Continue to App',
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                    ),
-                  ],
-                );
-              }
-
-              // Default view for login or generate.
               return SingleChildScrollView(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 32, vertical: 48),
@@ -140,51 +85,26 @@ class _AuthPageState extends State<AuthPage> {
                         ),
                       ),
                       const SizedBox(height: 32),
-                      AuthModeSwitcher(
-                        mode: _mode,
-                        onChanged: (next) {
-                          if (isLoading) return;
-                          setState(() => _mode = next);
+                      AuthTextField(
+                        controller: _accountController,
+                        label: '6-digit account number',
+                        enabled: !isLoading,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                          LengthLimitingTextInputFormatter(6),
+                        ],
+                        validator: (value) {
+                          final v = (value ?? '').trim();
+                          if (v.isEmpty) {
+                            return 'Please enter your account number';
+                          }
+                          if (v.length != 6) {
+                            return 'Account number must be 6 digits';
+                          }
+                          return null;
                         },
                       ),
-                      const SizedBox(height: 24),
-                      if (_mode == AuthMode.login) ...[
-                        AuthTextField(
-                          controller: _accountController,
-                          label: '6-digit account number',
-                          enabled: !isLoading,
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.digitsOnly,
-                            LengthLimitingTextInputFormatter(6),
-                          ],
-                          validator: (value) {
-                            final v = (value ?? '').trim();
-                            if (v.isEmpty) {
-                              return 'Please enter your account number';
-                            }
-                            if (v.length != 6) {
-                              return 'Account number must be 6 digits';
-                            }
-                            return null;
-                          },
-                        ),
-                      ] else ...[
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.primaryContainer
-                                .withValues(alpha: 0.4),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            'We will generate a 6-digit account '
-                            'number for you. Save it — it is the only '
-                            'way to log back in.',
-                            style: theme.textTheme.bodyMedium,
-                          ),
-                        ),
-                      ],
                       const SizedBox(height: 24),
                       FilledButton(
                         onPressed: isLoading ? null : _submit,
@@ -199,11 +119,9 @@ class _AuthPageState extends State<AuthPage> {
                                   strokeWidth: 2,
                                 ),
                               )
-                            : Text(
-                                _mode == AuthMode.login
-                                    ? 'Log in'
-                                    : 'Generate account',
-                                style: const TextStyle(
+                            : const Text(
+                                'Log in',
+                                style: TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w600,
                                 ),
