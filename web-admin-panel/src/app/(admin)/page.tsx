@@ -1,131 +1,219 @@
 // src/app/admin/dashboard/page.tsx
 'use client';
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import ComponentCard from "@/components/common/ComponentCard";
 import PageBreadCrumb from "@/components/common/PageBreadCrumb";
 import LineChartOne from "@/components/charts/line/LineChartOne";
 
-// Dummy user data (original)
-const dummyUsers = [
-  {
-    id: 1,
-    name: "Ahmad Rizki",
-    email: "ahmad.rizki@email.com",
-    age: 12,
-    assessmentDate: "2024-01-15",
-    dyslexiaLevel: "Mild",
-    status: "Active",
-  },
-  {
-    id: 2,
-    name: "Siti Nurhaliza",
-    email: "siti.nur@email.com",
-    age: 10,
-    assessmentDate: "2024-02-20",
-    dyslexiaLevel: "Moderate",
-    status: "Active",
-  },
-  {
-    id: 3,
-    name: "Budi Santoso",
-    email: "budi.santoso@email.com",
-    age: 14,
-    assessmentDate: "2024-03-10",
-    dyslexiaLevel: "Severe",
-    status: "Pending",
-  },
-  {
-    id: 4,
-    name: "Dewi Lestari",
-    email: "dewi.lestari@email.com",
-    age: 11,
-    assessmentDate: "2024-03-25",
-    dyslexiaLevel: "Mild",
-    status: "Active",
-  },
-  {
-    id: 5,
-    name: "Eko Prasetyo",
-    email: "eko.prasetyo@email.com",
-    age: 13,
-    assessmentDate: "2024-04-05",
-    dyslexiaLevel: "Moderate",
-    status: "Inactive",
-  },
-];
+// Type definitions
+interface User {
+  user_id: string;
+  display_name: string;
+  account_md5: string;
+  is_active: boolean;
+  created_at: string;
+  last_login: string | null;
+}
 
-// Dummy data for User Activity
-const userActivityData = [
-  { user: "user_001", action: "Read Text", time: "10:32" },
-  { user: "user_002", action: "Summarize", time: "10:12" },
-  { user: "user_003", action: "Screening", time: "09:58" },
-  { user: "user_004", action: "Define", time: "09:41" },
-  { user: "user_005", action: "Personalize", time: "09:15" },
-];
+interface HistoryItem {
+  id: string;
+  session_id: string;
+  user_id: string;
+  feature: "summarize" | "professionalize" | "define" | "screen";
+  input_text: string;
+  output_text: string | null;
+  created_at: string;
+}
 
-// Dummy data for Access Codes
-const accessCodesData = [
-  { code: "ABCD-1234", status: "Active", users: 25 },
-  { code: "EFGH-5678", status: "Active", users: 18 },
-  { code: "IJKL-9012", status: "Expired", users: 0 },
-  { code: "MNOP-3456", status: "Active", users: 11 },
-];
+interface DashboardStats {
+  totalUsers: number;
+  activeToday: number;
+  screeningsCompleted: number;
+  textsProcessed: number;
+}
 
-// Dummy data for Feature History
-const featureHistoryData = [
-  { feature: "Reader Tools", usageCount: 3482, trend: "up" },
-  { feature: "Summarize", usageCount: 1026, trend: "up" },
-  { feature: "Define", usageCount: 1214, trend: "up" },
-  { feature: "Personalize", usageCount: 872, trend: "up" },
-  { feature: "Screening", usageCount: 812, trend: "up" },
-];
+interface UserActivity {
+  user: string;
+  action: string;
+  time: string;
+  feature: string;
+}
 
-// ✅ Updated Summary stats for Dashboard Overview
-const summaryStats = {
-  totalUsers: 1248,
-  activeToday: 243,
-  screeningsCompleted: 812,
-  textsProcessed: 5671,
-};
+interface FeatureUsage {
+  feature: string;
+  usageCount: number;
+  trend: "up" | "down";
+  trendPercent: number;
+}
 
 export default function DyslexiaDashboard() {
+  const router = useRouter();
   const [mounted, setMounted] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Data states
+  const [stats, setStats] = useState<DashboardStats>({
+    totalUsers: 0,
+    activeToday: 0,
+    screeningsCompleted: 0,
+    textsProcessed: 0,
+  });
+  const [recentActivity, setRecentActivity] = useState<UserActivity[]>([]);
+  const [featureUsage, setFeatureUsage] = useState<FeatureUsage[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+
+  // ✅ Fetch data from API
+  const fetchDashboardData = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const token = localStorage.getItem("admin_token");
+      if (!token) {
+        router.push("/signin");
+        return;
+      }
+
+      // ✅ Fetch all data in parallel
+      const [usersResponse, historyResponse] = await Promise.all([
+        fetch(`/api/proxy/api/v1/admin/users`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        fetch(`/api/proxy/api/v1/admin/history`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+      ]);
+
+      // Handle auth errors
+      if (usersResponse.status === 401 || historyResponse.status === 401) {
+        localStorage.removeItem("admin_token");
+        localStorage.removeItem("admin_info");
+        document.cookie = "admin_token=; path=/; max-age=0";
+        router.push("/signin");
+        return;
+      }
+
+      if (!usersResponse.ok || !historyResponse.ok) {
+        throw new Error("Failed to fetch dashboard data");
+      }
+
+      const usersData = await usersResponse.json();
+      const historyData = await historyResponse.json();
+
+      const usersList: User[] = usersData.items || [];
+      const historyList: HistoryItem[] = historyData.items || [];
+
+      setUsers(usersList);
+
+      // ✅ Calculate stats
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const activeToday = usersList.filter((user) => {
+        if (!user.last_login) return false;
+        const lastLogin = new Date(user.last_login);
+        return lastLogin >= today;
+      }).length;
+
+      const screeningsCompleted = historyList.filter(
+        (item) => item.feature === "screen"
+      ).length;
+
+      const textsProcessed = historyList.filter(
+        (item) =>
+          item.feature === "summarize" || item.feature === "professionalize"
+      ).length;
+
+      setStats({
+        totalUsers: usersData.total || usersList.length,
+        activeToday,
+        screeningsCompleted,
+        textsProcessed,
+      });
+
+      // ✅ Calculate recent activity (last 10 items)
+      const activity: UserActivity[] = historyList
+        .slice(0, 10)
+        .map((item) => {
+          const user = usersList.find((u) => u.user_id === item.user_id);
+          const time = new Date(item.created_at);
+          return {
+            user: user?.display_name || "Unknown User",
+            action: formatFeatureName(item.feature),
+            time: time.toLocaleTimeString("en-US", {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+            feature: item.feature,
+          };
+        });
+      setRecentActivity(activity);
+
+      // ✅ Calculate feature usage
+      const featureCounts: Record<string, number> = {
+        summarize: 0,
+        professionalize: 0,
+        define: 0,
+        screen: 0,
+      };
+      
+      historyList.forEach((item) => {
+        if (featureCounts.hasOwnProperty(item.feature)) {
+          featureCounts[item.feature]++;
+        }
+      });
+
+      const features: FeatureUsage[] = Object.entries(featureCounts).map(
+        ([feature, count]) => ({
+          feature: formatFeatureName(feature),
+          usageCount: count,
+          trend: "up", // Default to up, can be calculated with historical data
+          trendPercent: 12, // Placeholder, can be calculated
+        })
+      );
+      
+      // Sort by usage count descending
+      features.sort((a, b) => b.usageCount - a.usageCount);
+      setFeatureUsage(features);
+    } catch (err: any) {
+      console.error("Error fetching dashboard data:", err);
+      setError(err.message || "Failed to load dashboard data");
+    } finally {
+      setLoading(false);
+    }
+  }, [router]);
 
   useEffect(() => {
     setMounted(true);
-    document.title = "Dyslexia User Management - QUB Admin";
-  }, []);
+    document.title = "Dashboard - QUB Admin";
+    fetchDashboardData();
+  }, [fetchDashboardData]);
 
-  const handleViewDetail = (userId: number) => {
-    alert(`Viewing details for user ID: ${userId}`);
+  const formatFeatureName = (feature: string): string => {
+    const names: Record<string, string> = {
+      summarize: "Summarize",
+      professionalize: "Professionalize",
+      define: "Define",
+      screen: "Screening",
+    };
+    return names[feature] || feature;
   };
 
-  const getLevelColor = (level: string) => {
-    switch (level) {
-      case "Mild":
-        return "bg-green-100 text-green-800";
-      case "Moderate":
-        return "bg-yellow-100 text-yellow-800";
-      case "Severe":
-        return "bg-red-100 text-red-800";
+  const getFeatureIcon = (feature: string) => {
+    switch (feature) {
+      case "Summarize":
+   
+      case "Professionalize":
+      
+      case "Define":
+      
+      case "Screening":
+      
       default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Active":
-        return "bg-blue-100 text-blue-800";
-      case "Pending":
-        return "bg-orange-100 text-orange-800";
-      case "Expired":
-        return "bg-red-100 text-red-800";
-      case "Inactive":
-        return "bg-gray-100 text-gray-800";
-      default:
-        return "bg-gray-100 text-gray-800";
+       
     }
   };
 
@@ -141,16 +229,45 @@ export default function DyslexiaDashboard() {
     );
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <p className="mt-4 text-gray-600">Loading dashboard data...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       {/* Breadcrumb */}
       <PageBreadCrumb pageTitle="Dashboard" />
 
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Dyslexia User Management</h1>
-        <p className="text-gray-600 mt-1">Manage and monitor users with dyslexia assessments</p>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Dashboard Overview</h1>
+          <p className="text-gray-600 mt-1">Monitor user activity and system usage</p>
+        </div>
+        <button
+          onClick={fetchDashboardData}
+          className="px-4 py-2 text-sm font-medium text-blue-600 bg-white border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors flex items-center gap-2"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          Refresh
+        </button>
       </div>
+
+      {/* Error Alert */}
+      {error && (
+        <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-sm text-red-800">❌ {error}</p>
+        </div>
+      )}
 
       {/* ✅ Dashboard Overview - 4 Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -161,7 +278,8 @@ export default function DyslexiaDashboard() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
             </svg>
           </div>
-          <p className="text-3xl font-bold text-gray-900">{summaryStats.totalUsers.toLocaleString()}</p>
+          <p className="text-3xl font-bold text-gray-900">{stats.totalUsers.toLocaleString()}</p>
+          <p className="text-xs text-gray-500 mt-1">Registered users</p>
         </ComponentCard>
 
         {/* Active Today */}
@@ -171,7 +289,8 @@ export default function DyslexiaDashboard() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <p className="text-3xl font-bold text-green-600">{summaryStats.activeToday.toLocaleString()}</p>
+          <p className="text-3xl font-bold text-green-600">{stats.activeToday.toLocaleString()}</p>
+          <p className="text-xs text-gray-500 mt-1">Users logged in today</p>
         </ComponentCard>
 
         {/* Screenings Completed */}
@@ -181,7 +300,8 @@ export default function DyslexiaDashboard() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
             </svg>
           </div>
-          <p className="text-3xl font-bold text-orange-600">{summaryStats.screeningsCompleted.toLocaleString()}</p>
+          <p className="text-3xl font-bold text-orange-600">{stats.screeningsCompleted.toLocaleString()}</p>
+          <p className="text-xs text-gray-500 mt-1">Total screening sessions</p>
         </ComponentCard>
 
         {/* Texts Processed */}
@@ -191,7 +311,8 @@ export default function DyslexiaDashboard() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
           </div>
-          <p className="text-3xl font-bold text-purple-600">{summaryStats.textsProcessed.toLocaleString()}</p>
+          <p className="text-3xl font-bold text-purple-600">{stats.textsProcessed.toLocaleString()}</p>
+          <p className="text-xs text-gray-500 mt-1">Summarize + Professionalize</p>
         </ComponentCard>
       </div>
 
@@ -202,140 +323,144 @@ export default function DyslexiaDashboard() {
         </div>
       </ComponentCard>
 
-      {/* User Activity & Access Codes */}
+      {/* User Activity & Feature Usage */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
         {/* User Activity */}
-        <ComponentCard title="User Activity (Recent)">
-          <div className="overflow-x-auto max-h-[280px] overflow-y-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {userActivityData.map((activity, index) => (
-                  <tr key={index} className="hover:bg-gray-50">
-                    <td className="px-6 py-3 text-sm text-gray-900">{activity.user}</td>
-                    <td className="px-6 py-3 text-sm text-gray-700">{activity.action}</td>
-                    <td className="px-6 py-3 text-sm text-gray-700">{activity.time}</td>
+        <ComponentCard title="Recent User Activity">
+          <div className="overflow-x-auto max-h-[320px] overflow-y-auto">
+            {recentActivity.length === 0 ? (
+              <div className="p-8 text-center text-gray-500">
+                <svg className="w-12 h-12 mx-auto mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+                <p>No recent activity</p>
+              </div>
+            ) : (
+              <table className="w-full">
+                <thead className="bg-gray-50 sticky top-0">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {recentActivity.map((activity, index) => (
+                    <tr key={index} className="hover:bg-gray-50">
+                      <td className="px-6 py-3">
+                        <div className="text-sm font-medium text-gray-900">{activity.user}</div>
+                      </td>
+                      <td className="px-6 py-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">{getFeatureIcon(activity.action)}</span>
+                          <span className="text-sm text-gray-700">{activity.action}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-3 text-sm text-gray-500">{activity.time}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         </ComponentCard>
 
-        {/* Access Codes */}
-        <ComponentCard title="Access Codes">
-          <div className="overflow-x-auto max-h-[280px] overflow-y-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Code</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Users</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {accessCodesData.map((code, index) => (
-                  <tr key={index} className="hover:bg-gray-50">
-                    <td className="px-6 py-3 text-sm font-mono text-gray-900">{code.code}</td>
-                    <td className="px-6 py-3">
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(code.status)}`}>
-                        {code.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-3 text-sm text-gray-700">{code.users}</td>
+        {/* Feature Usage */}
+        <ComponentCard title="Feature Usage Statistics">
+          <div className="overflow-x-auto max-h-[320px] overflow-y-auto">
+            {featureUsage.length === 0 ? (
+              <div className="p-8 text-center text-gray-500">
+                <p>No feature usage data</p>
+              </div>
+            ) : (
+              <table className="w-full">
+                <thead className="bg-gray-50 sticky top-0">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Feature</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usage Count</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trend</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {featureUsage.map((feature, index) => (
+                    <tr key={index} className="hover:bg-gray-50">
+                      <td className="px-6 py-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">{getFeatureIcon(feature.feature)}</span>
+                          <span className="text-sm font-medium text-gray-900">{feature.feature}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-3 text-sm text-gray-700">{feature.usageCount.toLocaleString()}</td>
+                      <td className="px-6 py-3">
+                        <div className="flex items-center gap-2">
+                          {getTrendIcon(feature.trend)}
+                          <span className={`text-sm ${feature.trend === "up" ? "text-green-600" : "text-red-600"}`}>
+                            {feature.trend === "up" ? "+" : "-"}{feature.trendPercent}%
+                          </span>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         </ComponentCard>
       </div>
 
-      {/* Feature History */}
-      <ComponentCard title="Feature History" className="mb-6">
-        <div className="overflow-x-auto max-h-[300px] overflow-y-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Feature</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usage Count</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trend</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {featureHistoryData.map((feature, index) => (
-                <tr key={index} className="hover:bg-gray-50">
-                  <td className="px-6 py-3 text-sm font-medium text-gray-900">{feature.feature}</td>
-                  <td className="px-6 py-3 text-sm text-gray-700">{feature.usageCount.toLocaleString()}</td>
-                  <td className="px-6 py-3 flex items-center gap-2">
-                    {getTrendIcon(feature.trend)}
-                    <span className="text-sm text-green-600">{feature.trend === "up" ? "+12%" : "-5%"}</span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </ComponentCard>
-
-      {/* User List Table (Original) */}
-      <ComponentCard title="User List">
+      {/* Recent Users */}
+      <ComponentCard title="Recently Registered Users">
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Age</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assessment Date</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dyslexia Level</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {dummyUsers.map((user) => (
-                <tr key={user.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{user.name}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-500">{user.email}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{user.age}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-500">{user.assessmentDate}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getLevelColor(user.dyslexiaLevel)}`}>
-                      {user.dyslexiaLevel}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(user.status)}`}>
-                      {user.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <button
-                      onClick={() => handleViewDetail(user.id)}
-                      className="px-3 py-1 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors"
-                    >
-                      View Detail
-                    </button>
-                  </td>
+          {users.length === 0 ? (
+            <div className="p-8 text-center text-gray-500">
+              <p>No users registered yet</p>
+            </div>
+          ) : (
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Display Name</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Account Hash</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Registered</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Login</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {users.slice(0, 5).map((user) => (
+                  <tr key={user.user_id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4">
+                      <div className="text-sm font-medium text-gray-900">{user.display_name}</div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <code className="text-xs bg-gray-100 px-2 py-1 rounded">
+                        {user.account_md5.substring(0, 12)}...
+                      </code>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-500">
+                      {new Date(user.created_at).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-500">
+                      {user.last_login 
+                        ? new Date(user.last_login).toLocaleDateString() 
+                        : "Never"}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span
+                        className={`px-2.5 py-1 text-xs font-medium rounded-full border ${
+                          user.is_active
+                            ? "bg-green-100 text-green-800 border-green-200"
+                            : "bg-red-100 text-red-800 border-red-200"
+                        }`}
+                      >
+                        {user.is_active ? "Active" : "Inactive"}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </ComponentCard>
     </div>

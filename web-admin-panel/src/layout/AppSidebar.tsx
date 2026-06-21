@@ -1,8 +1,8 @@
 "use client";
-import React, { useEffect, useRef, useState,useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useSidebar } from "../context/SidebarContext";
 import {
   BoxCubeIcon,
@@ -32,7 +32,8 @@ const navItems: NavItem[] = [
     name: "Master Data",
     subItems: [
       { name: "Dashboard", path: "/", pro: false },
-      { name: "Data Screening", path: "/data-screening", pro: false },
+      { name: "History user", path: "/data-history", pro: false },
+      { name: "User Management", path: "/user-management", pro: false },
     ],
   },
 ];
@@ -68,9 +69,33 @@ const othersItems: NavItem[] = [
   },
 ];
 
+// Halaman publik yang tidak perlu redirect
+const PUBLIC_PATHS = ["/signin", "/signup", "/forgot-password", "/reset-password"];
+
 const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
   const pathname = usePathname();
+  const router = useRouter();
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+
+  // ✅ Auto-redirect jika belum login
+  useEffect(() => {
+    // Skip check jika di halaman publik
+    if (PUBLIC_PATHS.some(path => pathname.startsWith(path))) {
+      setIsCheckingAuth(false);
+      return;
+    }
+
+    // Cek token di localStorage
+    const token = localStorage.getItem("admin_token");
+    
+    if (!token) {
+      // Tidak ada token, redirect ke signin
+      router.push("/signin");
+    } else {
+      setIsCheckingAuth(false);
+    }
+  }, [pathname, router]);
 
   const renderMenuItems = (
     navItems: NavItem[],
@@ -207,11 +232,9 @@ const AppSidebar: React.FC = () => {
   );
   const subMenuRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
-  // const isActive = (path: string) => path === pathname;
-   const isActive = useCallback((path: string) => path === pathname, [pathname]);
+  const isActive = useCallback((path: string) => path === pathname, [pathname]);
 
   useEffect(() => {
-    // Check if the current path matches any submenu item
     let submenuMatched = false;
     ["main", "others"].forEach((menuType) => {
       const items = menuType === "main" ? navItems : othersItems;
@@ -230,14 +253,12 @@ const AppSidebar: React.FC = () => {
       });
     });
 
-    // If no submenu item matches, close the open submenu
     if (!submenuMatched) {
       setOpenSubmenu(null);
     }
-  }, [pathname,isActive]);
+  }, [pathname, isActive]);
 
   useEffect(() => {
-    // Set the height of the submenu items when the submenu is opened
     if (openSubmenu !== null) {
       const key = `${openSubmenu.type}-${openSubmenu.index}`;
       if (subMenuRefs.current[key]) {
@@ -261,6 +282,17 @@ const AppSidebar: React.FC = () => {
       return { type: menuType, index };
     });
   };
+
+  // ✅ Loading state saat checking auth
+  if (isCheckingAuth) {
+    return (
+      <aside className="fixed mt-16 flex flex-col lg:mt-0 top-0 px-5 left-0 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 h-screen transition-all duration-300 ease-in-out z-50 border-r border-gray-200 w-[290px]">
+        <div className="flex items-center justify-center h-full">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </div>
+      </aside>
+    );
+  }
 
   return (
     <aside
@@ -329,7 +361,6 @@ const AppSidebar: React.FC = () => {
               </h2>
               {renderMenuItems(navItems, "main")}
             </div>
-
           </div>
         </nav>
         {isExpanded || isHovered || isMobileOpen ? <SidebarWidget /> : null}
