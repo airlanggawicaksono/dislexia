@@ -15,12 +15,12 @@ class RestoreSessionEvent extends AuthEvent {
 }
 
 /// Hits `POST /auth/generate` to mint a brand-new account. The result
-/// carries the 16-digit account number the user MUST save.
+/// carries the 6-digit account number the user MUST save.
 class GenerateAccountEvent extends AuthEvent {
   const GenerateAccountEvent();
 }
 
-/// Hits `POST /auth/login` with the user-entered 16-digit number.
+/// Hits `POST /auth/login` with the user-entered 6-digit number.
 class LoginEvent extends AuthEvent {
   final String accountNumber;
   const LoginEvent(this.accountNumber);

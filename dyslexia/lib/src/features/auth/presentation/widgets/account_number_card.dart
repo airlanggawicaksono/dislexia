@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 /// Shown right after a successful `GenerateAccountEvent` so the user
-/// can copy their 16-digit account number to clipboard. The
+/// can copy their 6-digit account number to clipboard. The
 /// auto-generated display name (e.g. "amusing-bee") is also surfaced.
 class AccountNumberCard extends StatelessWidget {
   final String accountNumber;
