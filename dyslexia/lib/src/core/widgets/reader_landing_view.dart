@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_dropzone/flutter_dropzone.dart';
 
 import '../constants/sample_text.dart';
 import '../../features/reader/presentation/bloc/reader_shell/reader_shell_bloc.dart';
@@ -11,17 +12,21 @@ import '../../features/upload/data/datasources/pdf_extractor_service.dart';
 
 /// Landing page shown when no text is loaded in the reader.
 ///
-/// Displays a PDF drop zone, paste text card, and load sample card
-/// matching the web reference mockup layout.
-class ReaderLandingView extends StatelessWidget {
+/// Displays a PDF drop zone (with native browser drag-and-drop via flutter_dropzone),
+/// paste text card, and load sample card matching the web reference mockup layout.
+class ReaderLandingView extends StatefulWidget {
   const ReaderLandingView({super.key});
 
-  Future<void> _processPdfBytes(
-    BuildContext context,
-    Uint8List bytes,
-    String fileName,
-  ) async {
-    if (!context.mounted) return;
+  @override
+  State<ReaderLandingView> createState() => _ReaderLandingViewState();
+}
+
+class _ReaderLandingViewState extends State<ReaderLandingView> {
+  late DropzoneViewController _dropzoneController;
+  bool _isDragOver = false;
+
+  Future<void> _processPdfBytes(Uint8List bytes, String fileName) async {
+    if (!mounted) return;
     context
         .read<ReaderShellBloc>()
         .add(const SetPdfProgressEvent(current: 0, total: 1));
@@ -29,13 +34,13 @@ class ReaderLandingView extends StatelessWidget {
       final text = await context.read<PdfExtractorService>().extractText(
         bytes,
         onProgress: (current, total) {
-          if (!context.mounted) return;
+          if (!mounted) return;
           context
               .read<ReaderShellBloc>()
               .add(SetPdfProgressEvent(current: current, total: total));
         },
       );
-      if (!context.mounted) return;
+      if (!mounted) return;
       if (text.trim().isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -51,7 +56,7 @@ class ReaderLandingView extends StatelessWidget {
           .read<ReaderShellBloc>()
           .add(LoadTextEvent(text, source: fileName));
     } catch (e) {
-      if (context.mounted) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to read PDF: $e')),
         );
@@ -59,7 +64,22 @@ class ReaderLandingView extends StatelessWidget {
     }
   }
 
-  Future<void> _pickPdf(BuildContext context) async {
+  Future<void> _handleDroppedFile(DropzoneFileInterface file) async {
+    final name = await _dropzoneController.getFilename(file);
+    if (!name.toLowerCase().endsWith('.pdf')) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Only PDF files are supported')),
+        );
+      }
+      return;
+    }
+    final bytes = await _dropzoneController.getFileData(file);
+    // ignore: use_build_context_synchronously — mounted is checked inside _processPdfBytes
+    await _processPdfBytes(bytes, name);
+  }
+
+  Future<void> _pickPdf() async {
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
@@ -75,9 +95,9 @@ class ReaderLandingView extends StatelessWidget {
         );
         return;
       }
-      await _processPdfBytes(context, bytes, file.name);
+      await _processPdfBytes(bytes, file.name);
     } catch (e) {
-      if (context.mounted) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to read PDF: $e')),
         );
@@ -98,57 +118,107 @@ class ReaderLandingView extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
-            // PDF drop zone
+            // PDF drop zone with native browser drag-and-drop
             GestureDetector(
-              onTap: () => _pickPdf(context),
+              onTap: _pickPdf,
               child: MouseRegion(
                 cursor: SystemMouseCursors.click,
-                child: Container(
+                child: SizedBox(
                   width: double.infinity,
-                  constraints: const BoxConstraints(maxWidth: 560),
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 40, horizontal: 32),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceContainerHighest
-                        .withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.15),
-                      width: 2,
-                    ),
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
+                  height: 220,
+                  child: Stack(
                     children: [
-                      Icon(
-                        Icons.cloud_upload_rounded,
-                        size: 48,
-                        color: muted,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Drop a PDF here',
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          color: theme.colorScheme.onSurface
-                              .withValues(alpha: 0.6),
-                          fontWeight: FontWeight.w600,
+                      // DropzoneView in the background - handles native drag events
+                      Positioned.fill(
+                        child: DropzoneView(
+                          operation: DragOperation.copy,
+                          cursor: CursorType.grab,
+                          mime: const ['application/pdf'],
+                        onCreated: (ctrl) => _dropzoneController = ctrl,
+                        onHover: () {
+                          if (!_isDragOver && mounted) {
+                            setState(() => _isDragOver = true);
+                          }
+                        },
+                        onLeave: () {
+                          if (mounted) {
+                            setState(() => _isDragOver = false);
+                          }
+                        },
+                          onDropFile: (DropzoneFileInterface file) async {
+                            if (mounted) {
+                              setState(() => _isDragOver = false);
+                            }
+                            await _handleDroppedFile(file);
+                          },
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Drag and drop any PDF file to start\nreading with your preferred settings',
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: muted,
-                          height: 1.5,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        'or browse your files',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.primary,
-                          fontWeight: FontWeight.w600,
+
+                      // Visual UI in the foreground
+                      IgnorePointer(
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          width: double.infinity,
+                          constraints: const BoxConstraints(maxWidth: 560),
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 40, horizontal: 32),
+                          decoration: BoxDecoration(
+                            color: _isDragOver
+                                ? theme.colorScheme.primaryContainer
+                                    .withValues(alpha: 0.4)
+                                : theme.colorScheme.surfaceContainerHighest
+                                    .withValues(alpha: 0.3),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: _isDragOver
+                                  ? theme.colorScheme.primary
+                                  : theme.colorScheme.onSurface
+                                      .withValues(alpha: 0.15),
+                              width: _isDragOver ? 2.5 : 2,
+                            ),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.cloud_upload_rounded,
+                                size: 48,
+                                color: _isDragOver
+                                    ? theme.colorScheme.primary
+                                    : muted,
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                _isDragOver
+                                    ? 'Release to upload'
+                                    : 'Drop a PDF here',
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  color: _isDragOver
+                                      ? theme.colorScheme.primary
+                                      : theme.colorScheme.onSurface
+                                          .withValues(alpha: 0.6),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Drag and drop any PDF file to start\nreading with your preferred settings',
+                                textAlign: TextAlign.center,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: muted,
+                                  height: 1.5,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                'or browse your files',
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: theme.colorScheme.primary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ],
