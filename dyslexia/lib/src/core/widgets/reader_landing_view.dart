@@ -1,9 +1,12 @@
+import 'dart:js_interop';
+import 'dart:ui_web' as ui_web;
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_dropzone/flutter_dropzone.dart';
+import 'package:web/web.dart' as web;
 
 import '../constants/sample_text.dart';
 import '../../features/reader/presentation/bloc/reader_shell/reader_shell_bloc.dart';
@@ -12,7 +15,7 @@ import '../../features/upload/data/datasources/pdf_extractor_service.dart';
 
 /// Landing page shown when no text is loaded in the reader.
 ///
-/// Displays a PDF drop zone (with native browser drag-and-drop via flutter_dropzone),
+/// Displays a PDF drop zone (with native browser drag-and-drop via package:web),
 /// paste text card, and load sample card matching the web reference mockup layout.
 class ReaderLandingView extends StatefulWidget {
   const ReaderLandingView({super.key});
@@ -22,9 +25,73 @@ class ReaderLandingView extends StatefulWidget {
 }
 
 class _ReaderLandingViewState extends State<ReaderLandingView> {
-  DropzoneViewController? _dropzoneController;
   bool _isDragOver = false;
   bool _isProcessing = false;
+
+  /// Registers the HTML-based drop zone platform view (web only).
+  void _registerDropzone() {
+    ui_web.platformViewRegistry.registerViewFactory(
+      'pdf-dropzone-view',
+      (int viewId) {
+        final div = web.document.createElement('div') as web.HTMLDivElement;
+        div.style
+          ..width = '100%'
+          ..height = '100%'
+          ..cursor = 'pointer'
+          ..borderRadius = '16px';
+
+        // dragover — must call preventDefault to allow drop
+        div.addEventListener('dragover', (web.Event event) {
+          event.preventDefault();
+          if (mounted && !_isDragOver) setState(() => _isDragOver = true);
+        }.toJS);
+
+        // dragleave
+        div.addEventListener('dragleave', (web.Event event) {
+          if (mounted) setState(() => _isDragOver = false);
+        }.toJS);
+
+        // drop
+        div.addEventListener('drop', (web.Event event) {
+          event.preventDefault();
+          if (!mounted) return;
+          setState(() => _isDragOver = false);
+
+          final dragEvent = event as web.DragEvent;
+          final files = dragEvent.dataTransfer?.files;
+          if (files == null || files.length == 0) return;
+
+          final file = files.item(0);
+          if (file == null) return;
+          if (!file.name.toLowerCase().endsWith('.pdf')) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Only PDF files are supported')),
+              );
+            }
+            return;
+          }
+
+          // Read the file as ArrayBuffer using FileReader
+          final reader = web.FileReader();
+          reader.addEventListener('load', (web.Event _) {
+            final buffer = reader.result! as JSArrayBuffer;
+            final bytes = buffer.toDart.asUint8List();
+            _processPdfBytes(bytes, file.name);
+          }.toJS);
+          reader.readAsArrayBuffer(file);
+        }.toJS);
+
+        return div;
+      },
+    );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    if (kIsWeb) _registerDropzone();
+  }
 
   Future<void> _processPdfBytes(Uint8List bytes, String fileName) async {
     if (!mounted) return;
@@ -66,21 +133,6 @@ class _ReaderLandingViewState extends State<ReaderLandingView> {
     } finally {
       if (mounted) setState(() => _isProcessing = false);
     }
-  }
-
-  Future<void> _handleDroppedFile(DropzoneFileInterface file) async {
-    final name = await _dropzoneController!.getFilename(file);
-    if (!name.toLowerCase().endsWith('.pdf')) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Only PDF files are supported')),
-        );
-      }
-      return;
-    }
-    final bytes = await _dropzoneController!.getFileData(file);
-    // ignore: use_build_context_synchronously — mounted is checked inside _processPdfBytes
-    await _processPdfBytes(bytes, name);
   }
 
   Future<void> _pickPdf() async {
@@ -131,34 +183,13 @@ class _ReaderLandingViewState extends State<ReaderLandingView> {
                 cursor: SystemMouseCursors.click,
                 child: SizedBox(
                   width: double.infinity,
-                  height: 220,
+                  height: 260,
                   child: Stack(
                     children: [
-                      // DropzoneView in the background - handles native drag events (web only)
+                      // HTML drop zone in the background — handles native drag events (web only)
                       if (kIsWeb)
-                        Positioned.fill(
-                          child: DropzoneView(
-                          operation: DragOperation.copy,
-                          cursor: CursorType.grab,
-                          mime: const ['application/pdf'],
-                        onCreated: (ctrl) => _dropzoneController = ctrl,
-                        onHover: () {
-                          if (!_isDragOver && mounted) {
-                            setState(() => _isDragOver = true);
-                          }
-                        },
-                        onLeave: () {
-                          if (mounted) {
-                            setState(() => _isDragOver = false);
-                          }
-                        },
-                          onDropFile: (DropzoneFileInterface file) async {
-                            if (mounted) {
-                              setState(() => _isDragOver = false);
-                            }
-                            await _handleDroppedFile(file);
-                          },
-                          ),
+                        const Positioned.fill(
+                          child: HtmlElementView(viewType: 'pdf-dropzone-view'),
                         ),
 
                       // Visual UI in the foreground
