@@ -61,7 +61,7 @@ class DisplaySettingsPanel extends StatelessWidget {
                       const SizedBox(height: 12),
                     ],
                     _SectionLabel(title: 'FONT', color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
-                    FontSelector(compact: !fullWidth),
+                    const FontSelector(),
                     const SizedBox(height: 12),
                     _SectionLabel(title: 'BACKGROUND COLOR', color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
                     ColorSelector(compact: !fullWidth),
