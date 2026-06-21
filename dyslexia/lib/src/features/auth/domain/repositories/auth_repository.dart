@@ -13,7 +13,7 @@ abstract class AuthRepository {
   /// MUST be shown to the user so they can save it.
   Future<Either<Failure, GeneratedAccountEntity>> generateAccount();
 
-  /// `POST /api/v1/auth/login` — exchange a 16-digit account number for
+  /// `POST /api/v1/auth/login` — exchange a 6-digit account number for
   /// a session. The session is persisted to secure storage before
   /// returning.
   Future<Either<Failure, AuthSessionEntity>> login(String accountNumber);

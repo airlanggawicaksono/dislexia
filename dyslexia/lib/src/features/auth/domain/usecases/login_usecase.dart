@@ -14,7 +14,7 @@ class LoginParams extends Equatable {
   List<Object?> get props => [accountNumber];
 }
 
-/// `POST /api/v1/auth/login` — takes a 16-digit account number and
+/// `POST /api/v1/auth/login` — takes a 6-digit account number and
 /// returns a fresh access token + user profile. Validates the input
 /// shape locally before hitting the network.
 class LoginUseCase implements UseCase<AuthSessionEntity, LoginParams> {
@@ -24,7 +24,7 @@ class LoginUseCase implements UseCase<AuthSessionEntity, LoginParams> {
   @override
   Future<Either<Failure, AuthSessionEntity>> call(LoginParams params) {
     final cleaned = params.accountNumber.trim();
-    if (cleaned.length != 16 || !RegExp(r'^\d{16}$').hasMatch(cleaned)) {
+    if (cleaned.length != 6 || !RegExp(r'^\d{6}$').hasMatch(cleaned)) {
       return Future.value(const Left(InvalidAccountNumberFailure()));
     }
     return _repository.login(cleaned);

@@ -151,20 +151,20 @@ class _AuthPageState extends State<AuthPage> {
                       if (_mode == AuthMode.login) ...[
                         AuthTextField(
                           controller: _accountController,
-                          label: '16-digit account number',
+                          label: '6-digit account number',
                           enabled: !isLoading,
                           keyboardType: TextInputType.number,
                           inputFormatters: [
                             FilteringTextInputFormatter.digitsOnly,
-                            LengthLimitingTextInputFormatter(16),
+                            LengthLimitingTextInputFormatter(6),
                           ],
                           validator: (value) {
                             final v = (value ?? '').trim();
                             if (v.isEmpty) {
                               return 'Please enter your account number';
                             }
-                            if (v.length != 16) {
-                              return 'Account number must be 16 digits';
+                            if (v.length != 6) {
+                              return 'Account number must be 6 digits';
                             }
                             return null;
                           },
@@ -178,7 +178,7 @@ class _AuthPageState extends State<AuthPage> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
-                            'We will generate a 16-digit account '
+                            'We will generate a 6-digit account '
                             'number for you. Save it — it is the only '
                             'way to log back in.',
                             style: theme.textTheme.bodyMedium,
