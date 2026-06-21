@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../bloc/auth/auth_bloc.dart';
@@ -53,14 +54,44 @@ class AuthUserMenu extends StatelessWidget {
                     style: Theme.of(context).textTheme.titleSmall,
                   ),
                   if (user.accountNumber.isNotEmpty)
-                    Text(
-                      '#${user.accountNumber}',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withValues(alpha: 0.6),
+                    Row(
+                      children: [
+                        Text(
+                          '#${user.accountNumber}',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withValues(alpha: 0.6),
+                              ),
+                        ),
+                        const SizedBox(width: 4),
+                        InkWell(
+                          onTap: () async {
+                            await Clipboard.setData(
+                              ClipboardData(text: user.accountNumber),
+                            );
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Account number copied'),
+                              ),
+                            );
+                          },
+                          borderRadius: BorderRadius.circular(4),
+                          child: Padding(
+                            padding: const EdgeInsets.all(2),
+                            child: Icon(
+                              Icons.copy_rounded,
+                              size: 18,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withValues(alpha: 0.8),
+                            ),
                           ),
+                        ),
+                      ],
                     ),
                 ],
               ),
