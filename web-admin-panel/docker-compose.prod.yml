@@ -1,0 +1,31 @@
+# Production docker-compose for admin panel
+# Usage: docker compose -f docker-compose.prod.yml up
+
+services:
+  admin-panel:
+    image: ${ADMIN_PANEL_IMAGE:-dyslexia-admin:latest}
+    container_name: prod-admin-panel
+    ports:
+      - "${ADMIN_PORT:-3000}:${PORT:-3000}"
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: ${PORT:-3000}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://api.dyslexic.app}
+      NEXT_PUBLIC_ADMIN_USERNAME: ${NEXT_PUBLIC_ADMIN_USERNAME}
+      NEXT_PUBLIC_ADMIN_PASSWORD: ${NEXT_PUBLIC_ADMIN_PASSWORD}
+    depends_on:
+      - backend
+    restart: always
+    networks:
+      - dislexia_network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  dislexia_network:
+    name: prod_dislexia_network
+    external: true
