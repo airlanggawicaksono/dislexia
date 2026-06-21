@@ -1,21 +1,21 @@
-import 'dart:js_interop';
-import 'dart:ui_web' as ui_web;
-
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:web/web.dart' as web;
 
 import '../constants/sample_text.dart';
 import '../../features/reader/presentation/bloc/reader_shell/reader_shell_bloc.dart';
 import '../../features/reader/presentation/bloc/reader_shell/reader_shell_event.dart';
 import '../../features/upload/data/datasources/pdf_extractor_service.dart';
 
+// Conditional import: web-only dropzone registration vs stub for mobile/desktop.
+import 'reader_landing_view_stub.dart'
+    if (dart.library.js_interop) 'reader_landing_view_web.dart';
+
 /// Landing page shown when no text is loaded in the reader.
 ///
-/// Displays a PDF drop zone (with native browser drag-and-drop via package:web),
+/// Displays a PDF drop zone (with native browser drag-and-drop on web),
 /// paste text card, and load sample card matching the web reference mockup layout.
 class ReaderLandingView extends StatefulWidget {
   const ReaderLandingView({super.key});
@@ -28,101 +28,24 @@ class _ReaderLandingViewState extends State<ReaderLandingView> {
   bool _isDragOver = false;
   bool _isProcessing = false;
 
-  /// Registers the HTML-based drop zone platform view (web only).
-  void _registerDropzone() {
-    ui_web.platformViewRegistry.registerViewFactory(
-      'pdf-dropzone-view',
-      (int viewId) {
-        final div = web.document.createElement('div') as web.HTMLDivElement;
-        div.style
-          ..width = '100%'
-          ..height = '100%'
-          ..cursor = 'pointer'
-          ..borderRadius = '16px';
-
-        // click — open file picker via hidden <input type="file">
-        div.addEventListener('click', (web.Event event) {
-          final input = web.document.createElement('input') as web.HTMLInputElement;
-          input.type = 'file';
-          input.accept = '.pdf';
-          input.style.display = 'none';
-          web.document.body?.appendChild(input);
-          input.addEventListener('change', (web.Event _) {
-            final files = input.files;
-            if (files == null || files.length == 0) {
-              input.remove();
-              return;
-            }
-            final file = files.item(0);
-            if (file == null) {
-              input.remove();
-              return;
-            }
-            final reader = web.FileReader();
-            reader.addEventListener('load', (web.Event _) {
-              final buffer = reader.result! as JSArrayBuffer;
-              final bytes = buffer.toDart.asUint8List();
-              _processPdfBytes(bytes, file.name);
-            }.toJS);
-            reader.readAsArrayBuffer(file);
-          }.toJS);
-          input.addEventListener('cancel', (web.Event _) {
-            input.remove();
-          }.toJS);
-          input.click();
-        }.toJS);
-
-        // dragover — must call preventDefault to allow drop
-        div.addEventListener('dragover', (web.Event event) {
-          event.preventDefault();
-          if (mounted && !_isDragOver) setState(() => _isDragOver = true);
-        }.toJS);
-
-        // dragleave
-        div.addEventListener('dragleave', (web.Event event) {
-          if (mounted) setState(() => _isDragOver = false);
-        }.toJS);
-
-        // drop
-        div.addEventListener('drop', (web.Event event) {
-          event.preventDefault();
-          if (!mounted) return;
-          setState(() => _isDragOver = false);
-
-          final dragEvent = event as web.DragEvent;
-          final files = dragEvent.dataTransfer?.files;
-          if (files == null || files.length == 0) return;
-
-          final file = files.item(0);
-          if (file == null) return;
-          if (!file.name.toLowerCase().endsWith('.pdf')) {
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Only PDF files are supported')),
-              );
-            }
-            return;
-          }
-
-          // Read the file as ArrayBuffer using FileReader
-          final reader = web.FileReader();
-          reader.addEventListener('load', (web.Event _) {
-            final buffer = reader.result! as JSArrayBuffer;
-            final bytes = buffer.toDart.asUint8List();
-            _processPdfBytes(bytes, file.name);
-          }.toJS);
-          reader.readAsArrayBuffer(file);
-        }.toJS);
-
-        return div;
-      },
-    );
-  }
-
   @override
   void initState() {
     super.initState();
-    if (kIsWeb) _registerDropzone();
+    if (kIsWeb) {
+      registerPdfDropzone(
+        isMounted: () => mounted,
+        setDragOver: (v) {
+          if (mounted) setState(() => _isDragOver = v);
+        },
+        processPdfBytes: _processPdfBytes,
+        showError: (message) {
+          if (mounted) {
+            ScaffoldMessenger.of(context)
+                .showSnackBar(SnackBar(content: Text(message)));
+          }
+        },
+      );
+    }
   }
 
   Future<void> _processPdfBytes(Uint8List bytes, String fileName) async {
