@@ -24,9 +24,11 @@ class ReaderLandingView extends StatefulWidget {
 class _ReaderLandingViewState extends State<ReaderLandingView> {
   late DropzoneViewController _dropzoneController;
   bool _isDragOver = false;
+  bool _isProcessing = false;
 
   Future<void> _processPdfBytes(Uint8List bytes, String fileName) async {
     if (!mounted) return;
+    setState(() => _isProcessing = true);
     context
         .read<ReaderShellBloc>()
         .add(const SetPdfProgressEvent(current: 0, total: 1));
@@ -61,6 +63,8 @@ class _ReaderLandingViewState extends State<ReaderLandingView> {
           SnackBar(content: Text('Failed to read PDF: $e')),
         );
       }
+    } finally {
+      if (mounted) setState(() => _isProcessing = false);
     }
   }
 
@@ -120,7 +124,7 @@ class _ReaderLandingViewState extends State<ReaderLandingView> {
           children: [
             // PDF drop zone with native browser drag-and-drop
             GestureDetector(
-              onTap: _pickPdf,
+              onTap: _isProcessing ? null : _pickPdf,
               child: MouseRegion(
                 cursor: SystemMouseCursors.click,
                 child: SizedBox(
@@ -218,6 +222,32 @@ class _ReaderLandingViewState extends State<ReaderLandingView> {
                                 ),
                               ),
                             ],
+                          ),
+                        ),
+                      ),
+
+                      // Loading spinner overlay during PDF extraction
+                      Positioned.fill(
+                        child: AnimatedOpacity(
+                          opacity: _isProcessing ? 1.0 : 0.0,
+                          duration: const Duration(milliseconds: 200),
+                          child: IgnorePointer(
+                            ignoring: !_isProcessing,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.06),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: const Center(
+                                child: SizedBox(
+                                  width: 36,
+                                  height: 36,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 3,
+                                  ),
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                       ),
