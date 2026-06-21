@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 interface User {
   user_id: string;
   display_name: string;
-  account_number: string; // ✅ Added
+  account_number?: string; // ✅ Made optional (API may not return this)
   account_md5: string;
   is_active: boolean;
   created_at: string;
@@ -236,12 +236,19 @@ export default function UserManagementPage() {
     });
   };
 
-  const filteredUsers = users.filter(
-    (user) =>
-      user.display_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.account_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.account_md5.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // ✅ FIXED: Safe filter with optional chaining
+  const filteredUsers = users.filter((user) => {
+    const query = searchQuery.toLowerCase();
+    const displayName = user.display_name?.toLowerCase() || "";
+    const accountNumber = user.account_number?.toLowerCase() || "";
+    const accountMd5 = user.account_md5?.toLowerCase() || "";
+    
+    return (
+      displayName.includes(query) ||
+      accountNumber.includes(query) ||
+      accountMd5.includes(query)
+    );
+  });
 
   if (!authChecked) {
     return (
@@ -292,7 +299,7 @@ export default function UserManagementPage() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Display name or access code..."
+              placeholder="Display name, access code, or account hash..."
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
