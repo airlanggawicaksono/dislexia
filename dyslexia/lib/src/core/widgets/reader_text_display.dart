@@ -50,6 +50,7 @@ class _ReaderTextDisplayState extends State<ReaderTextDisplay> {
         final contentWidth = maxW < 800.0 ? maxW - 32 : 740.0.clamp(400.0, maxW - 64);
         return ColoredBox(
           color: widget.bgColor ?? Colors.transparent,
+          child: SizedBox.expand(
           child: Stack(
           children: [
             MouseRegion(
@@ -73,6 +74,7 @@ class _ReaderTextDisplayState extends State<ReaderTextDisplay> {
                 onPositionChanged: (y) => setState(() => _rulerY = y              ),
             ),
           ],
+        ),
         ),
         );
       },
