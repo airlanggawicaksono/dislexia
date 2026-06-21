@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dropzone/flutter_dropzone.dart';
@@ -22,7 +23,7 @@ class ReaderLandingView extends StatefulWidget {
 }
 
 class _ReaderLandingViewState extends State<ReaderLandingView> {
-  late DropzoneViewController _dropzoneController;
+  DropzoneViewController? _dropzoneController;
   bool _isDragOver = false;
   bool _isProcessing = false;
 
@@ -69,7 +70,7 @@ class _ReaderLandingViewState extends State<ReaderLandingView> {
   }
 
   Future<void> _handleDroppedFile(DropzoneFileInterface file) async {
-    final name = await _dropzoneController.getFilename(file);
+    final name = await _dropzoneController!.getFilename(file);
     if (!name.toLowerCase().endsWith('.pdf')) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -78,7 +79,7 @@ class _ReaderLandingViewState extends State<ReaderLandingView> {
       }
       return;
     }
-    final bytes = await _dropzoneController.getFileData(file);
+    final bytes = await _dropzoneController!.getFileData(file);
     // ignore: use_build_context_synchronously — mounted is checked inside _processPdfBytes
     await _processPdfBytes(bytes, name);
   }
@@ -132,9 +133,10 @@ class _ReaderLandingViewState extends State<ReaderLandingView> {
                   height: 220,
                   child: Stack(
                     children: [
-                      // DropzoneView in the background - handles native drag events
-                      Positioned.fill(
-                        child: DropzoneView(
+                      // DropzoneView in the background - handles native drag events (web only)
+                      if (kIsWeb)
+                        Positioned.fill(
+                          child: DropzoneView(
                           operation: DragOperation.copy,
                           cursor: CursorType.grab,
                           mime: const ['application/pdf'],
@@ -155,8 +157,8 @@ class _ReaderLandingViewState extends State<ReaderLandingView> {
                             }
                             await _handleDroppedFile(file);
                           },
+                          ),
                         ),
-                      ),
 
                       // Visual UI in the foreground
                       IgnorePointer(
