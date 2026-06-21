@@ -19,8 +19,8 @@ enum SidebarSection {
   ),
   define(
     label: 'Define',
-    cupertinoIcon: CupertinoIcons.book_circle,
-    materialIcon: Icons.translate_rounded,
+    cupertinoIcon: CupertinoIcons.doc_text_search,
+    materialIcon: Icons.find_in_page_rounded,
   ),
   professionalize(
     label: 'Professionalize',
