@@ -57,24 +57,17 @@ Widget _labeledSlider(String label, String displayValue, double value, double mi
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.black87)),
-        const SizedBox(height: 4),
         Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Expanded(
-              child: AdaptiveSlider(value: value, min: min, max: max, onChanged: onChanged, activeColor: const Color(0xFF3D5A99)),
-            ),
-            const SizedBox(width: 8),
-            SizedBox(
-              width: 48,
-              child: Text(
-                displayValue,
-                textAlign: TextAlign.right,
-                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF3D5A99)),
-              ),
-            ),
+            Text(label,
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.black87)),
+            Text(displayValue,
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF3D5A99))),
           ],
         ),
+        const SizedBox(height: 4),
+        AdaptiveSlider(value: value, min: min, max: max, onChanged: onChanged, activeColor: const Color(0xFF3D5A99)),
       ],
     ),
   );
