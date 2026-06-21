@@ -26,6 +26,20 @@ class DisplaySettingsPanel extends StatelessWidget {
     DisplayPreset.peachTheme: 'Peach',
   };
 
+  static const _presetSubtitles = {
+    DisplayPreset.defaultPreset: 'OpenDyslexic - Cream - 18pt',
+    DisplayPreset.dyslexiaFriendly: 'OpenDyslexic - Cream - 20pt - 2.0x',
+    DisplayPreset.highContrast: 'Plus Jakarta Sans - Dark - 22pt',
+    DisplayPreset.nightMode: 'Plus Jakarta Sans - Dark - 18pt',
+    DisplayPreset.lightBlueTheme: 'Sassoon Primary - Light Blue - 18pt',
+    DisplayPreset.greyTheme: 'Tahoma - Grey - 18pt',
+    DisplayPreset.lavenderTheme: 'Sassoon Primary - Lavender - 18pt',
+    DisplayPreset.whiteTheme: 'OpenDyslexic - White - 18pt',
+    DisplayPreset.skyBlueTheme: 'Plus Jakarta Sans - Sky Blue - 18pt',
+    DisplayPreset.mintGreenTheme: 'Lexend - Mint Green - 18pt',
+    DisplayPreset.peachTheme: 'Sassoon Primary - Peach - 18pt',
+  };
+
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<DisplaySettingsBloc, DisplaySettingsState>(
@@ -75,6 +89,7 @@ class DisplaySettingsPanel extends StatelessWidget {
                     _SectionLabel(title: 'PRESETS', color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
                     ...DisplayPreset.values.map((p) => _PresetChip(
                         label: _presetLabels[p] ?? '',
+                        subtitle: _presetSubtitles[p] ?? '',
                         selected: s.preset == p,
                         onTap: () => bloc.add(ApplyPresetEvent(p)),
                         surfaceColor: theme.colorScheme.onSurface.withValues(alpha: 0.08))),
@@ -105,10 +120,17 @@ class _SectionLabel extends StatelessWidget {
 
 class _PresetChip extends StatelessWidget {
   final String label;
+  final String subtitle;
   final bool selected;
   final VoidCallback onTap;
   final Color surfaceColor;
-  const _PresetChip({required this.label, required this.selected, required this.onTap, required this.surfaceColor});
+  const _PresetChip({
+    required this.label,
+    required this.subtitle,
+    required this.selected,
+    required this.onTap,
+    required this.surfaceColor,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -116,21 +138,33 @@ class _PresetChip extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(8),
         child: Container(
           width: double.infinity,
-          margin: const EdgeInsets.only(bottom: 4),
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          margin: const EdgeInsets.only(bottom: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
             color: selected ? const Color(0xFF3D5A99).withValues(alpha: 0.15) : surfaceColor,
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(8),
             border: Border.all(color: selected ? const Color(0xFF3D5A99) : Colors.transparent, width: 1),
           ),
-          child: Text(label,
-              style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                  color: selected ? const Color(0xFF3D5A99) : surfaceColor.withValues(alpha: 1))),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label,
+                  style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                      color: selected ? const Color(0xFF3D5A99) : surfaceColor.withValues(alpha: 1))),
+              const SizedBox(height: 2),
+              Text(subtitle,
+                  style: TextStyle(
+                      fontSize: 9,
+                      color: selected ? const Color(0xFF3D5A99).withValues(alpha: 0.7) : Colors.black45),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis),
+            ],
+          ),
         ),
       ),
     );
