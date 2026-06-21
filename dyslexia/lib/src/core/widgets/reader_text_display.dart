@@ -69,7 +69,6 @@ class _ReaderTextDisplayState extends State<ReaderTextDisplay> {
             if (s.rulerEnabled && _isHovering)
               ReadingRuler(
                 height: rulerH,
-                foregroundColor: fg,
                 rulerY: _rulerY,
                 onPositionChanged: (y) => setState(() => _rulerY = y              ),
             ),

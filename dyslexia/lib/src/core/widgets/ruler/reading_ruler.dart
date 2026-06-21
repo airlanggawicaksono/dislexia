@@ -4,14 +4,12 @@ import 'package:flutter/material.dart';
 /// in every feature that respects `DisplaySettingsBloc.rulerEnabled`.
 class ReadingRuler extends StatelessWidget {
   final double height;
-  final Color foregroundColor;
   final double rulerY;
   final ValueChanged<double> onPositionChanged;
 
   const ReadingRuler({
     super.key,
     required this.height,
-    required this.foregroundColor,
     required this.rulerY,
     required this.onPositionChanged,
   });
@@ -31,14 +29,15 @@ class ReadingRuler extends StatelessWidget {
                 width: double.infinity,
                 height: height,
                 decoration: BoxDecoration(
-                  color: foregroundColor.withValues(alpha: 0.06),
+                  // Match React web: yellow/amber ruler color
+                  color: const Color(0xFFFDD200).withValues(alpha: 0.13),
                   border: Border(
                     top: BorderSide(
-                        color: foregroundColor.withValues(alpha: 0.4),
-                        width: 1.5),
+                        color: const Color(0xFFC8A000).withValues(alpha: 0.25),
+                        width: 1),
                     bottom: BorderSide(
-                        color: foregroundColor.withValues(alpha: 0.4),
-                        width: 1.5),
+                        color: const Color(0xFFC8A000).withValues(alpha: 0.25),
+                        width: 1),
                   ),
                 ),
               ),
