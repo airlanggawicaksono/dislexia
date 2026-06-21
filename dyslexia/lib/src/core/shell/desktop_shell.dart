@@ -7,7 +7,6 @@ import '../../configs/injector/injector_conf.dart';
 import '../blocs/theme/theme_bloc.dart';
 import '../themes/app_theme.dart';
 import '../../core/api/api_helper.dart';
-import '../../core/constants/sample_text.dart';
 import '../../features/display_settings/presentation/bloc/display_settings/display_settings_bloc.dart';
 import '../../features/upload/data/datasources/pdf_extractor_service.dart';
 import '../../features/reader/presentation/bloc/reader/reader_bloc.dart';
@@ -31,6 +30,7 @@ import '../../features/sidebar/presentation/bloc/sidebar/sidebar_state.dart';
 import '../../features/sidebar/presentation/pages/sidebar_shell_page.dart';
 import '../../features/sidebar/presentation/widgets/placeholder_panel.dart';
 import '../../features/auth/presentation/widgets/auth_user_menu.dart';
+import '../widgets/reader_landing_view.dart';
 
 /// Width below which the sidebar collapses to icon-only.
 const double kSidebarIconBreakpoint = 900;
@@ -216,29 +216,9 @@ class MainColumn extends StatefulWidget {
 }
 
 class _MainColumnState extends State<MainColumn> {
-  bool _autoLoadDispatched = false;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || _autoLoadDispatched) return;
-      _autoLoadDispatched = true;
-      // Auto-load the dyslexia sample on first launch so users see content
-      // immediately, matching the React web reference behaviour.
-      context
-          .read<ReaderShellBloc>()
-          .add(const LoadTextEvent(kDyslexiaSampleText, source: 'Sample'));
-    });
-  }
-
   void _onBack() {
-    // Returning to landing always reloads the sample text so the user
-    // sees the dyslexia sample in the reader (with ruler, syllabify,
-    // display settings) instead of an empty column.
-    context.read<ReaderShellBloc>().add(
-          const LoadTextEvent(kDyslexiaSampleText, source: 'Sample'),
-        );
+    // Returning to landing clears the loaded text.
+    context.read<ReaderShellBloc>().add(const ClearTextEvent());
   }
 
   @override
@@ -255,7 +235,7 @@ class _MainColumnState extends State<MainColumn> {
                 onBack: _onBack,
               )
             else
-              const SizedBox.expand(),
+              const ReaderLandingView(),
             if (state.pdfProgress != null)
               _PdfProgressOverlay(
                 current: state.pdfProgress!.current,
