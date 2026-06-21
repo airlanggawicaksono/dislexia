@@ -1,4 +1,4 @@
-// src/app/admin/dashboard/page.tsx
+// src/app/(admin)/page.tsx
 'use client';
 
 import React, { useEffect, useState, useCallback } from "react";
@@ -54,7 +54,6 @@ export default function DyslexiaDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  // Data states
   const [stats, setStats] = useState<DashboardStats>({
     totalUsers: 0,
     activeToday: 0,
@@ -65,7 +64,6 @@ export default function DyslexiaDashboard() {
   const [featureUsage, setFeatureUsage] = useState<FeatureUsage[]>([]);
   const [users, setUsers] = useState<User[]>([]);
 
-  // ✅ Fetch data from API
   const fetchDashboardData = useCallback(async () => {
     try {
       setLoading(true);
@@ -77,7 +75,6 @@ export default function DyslexiaDashboard() {
         return;
       }
 
-      // ✅ Fetch all data in parallel
       const [usersResponse, historyResponse] = await Promise.all([
         fetch(`/api/proxy/api/v1/admin/users`, {
           headers: { Authorization: `Bearer ${token}` },
@@ -87,7 +84,6 @@ export default function DyslexiaDashboard() {
         }),
       ]);
 
-      // Handle auth errors
       if (usersResponse.status === 401 || historyResponse.status === 401) {
         localStorage.removeItem("admin_token");
         localStorage.removeItem("admin_info");
@@ -108,7 +104,6 @@ export default function DyslexiaDashboard() {
 
       setUsers(usersList);
 
-      // ✅ Calculate stats
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       
@@ -134,7 +129,6 @@ export default function DyslexiaDashboard() {
         textsProcessed,
       });
 
-      // ✅ Calculate recent activity (last 10 items)
       const activity: UserActivity[] = historyList
         .slice(0, 10)
         .map((item) => {
@@ -152,7 +146,6 @@ export default function DyslexiaDashboard() {
         });
       setRecentActivity(activity);
 
-      // ✅ Calculate feature usage
       const featureCounts: Record<string, number> = {
         summarize: 0,
         professionalize: 0,
@@ -170,12 +163,11 @@ export default function DyslexiaDashboard() {
         ([feature, count]) => ({
           feature: formatFeatureName(feature),
           usageCount: count,
-          trend: "up", // Default to up, can be calculated with historical data
-          trendPercent: 12, // Placeholder, can be calculated
+          trend: "up",
+          trendPercent: 12,
         })
       );
       
-      // Sort by usage count descending
       features.sort((a, b) => b.usageCount - a.usageCount);
       setFeatureUsage(features);
     } catch (err: any) {
@@ -202,19 +194,19 @@ export default function DyslexiaDashboard() {
     return names[feature] || feature;
   };
 
-  const getFeatureIcon = (feature: string) => {
-    switch (feature) {
-      case "Summarize":
-   
-      case "Professionalize":
-      
-      case "Define":
-      
-      case "Screening":
-      
-      default:
-       
-    }
+  // ✅ FIXED: Return type string, dengan default value
+  const getFeatureIcon = (feature: string): string => {
+    const icons: Record<string, string> = {
+      "Summarize": "📝",
+      "Professionalize": "💼",
+      "Define": "📖",
+      "Screening": "🔍",
+      "summarize": "📝",
+      "professionalize": "💼",
+      "define": "📖",
+      "screen": "🔍",
+    };
+    return icons[feature] || "⚡";
   };
 
   const getTrendIcon = (trend: string) => {
@@ -242,10 +234,8 @@ export default function DyslexiaDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
-      {/* Breadcrumb */}
       <PageBreadCrumb pageTitle="Dashboard" />
 
-      {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Dashboard Overview</h1>
@@ -262,16 +252,13 @@ export default function DyslexiaDashboard() {
         </button>
       </div>
 
-      {/* Error Alert */}
       {error && (
         <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
           <p className="text-sm text-red-800">❌ {error}</p>
         </div>
       )}
 
-      {/* ✅ Dashboard Overview - 4 Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {/* Total Users */}
         <ComponentCard title="Total Users" className="text-center">
           <div className="flex items-center justify-center mb-2">
             <svg className="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -282,7 +269,6 @@ export default function DyslexiaDashboard() {
           <p className="text-xs text-gray-500 mt-1">Registered users</p>
         </ComponentCard>
 
-        {/* Active Today */}
         <ComponentCard title="Active Today" className="text-center">
           <div className="flex items-center justify-center mb-2">
             <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -293,7 +279,6 @@ export default function DyslexiaDashboard() {
           <p className="text-xs text-gray-500 mt-1">Users logged in today</p>
         </ComponentCard>
 
-        {/* Screenings Completed */}
         <ComponentCard title="Screenings Completed" className="text-center">
           <div className="flex items-center justify-center mb-2">
             <svg className="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -304,7 +289,6 @@ export default function DyslexiaDashboard() {
           <p className="text-xs text-gray-500 mt-1">Total screening sessions</p>
         </ComponentCard>
 
-        {/* Texts Processed */}
         <ComponentCard title="Texts Processed" className="text-center">
           <div className="flex items-center justify-center mb-2">
             <svg className="w-8 h-8 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -316,16 +300,13 @@ export default function DyslexiaDashboard() {
         </ComponentCard>
       </div>
 
-      {/* Usage Over Time Chart */}
       <ComponentCard title="Usage Over Time" className="mb-6">
         <div className="h-[350px]">
           {mounted && <LineChartOne />}
         </div>
       </ComponentCard>
 
-      {/* User Activity & Feature Usage */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
-        {/* User Activity */}
         <ComponentCard title="Recent User Activity">
           <div className="overflow-x-auto max-h-[320px] overflow-y-auto">
             {recentActivity.length === 0 ? (
@@ -365,7 +346,6 @@ export default function DyslexiaDashboard() {
           </div>
         </ComponentCard>
 
-        {/* Feature Usage */}
         <ComponentCard title="Feature Usage Statistics">
           <div className="overflow-x-auto max-h-[320px] overflow-y-auto">
             {featureUsage.length === 0 ? (
@@ -408,7 +388,6 @@ export default function DyslexiaDashboard() {
         </ComponentCard>
       </div>
 
-      {/* Recent Users */}
       <ComponentCard title="Recently Registered Users">
         <div className="overflow-x-auto">
           {users.length === 0 ? (

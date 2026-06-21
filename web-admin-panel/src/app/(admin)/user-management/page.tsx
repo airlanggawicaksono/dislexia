@@ -363,7 +363,7 @@ export default function UserManagementPage() {
                           </code>
                           {user.account_number && (
                             <button
-                              onClick={() => copyToClipboard(user.account_number, user.user_id)}
+                              onClick={() => copyToClipboard(user.account_number!, user.user_id)}
                               className={`p-1.5 rounded transition-colors ${
                                 copiedId === user.user_id
                                   ? 'text-green-600 bg-green-50'
@@ -562,7 +562,7 @@ export default function UserManagementPage() {
                   </p>
                   {selectedUser.account_number && (
                     <button
-                      onClick={() => copyToClipboard(selectedUser.account_number)}
+                      onClick={() => copyToClipboard(selectedUser.account_number!)}
                       className="p-2 text-blue-600 hover:bg-blue-50 rounded"
                       title="Copy access code"
                     >

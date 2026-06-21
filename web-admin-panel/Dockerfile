@@ -25,8 +25,15 @@ COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/next.config.ts ./next.config.ts
 
 # Copy built application
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
+
+# Copy static files
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+# Handle standalone directory if it exists
+RUN if [ -d ./.next/standalone ]; then \
+      mv ./.next/standalone ./.next/; \
+    fi
 
 # Set environment variables
 ENV NODE_ENV=production
