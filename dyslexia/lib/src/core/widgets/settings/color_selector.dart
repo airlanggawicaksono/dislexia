@@ -32,7 +32,7 @@ class ColorSelector extends StatelessWidget {
               return GestureDetector(
                 onTap: () => bloc.add(UpdateColorThemeEvent(theme)),
                 child: Container(
-                  width: 20, height: 20,
+                  width: 28, height: 28,
                   decoration: BoxDecoration(
                     color: bgColor(theme),
                     borderRadius: BorderRadius.circular(4),
@@ -42,7 +42,7 @@ class ColorSelector extends StatelessWidget {
                     ),
                   ),
                   child: isSelected
-                      ? const Center(child: Icon(Icons.check, size: 10, color: Color(0xFF3D5A99)))
+                      ? const Center(child: Icon(Icons.check, size: 14, color: Color(0xFF3D5A99)))
                       : null,
                 ),
               );
@@ -55,7 +55,7 @@ class ColorSelector extends StatelessWidget {
           physics: const NeverScrollableScrollPhysics(),
           itemCount: entries.length,
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 4,
+            crossAxisCount: 3,
             mainAxisSpacing: 12,
             crossAxisSpacing: 12,
             childAspectRatio: 0.85,
@@ -83,15 +83,13 @@ class ColorSelector extends StatelessWidget {
                       ),
                       child: isSelected
                           ? Center(
-                              child: Container(
-                                width: 24, height: 24,
+                              child: Container(                                  width: 28, height: 28,
                                 decoration: BoxDecoration(
                                   color: const Color(0xFF3D5A99).withValues(alpha: 0.15),
                                   shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  _cupertinoCheck ? CupertinoIcons.checkmark : Icons.check_rounded,
-                                  size: 16, color: const Color(0xFF3D5A99),
+                                ),                                  child: Icon(
+                                    _cupertinoCheck ? CupertinoIcons.checkmark : Icons.check_rounded,
+                                    size: 18, color: const Color(0xFF3D5A99),
                                 ),
                               ),
                             )
