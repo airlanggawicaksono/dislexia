@@ -40,6 +40,38 @@ class _ReaderLandingViewState extends State<ReaderLandingView> {
           ..cursor = 'pointer'
           ..borderRadius = '16px';
 
+        // click — open file picker via hidden <input type="file">
+        div.addEventListener('click', (web.Event event) {
+          final input = web.document.createElement('input') as web.HTMLInputElement;
+          input.type = 'file';
+          input.accept = '.pdf';
+          input.style.display = 'none';
+          web.document.body?.appendChild(input);
+          input.addEventListener('change', (web.Event _) {
+            final files = input.files;
+            if (files == null || files.length == 0) {
+              input.remove();
+              return;
+            }
+            final file = files.item(0);
+            if (file == null) {
+              input.remove();
+              return;
+            }
+            final reader = web.FileReader();
+            reader.addEventListener('load', (web.Event _) {
+              final buffer = reader.result! as JSArrayBuffer;
+              final bytes = buffer.toDart.asUint8List();
+              _processPdfBytes(bytes, file.name);
+            }.toJS);
+            reader.readAsArrayBuffer(file);
+          }.toJS);
+          input.addEventListener('cancel', (web.Event _) {
+            input.remove();
+          }.toJS);
+          input.click();
+        }.toJS);
+
         // dragover — must call preventDefault to allow drop
         div.addEventListener('dragover', (web.Event event) {
           event.preventDefault();
