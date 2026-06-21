@@ -28,10 +28,10 @@ class TypographySliders extends StatelessWidget {
 
         return Column(
           children: [
-            _labeledSlider('Font Size', '18pt', s.fontSize, 12, 32, (v) => bloc.add(UpdateFontSizeEvent(v)), leadingLabel: 'AA'),
-            _labeledSlider('Line Spacing', '${s.lineSpacing.toStringAsFixed(1)}x', s.lineSpacing, 1.0, 3.0, (v) => bloc.add(UpdateLineSpacingEvent(v)), leadingIcon: Icons.format_line_spacing_rounded),
-            _labeledSlider('Letter Spacing', '${s.letterSpacing.toStringAsFixed(1)}pt', s.letterSpacing, 0.0, 2.0, (v) => bloc.add(UpdateLetterSpacingEvent(v)), leadingLabel: 'A'),
-            _labeledSlider('Word Spacing', '${s.wordSpacing.toStringAsFixed(1)}pt', s.wordSpacing, 0.0, 8.0, (v) => bloc.add(UpdateWordSpacingEvent(v)), leadingLabel: 'W'),
+            _labeledSlider('Size', '${s.fontSize.toStringAsFixed(0)}px', s.fontSize, 12, 32, (v) => bloc.add(UpdateFontSizeEvent(v))),
+            _labeledSlider('Line Height', '${s.lineSpacing.toStringAsFixed(1)}', s.lineSpacing, 1.0, 3.0, (v) => bloc.add(UpdateLineSpacingEvent(v))),
+            _labeledSlider('Letter Spacing', '${s.letterSpacing.toStringAsFixed(1)}px', s.letterSpacing, 0.0, 2.0, (v) => bloc.add(UpdateLetterSpacingEvent(v))),
+            _labeledSlider('Word Spacing', '${s.wordSpacing.toStringAsFixed(0)}px', s.wordSpacing, 0.0, 8.0, (v) => bloc.add(UpdateWordSpacingEvent(v))),
           ],
         );
       },
@@ -51,28 +51,28 @@ Widget _miniSlider(String label, double value, double min, double max, ValueChan
   );
 }
 
-Widget _labeledSlider(String label, String displayValue, double value, double min, double max, ValueChanged<double> onChanged, {String? leadingLabel, IconData? leadingIcon}) {
+Widget _labeledSlider(String label, String displayValue, double value, double min, double max, ValueChanged<double> onChanged) {
   return Padding(
     padding: const EdgeInsets.only(bottom: 12),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Colors.black87)),
-            Text(displayValue, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF3D5A99))),
-          ],
-        ),
+        Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.black87)),
+        const SizedBox(height: 4),
         Row(
           children: [
-            SizedBox(
-              width: 28,
-              child: leadingIcon != null
-                  ? Icon(leadingIcon, size: 18, color: Colors.black45)
-                  : Text(leadingLabel ?? '', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.black45)),
+            Expanded(
+              child: AdaptiveSlider(value: value, min: min, max: max, onChanged: onChanged, activeColor: const Color(0xFF3D5A99)),
             ),
-            Expanded(child: AdaptiveSlider(value: value, min: min, max: max, onChanged: onChanged, activeColor: const Color(0xFF3D5A99))),
+            const SizedBox(width: 8),
+            SizedBox(
+              width: 48,
+              child: Text(
+                displayValue,
+                textAlign: TextAlign.right,
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF3D5A99)),
+              ),
+            ),
           ],
         ),
       ],
