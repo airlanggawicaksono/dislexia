@@ -58,16 +58,13 @@ async function adminLogin(
   }
 }
 
-// ✅ Always save token in cookie (for middleware) + localStorage (for client)
 function setAdminToken(token: string, adminInfo: AdminInfo, rememberMe: boolean = false): void {
   if (typeof window === 'undefined') return;
   
-  // Save to localStorage (for client-side)
   localStorage.setItem('admin_token', token);
   localStorage.setItem('admin_info', JSON.stringify(adminInfo));
   
-  // ✅ ALWAYS save to cookie (for middleware)
-  const days = rememberMe ? 30 : 1; // 30 days if remember me, 1 day if not
+  const days = rememberMe ? 30 : 1;
   const date = new Date();
   date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
   const expires = "; expires=" + date.toUTCString();
@@ -82,12 +79,14 @@ function SignInFormContent() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{ username?: boolean; password?: boolean }>({});
   const [rememberMe, setRememberMe] = useState(false);
   const [formData, setFormData] = useState({ username: '', password: '' });
 
   const handleChange = (field: 'username' | 'password') => (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({ ...prev, [field]: e.target.value }));
     setError(null);
+    setFieldErrors({});
   };
 
   const validateForm = (): string | null => {
@@ -101,6 +100,7 @@ function SignInFormContent() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setFieldErrors({});
 
     const validationError = validateForm();
     if (validationError) {
@@ -114,17 +114,22 @@ function SignInFormContent() {
       const response = await adminLogin(formData);
       
       if (response.error) {
-        setError(response.error);
+        if (response.status === 401) {
+          setError('❌ Invalid username or password. Please check your credentials and try again.');
+          setFieldErrors({ username: true, password: true });
+        } else if (response.status === 403) {
+          setError('⚠️ Your account has been deactivated. Please contact the administrator.');
+        } else {
+          setError(response.error);
+        }
         return;
       }
 
       if (response.data?.access_token) {
-        // ✅ Save token to localStorage + cookie
         setAdminToken(response.data.access_token, response.data.admin, rememberMe);
         
         await new Promise(resolve => setTimeout(resolve, 100));
         
-        // Redirect based on must_change_password
         if (response.data.admin.must_change_password) {
           router.push('/change-password?first_login=true');
         } else {
@@ -152,8 +157,22 @@ function SignInFormContent() {
           </div>
 
           {error && (
-            <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200">
-              <p className="text-sm text-red-600">{error}</p>
+            <div className={`mb-4 p-3 rounded-lg border ${
+              error.includes('❌') 
+                ? 'bg-red-50 border-red-200' 
+                : error.includes('⚠️')
+                ? 'bg-yellow-50 border-yellow-200'
+                : 'bg-red-50 border-red-200'
+            }`}>
+              <p className={`text-sm ${
+                error.includes('❌') 
+                  ? 'text-red-600' 
+                  : error.includes('⚠️')
+                  ? 'text-yellow-700'
+                  : 'text-red-600'
+              }`}>
+                {error}
+              </p>
             </div>
           )}
 
@@ -161,20 +180,25 @@ function SignInFormContent() {
             <div className="space-y-6">
               <div>
                 <Label>Username <span className="text-error-500">*</span></Label>
-                <Input
-                  placeholder="Enter username"
-                  type="text"
-                  value={formData.username}
-                  onChange={handleChange('username')}
-                  disabled={isLoading}
-                  autoComplete="username"
-                  autoFocus
-                />
+                <div className={fieldErrors.username ? 'ring-2 ring-red-500 rounded-lg' : ''}>
+                  <Input
+                    placeholder="Enter username"
+                    type="text"
+                    value={formData.username}
+                    onChange={handleChange('username')}
+                    disabled={isLoading}
+                    autoComplete="username"
+                    autoFocus
+                  />
+                </div>
+                {fieldErrors.username && (
+                  <p className="mt-1 text-xs text-red-500">Please check your username</p>
+                )}
               </div>
 
               <div>
                 <Label>Password <span className="text-error-500">*</span></Label>
-                <div className="relative">
+                <div className={`relative ${fieldErrors.password ? 'ring-2 ring-red-500 rounded-lg' : ''}`}>
                   <Input
                     type={showPassword ? "text" : "password"}
                     placeholder="Enter your password"
@@ -192,6 +216,9 @@ function SignInFormContent() {
                     {showPassword ? <EyeIcon className="w-5 h-5" /> : <EyeCloseIcon className="w-5 h-5" />}
                   </button>
                 </div>
+                {fieldErrors.password && (
+                  <p className="mt-1 text-xs text-red-500">Please check your password</p>
+                )}
               </div>
 
               <div className="flex items-center justify-between">
