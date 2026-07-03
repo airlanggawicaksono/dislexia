@@ -21,8 +21,14 @@ headers {
 
 body:json {
   {
-    "text": "Climate change is altering ecosystems faster than many species can adapt, threatening biodiversity worldwide."
+    "text": "Climate change is altering ecosystems faster than many species can adapt, threatening biodiversity worldwide.",
+    "level": "30pct"
   }
+}
+
+docs {
+  Optional `level`: `10pct` | `30pct` | `50pct` (default) | `70pct` | `90pct`.
+  Streams the summary as SSE `LLMChunkDTO` events.
 }
 
 assert {

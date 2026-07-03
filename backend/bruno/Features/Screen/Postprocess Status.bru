@@ -1,0 +1,55 @@
+meta {
+  name: Screen - Postprocess Status
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{base_url}}/api/v1/me/screen/{{session_id}}/postprocess/status
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 200
+  res.body.session_id: isDefined
+  res.body.status: isDefined
+}
+
+docs {
+  Cheap DB-only snapshot of the ARHQ post-processing status for a session.
+
+  Zero LLM cost. Reads the latest `feature_history` row's `metadata` JSONB and
+  derives the `status` field via a pure function.
+
+  Response shape:
+    {
+      "session_id": "...",
+      "history_id": "..." | null,
+      "status": "not_started" | "success" | "failed",
+      "metadata": {
+        "ahrq_status": "success" | "failed",
+        "ahrq_started_at": "2026-07-03T12:34:56Z",
+        "ahrq_finished_at": "2026-07-03T12:35:12Z",
+        "ahrq_scores": [...] | null,
+        "ahrq_comments": "..." | null,
+        "ahrq_total": 45 | null,
+        "ahrq_severity": "mild" | "moderate" | "severe" | null,
+        "ahrq_error": null | { "reason": "...", "message": "..." }
+      } | null
+    }
+
+  Use cases:
+    - Frontend poll to gate UI ("Retry" vs "Show Results").
+    - Admin dashboard to spot `failed` sessions.
+    - CI smoke test after re-triggering `/postprocess`.
+
+  Status codes:
+    200 — snapshot returned
+    403 — session belongs to another user
+    404 — session or its history rows are missing
+}

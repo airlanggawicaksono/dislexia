@@ -5,6 +5,7 @@ import '../../../../core/api/api_exception.dart';
 import '../datasources/summarize_remote_datasource.dart';
 import '../models/summarize_model.dart';
 import '../../domain/entities/summarize_result.dart';
+import '../../domain/entities/summary_level.dart';
 import '../../domain/repositories/summarize_repository.dart';
 
 class SummarizeRepositoryImpl implements SummarizeRepository {
@@ -12,10 +13,13 @@ class SummarizeRepositoryImpl implements SummarizeRepository {
   const SummarizeRepositoryImpl(this._remote);
 
   @override
-  Future<Either<Failure, SummarizeResult>> summarize(String text) async {
+  Future<Either<Failure, SummarizeResult>> summarize(
+    String text, {
+    SummaryLevel? level,
+  }) async {
     try {
       final res = await _remote.summarize(
-        SummarizeRequestModel(text: text),
+        SummarizeRequestModel(text: text, level: level),
       );
       return right(SummarizeResult(text: res.result, sessionId: res.sessionId));
     } on ApiException catch (e) {

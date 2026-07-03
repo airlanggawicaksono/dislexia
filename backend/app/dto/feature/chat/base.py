@@ -46,6 +46,7 @@ class FeatureHistoryItemDTO(BaseModel):
     input_text: str
     output_text: Optional[str] = None
     created_at: datetime
+    metadata: Optional[dict] = None
 
 
 class FeatureHistoryListDTO(BaseModel):

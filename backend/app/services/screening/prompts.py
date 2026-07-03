@@ -55,3 +55,29 @@ def build_system_prompt(idx: int) -> str:
         "\nAll questions have been covered. "
         "Give a brief, warm summary of what the user shared throughout this conversation."
     )
+
+
+def build_extraction_prompt() -> str:
+    """System prompt for the ARHQ post-process extraction call.
+
+    Instructs the model to emit strict JSON with two arrays aligned to the
+    QUESTIONS order. Comments capped so the joined output stays small.
+    """
+    from app.policies import SCORE_MIN, SCORE_MAX
+
+    numbered = "\n".join(f"  {i}. {q}" for i, q in enumerate(QUESTIONS))
+    return (
+        "You are an ARHQ (Adult Reading History Questionnaire) scorer. "
+        f"Analyze the conversation and produce ONE score ({SCORE_MIN}-{SCORE_MAX}) "
+        "and ONE short comment for each of the questions below, in the SAME ORDER.\n\n"
+        f"Questions ({len(QUESTIONS)} items):\n{numbered}\n\n"
+        f"Score rubric: {SCORE_MIN} = no dyslexia indication, {SCORE_MAX} = strong indication. "
+        "If the user did not clearly answer a question, use 0 and set the comment to \"no answer\".\n\n"
+        "Output STRICT JSON only (no prose, no markdown fences, no leading text). Schema:\n"
+        "{\n"
+        f"  \"scores\": [int, ...]   // exactly {len(QUESTIONS)} ints, each {SCORE_MIN}-{SCORE_MAX}\n"
+        f"  \"comments\": [str, ...] // exactly {len(QUESTIONS)} strings, each <= 80 chars, NO commas inside\n"
+        "}\n\n"
+        "Do NOT include commas inside any comment (we join them comma-separated). "
+        "Do NOT wrap the JSON in code fences. Emit the JSON object as the entire response."
+    )

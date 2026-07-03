@@ -20,8 +20,15 @@ headers {
 
 body:json {
   {
-    "text": "The quarterly earnings report indicates that the company exceeded all projected revenue targets for the third consecutive period, with notable gains across all geographic segments and product categories. Management cited operational efficiency and strategic acquisitions as key drivers."
+    "text": "The quarterly earnings report indicates that the company exceeded all projected revenue targets for the third consecutive period, with notable gains across all geographic segments and product categories. Management cited operational efficiency and strategic acquisitions as key drivers.",
+    "level": "50pct"
   }
+}
+
+docs {
+  Optional `level` controls how much of the source is preserved (importance-ordered).
+  Accepted values: `10pct`, `30pct`, `50pct` (default), `70pct`, `90pct`.
+  Lower pct = tighter summary, only the CORE idea. Higher pct = more supporting detail.
 }
 
 script:post-response {

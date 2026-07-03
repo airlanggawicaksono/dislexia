@@ -70,6 +70,7 @@ class ChatHistoryService:
     async def save_feature_history(
         session_id: UUID, user_id: UUID, feature: FeatureType,
         input_text: str, output_text: str, db: AsyncSession,
+        metadata: Optional[dict] = None,
     ) -> FeatureHistoryItemDTO:
         item = FeatureHistory(
             session_id=session_id,
@@ -77,8 +78,48 @@ class ChatHistoryService:
             feature=feature.value,
             input_text=input_text,
             output_text=output_text,
+            extra_metadata=metadata,
         )
         db.add(item)
+        await db.commit()
+        await db.refresh(item)
+        return to_history_item_dto(item)
+
+    @staticmethod
+    async def get_last_feature_history_for_session(
+        session_id: UUID, user_id: UUID, db: AsyncSession,
+    ) -> FeatureHistoryItemDTO:
+        """Return the most recent FeatureHistory row for a session (owner-checked).
+
+        Raises NotFoundError if none exist, ForbiddenError if the session
+        belongs to another user.
+        """
+        await _load_owned_session(session_id, user_id, db)
+        result = await db.execute(
+            select(FeatureHistory)
+            .where(FeatureHistory.session_id == session_id)
+            .order_by(FeatureHistory.created_at.desc())
+            .limit(1)
+        )
+        item = result.scalar_one_or_none()
+        if item is None:
+            raise NotFoundError("No history for this session")
+        return to_history_item_dto(item)
+
+    @staticmethod
+    async def set_feature_history_metadata(
+        history_id: UUID, metadata: dict, db: AsyncSession,
+    ) -> FeatureHistoryItemDTO:
+        """Overwrite the `metadata` JSONB of an existing feature_history row.
+
+        Used by post-processing paths that need to attach structured output
+        (e.g. ARHQ scores) AFTER the row is saved.
+        """
+        result = await db.execute(select(FeatureHistory).where(FeatureHistory.id == history_id))
+        item = result.scalar_one_or_none()
+        if item is None:
+            raise NotFoundError("History item not found")
+        item.extra_metadata = metadata
         await db.commit()
         await db.refresh(item)
         return to_history_item_dto(item)

@@ -32,3 +32,11 @@ class UnauthorizedError(HTTPException):
 class ForbiddenError(HTTPException):
     def __init__(self, detail: str = "Forbidden"):
         super().__init__(status_code=status.HTTP_403_FORBIDDEN, detail=detail)
+
+
+class ConflictError(HTTPException):
+    """Resource is in a state that can't accept the requested operation
+    (e.g. re-triggering post-processing on an incomplete screening session)."""
+
+    def __init__(self, detail: str = "Conflict"):
+        super().__init__(status_code=status.HTTP_409_CONFLICT, detail=detail)

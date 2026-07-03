@@ -17,7 +17,7 @@ class SummarizeBloc extends Bloc<SummarizeEvent, SummarizeState> {
   Future<void> _onSummarize(
       SummarizeTextEvent event, Emitter<SummarizeState> emit) async {
     emit(SummarizeLoading());
-    final result = await _summarize(event.text);
+    final result = await _summarize(event.text, level: event.level);
     result.fold(
       (failure) => emit(SummarizeErrorState(failure.props.toString())),
       (SummarizeResult success) =>

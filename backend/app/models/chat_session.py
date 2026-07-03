@@ -48,6 +48,11 @@ class FeatureHistory(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
+    # Per-feature invocation metadata (e.g. summarize level, email recipient/sender).
+    # Named `extra_metadata` in Python because `metadata` collides with Base.metadata.
+    extra_metadata: Mapped[dict | None] = mapped_column(
+        "metadata", JSONB, nullable=True, default=None
+    )
 
     __table_args__ = (
         Index("ix_feature_history_user_feature", "user_id", "feature"),

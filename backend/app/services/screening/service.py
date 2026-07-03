@@ -4,20 +4,21 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.services.chat_history_service import ChatHistoryService
 from app.services.feature_service import FeatureService
 from app.services.llm_service import LmIoNoStream
-from app.policies.retry import LLMRetryPolicy
+from app.policies import LLMRetryPolicy
 from app.services.screening.prompts import PERSONA, STYLE_TEMPLATE, QUESTIONS, build_system_prompt
+from app.services.screening.postprocess import PostProcessService
 from app.dto.feature.chat.enums import FeatureType, ChatRoleType
 from app.dto.feature.chat.base import ChatSessionDTO
-from app.dto.feature.llm import LLMRequestDTO, LLMHistoryMessageDTO
-from app.dto.feature.screening import ScreeningResponseDTO
+from app.dto.feature.llm import LLMRequestDTO
+from app.dto.feature.screening.response import (
+    ScreeningResponseDTO,
+    PostProcessRunDTO,
+    PostProcessStatusDTO,
+)
 
 
 def _next_question_index(session: ChatSessionDTO) -> int:
     return sum(1 for m in session.history if m.role == ChatRoleType.ASSISTANT)
-
-
-def _to_llm_history(session: ChatSessionDTO) -> list[LLMHistoryMessageDTO]:
-    return [LLMHistoryMessageDTO(role=m.role.value, content=m.content) for m in session.history]
 
 
 class ScreeningService:
@@ -59,9 +60,30 @@ class ScreeningService:
         feature_res = await FeatureService.process(
             FeatureType.SCREEN, build_system_prompt(idx), text, user_id, db, session_id
         )
+
+        ahrq_result: dict | None = None
+        if is_complete:
+            # Auto-run the post-process callback. force=False is a no-op here
+            # since we already know the session is complete.
+            outcome = await PostProcessService.run(session_id, user_id, db, force=True)
+            ahrq_result = outcome.metadata
+
         return ScreeningResponseDTO(
             result=feature_res.result,
             session_id=feature_res.session_id,
             history_id=feature_res.history_id,
             is_complete=is_complete,
+            ahrq_result=ahrq_result,
         )
+
+    @staticmethod
+    async def postprocess(
+        session_id: UUID, user_id: UUID, db: AsyncSession, force: bool = False,
+    ) -> PostProcessRunDTO:
+        return await PostProcessService.run(session_id, user_id, db, force=force)
+
+    @staticmethod
+    async def postprocess_status(
+        session_id: UUID, user_id: UUID, db: AsyncSession,
+    ) -> PostProcessStatusDTO:
+        return await PostProcessService.get_status(session_id, user_id, db)

@@ -32,6 +32,35 @@ assert {
 }
 
 docs {
-  Submit a reply for the current screening question. Run this 23+ times to walk through the full ARHQ.
-  is_complete flips to true on the final turn.
+  Submit a reply for the current screening question. Run this 23+ times to walk
+  through the full ARHQ. `is_complete` flips to true on the final turn.
+
+  On completion the server runs a SECOND LLM call (post-process callback) that
+  extracts ARHQ scores + comments from the conversation. The result is returned
+  in `ahrq_result` (and persisted to `feature_history.metadata`).
+
+  Expected `ahrq_result` shape on success:
+    {
+      "ahrq_status": "success",
+      "ahrq_started_at": "2026-07-03T12:34:56Z",
+      "ahrq_finished_at": "2026-07-03T12:35:12Z",
+      "ahrq_error": null,
+      "ahrq_scores": [2, 3, 1, ...],           // 23 ints, ARHQ order
+      "ahrq_comments": "slow reader;heavy,...", // comma-sep, index-aligned
+      "ahrq_total": 45,
+      "ahrq_severity": "mild" | "moderate" | "severe"
+    }
+
+  On failure (LLM refused, malformed JSON, schema mismatch, etc.):
+    {
+      "ahrq_status": "failed",
+      "ahrq_error": { "reason": "...", "message": "..." },
+      "ahrq_scores": null,
+      ...
+    }
+  The `/reply` call still returns 200 — the warm summary is unaffected.
+
+  To re-run post-processing later (e.g. after a failed result), call
+  `POST /api/v1/me/screen/{session_id}/postprocess` — see "Postprocess (re-run)".
+  Commas inside a comment are sanitized to ';' (not a failure).
 }

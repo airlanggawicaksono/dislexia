@@ -6,6 +6,7 @@ from app.exceptions.http import (
     NotFoundError,
     UnauthorizedError,
     ForbiddenError,
+    ConflictError,
 )
 
 __all__ = [
@@ -14,4 +15,5 @@ __all__ = [
     "NotFoundError",
     "UnauthorizedError",
     "ForbiddenError",
+    "ConflictError",
 ]

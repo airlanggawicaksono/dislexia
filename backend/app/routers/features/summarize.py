@@ -20,41 +20,74 @@ TAG = {
 
 router = APIRouter(prefix="/api/v1/me/summarize", tags=[TAG["name"]])
 
-_BASE_PROMPT = (
-    "You are a reading assistant for people with dyslexia. "
-    "Summarize the provided text into clear, concise prose using simple, accessible language. "
-    "Do not use bullet points, numbered lists, or any list formatting. "
-    "Write flowing sentences and short paragraphs only.\n\n"
-    f"{DYSLEXIA_OUTPUT_RULES}"
-)
 
-_LEVEL_CONFIG: dict[SummaryLevel, tuple[str, int]] = {
-    SummaryLevel.SHORT: (
-        "Write a very brief summary in 2-3 sentences maximum. Capture only the single most important idea.",
-        200,
-    ),
-    SummaryLevel.MODERATE: (
-        "Write a moderate-length summary covering the key points.",
-        500,
-    ),
-    SummaryLevel.DETAILED: (
-        "Write a comprehensive summary covering all important details and nuances.",
-        1000,
-    ),
+# pct of source-text characters preserved in summary, per level.
+_LEVEL_PCT: dict[SummaryLevel, float] = {
+    SummaryLevel.PCT_10: 0.10,
+    SummaryLevel.PCT_30: 0.30,
+    SummaryLevel.PCT_50: 0.50,
+    SummaryLevel.PCT_70: 0.70,
+    SummaryLevel.PCT_90: 0.90,
 }
 
+# Which importance layers to include, per level.
+_LEVEL_LAYERS: dict[SummaryLevel, str] = {
+    SummaryLevel.PCT_10: "ONLY the CORE layer",
+    SummaryLevel.PCT_30: "the CORE layer AND the DEPENDENCIES layer",
+    SummaryLevel.PCT_50: "the CORE layer, the DEPENDENCIES layer, AND the most essential parts of the DETAILS layer",
+    SummaryLevel.PCT_70: "the CORE layer, the DEPENDENCIES layer, AND most of the DETAILS layer",
+    SummaryLevel.PCT_90: "ALL layers (CORE, DEPENDENCIES, DETAILS) in tightened prose",
+}
 
-def _build_prompt_and_config(level: SummaryLevel) -> tuple[str, LLMGenerationConfigDTO]:
-    instruction, max_tokens = _LEVEL_CONFIG[level]
+# Floors/ceilings to keep tiny inputs usable and giant inputs sane.
+_MIN_TARGET_CHARS = 80
+_CHARS_PER_TOKEN = 4  # rough english heuristic
+_MAX_TOKENS_SLACK = 1.5  # ceiling above target, catches overshoot before hard cut
+_MAX_TOKENS_HARD_CAP = 4096
+
+
+def _normalize_chars(text: str) -> int:
+    """Count chars after collapsing runs of whitespace into single spaces."""
+    return len(" ".join(text.split()))
+
+
+def _build_prompt_and_config(
+    level: SummaryLevel, text: str
+) -> tuple[str, LLMGenerationConfigDTO, dict]:
+    src_chars = _normalize_chars(text)
+    pct = _LEVEL_PCT[level]
+    target_chars = max(_MIN_TARGET_CHARS, int(src_chars * pct))
+    max_tokens = min(
+        _MAX_TOKENS_HARD_CAP,
+        max(64, int(target_chars / _CHARS_PER_TOKEN * _MAX_TOKENS_SLACK)),
+    )
+    layers = _LEVEL_LAYERS[level]
+    metadata = {
+        "level": level.value,
+        "pct": pct,
+        "src_chars": src_chars,
+        "target_chars": target_chars,
+        "max_tokens": max_tokens,
+    }
+
     prompt = (
-        "You are a reading assistant for people with dyslexia. "
-        f"{instruction} "
-        "Use simple, accessible language. "
-        "Do not use bullet points, numbered lists, or any list formatting. "
-        "Write flowing sentences and short paragraphs only.\n\n"
+        "You are a reading assistant for people with dyslexia. Summarize the provided "
+        "text using strict importance ordering:\n"
+        "1. CORE — the single most critical idea. Always the first sentence.\n"
+        "2. DEPENDENCIES — the facts, claims, or context the CORE idea rests on.\n"
+        "3. DETAILS — supporting examples, numbers, and nuance.\n\n"
+        f"For THIS summary include {layers}. Stop after the last included layer.\n\n"
+        f"Length constraints (HARD RULES):\n"
+        f"- Original text is {src_chars} characters (whitespace-normalized).\n"
+        f"- Target approximately {target_chars} characters.\n"
+        f"- Your summary MUST be shorter than the original ({src_chars} chars).\n"
+        "- End on a complete sentence. Never trail off mid-word or mid-clause.\n\n"
+        "Style:\n"
+        "- Use simple, accessible language.\n"
+        "- No bullet points, numbered lists, or headings — flowing sentences and short paragraphs only.\n\n"
         f"{DYSLEXIA_OUTPUT_RULES}"
     )
-    return prompt, LLMGenerationConfigDTO(max_tokens=max_tokens)
+    return prompt, LLMGenerationConfigDTO(max_tokens=max_tokens), metadata
 
 
 @router.post(
@@ -72,16 +105,20 @@ async def process(
     """
     Summarize the provided text into accessible prose.
 
-    Use `level` to control output length:
-    - `short` — 2-3 sentences, single key idea
-    - `moderate` — key points (default)
-    - `detailed` — comprehensive coverage
+    Use `level` to control how much of the source is preserved (by character percentage):
+    - `10pct` — core idea only
+    - `30pct` — core + supporting facts
+    - `50pct` — core + facts + key details (default)
+    - `70pct` — most detail retained
+    - `90pct` — near-verbatim in tightened prose
+
+    Content is always ordered by importance so shorter tiers remain coherent.
 
     Pass `session_id` to continue a prior conversation; omit to start fresh.
     """
-    prompt, config = _build_prompt_and_config(request.level)
+    prompt, config, metadata = _build_prompt_and_config(request.level, request.text)
     return await FeatureService.process(
-        FeatureType.SUMMARIZE, prompt, request.text, user.user_id, db, request.session_id, config
+        FeatureType.SUMMARIZE, prompt, request.text, user.user_id, db, request.session_id, config, metadata
     )
 
 
@@ -101,11 +138,11 @@ async def process_stream(
     Each event payload is a JSON-encoded `LLMChunkDTO`. The full response is
     persisted to history after the stream completes.
     """
-    prompt, config = _build_prompt_and_config(request.level)
+    prompt, config, metadata = _build_prompt_and_config(request.level, request.text)
 
     async def sse():
         async for chunk in FeatureService.process_stream(
-            FeatureType.SUMMARIZE, prompt, request.text, user.user_id, db, request.session_id, config
+            FeatureType.SUMMARIZE, prompt, request.text, user.user_id, db, request.session_id, config, metadata
         ):
             yield f"data: {chunk.model_dump_json()}\n\n"
 

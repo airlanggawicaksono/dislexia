@@ -22,11 +22,38 @@ class FeatureRequestDTO(BaseModel):
 
 
 class SummarizeRequestDTO(FeatureRequestDTO):
-    """Request for /summarize/process. Adds summary length level."""
+    """Request for /summarize/process.
+
+    Adds `level` — the pct of source-text characters the summary should target.
+    Content is always ordered by importance (CORE → DEPENDENCIES → DETAILS),
+    so lower levels drop the least-important layers first.
+    """
+
+    model_config = ConfigDict(
+        populate_by_name=True,
+        str_strip_whitespace=True,
+        json_schema_extra={
+            "examples": [
+                {
+                    "text": "The quarterly earnings report indicates the company exceeded revenue targets.",
+                    "level": "50pct",
+                },
+                {
+                    "text": "Long article body...",
+                    "level": "10pct",
+                    "session_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                },
+            ]
+        },
+    )
 
     level: SummaryLevel = Field(
-        SummaryLevel.MODERATE,
-        description="Summary length: short (2-3 sentences), moderate (key points), detailed (comprehensive).",
+        SummaryLevel.PCT_50,
+        description=(
+            "Summary length as pct of source (importance-ordered content): "
+            "10pct (core only), 30pct (core+deps), 50pct (default), "
+            "70pct, 90pct (near-verbatim)."
+        ),
     )
 
 

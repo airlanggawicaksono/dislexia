@@ -39,4 +39,5 @@ def to_history_item_dto(item: FeatureHistory) -> FeatureHistoryItemDTO:
         input_text=item.input_text,
         output_text=item.output_text,
         created_at=item.created_at,
+        metadata=item.extra_metadata,
     )

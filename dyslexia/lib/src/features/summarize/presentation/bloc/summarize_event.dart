@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
 
+import '../../domain/entities/summary_level.dart';
+
 abstract class SummarizeEvent extends Equatable {
   const SummarizeEvent();
   @override
@@ -8,10 +10,11 @@ abstract class SummarizeEvent extends Equatable {
 
 class SummarizeTextEvent extends SummarizeEvent {
   final String text;
-  const SummarizeTextEvent(this.text);
+  final SummaryLevel? level;
+  const SummarizeTextEvent(this.text, {this.level});
 
   @override
-  List<Object?> get props => [text];
+  List<Object?> get props => [text, level];
 }
 
 class ClearSummarizeEvent extends SummarizeEvent {}

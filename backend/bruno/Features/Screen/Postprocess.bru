@@ -1,0 +1,75 @@
+meta {
+  name: Screen - Postprocess (re-run)
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{base_url}}/api/v1/me/screen/{{session_id}}/postprocess
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+params:query {
+  ~force: true
+}
+
+assert {
+  res.status: eq 200
+  res.body.session_id: isDefined
+  res.body.history_id: isDefined
+  res.body.status: isDefined
+  res.body.metadata: isDefined
+  res.body.metadata.ahrq_status: isDefined
+}
+
+docs {
+  Re-trigger the ARHQ post-processing callback for an existing screening session.
+  Keyed only by `session_id` — an idempotent, id-triggered reprocess. Same logic
+  as the automatic run at end of `/reply`: a second LLM call extracts scores +
+  comments into strict JSON, the result is written to `feature_history.metadata`
+  on the latest history row AND returned here.
+
+  Query params:
+    - `force=true` — allow re-run even if the session hasn't covered all 23
+      questions yet (admin / QA). Default false → 409 on incomplete sessions.
+
+  Use cases:
+    - Retry after a prior failed run (poll `/postprocess/status` first — zero
+      LLM cost — then re-POST here). Never 500s on extractor errors, so a client
+      can safely loop retry-on-failure.
+    - Re-score after tweaking the rubric / severity thresholds in
+      `app/policies/ahrq.py`.
+    - Backfill sessions that completed before the callback existed
+      (status `not_started`).
+
+  Response shape (PostProcessRunDTO):
+    {
+      "session_id": "...",
+      "history_id": "...",
+      "status": "success" | "failed",
+      "metadata": {
+        "ahrq_status": "success" | "failed",
+        "ahrq_started_at": "2026-07-03T12:34:56Z",
+        "ahrq_finished_at": "2026-07-03T12:35:12Z",
+        "ahrq_scores": [2, 3, 1, ...] | null,     // 23 ints, ARHQ order
+        "ahrq_comments": "slow reader;heavy,..." | null,  // comma-sep, index-aligned
+        "ahrq_total": 45 | null,
+        "ahrq_severity": "mild" | "moderate" | "severe" | null,
+        "ahrq_error": null | { "reason": "...", "message": "..." }
+      }
+    }
+
+  Note: commas inside an individual comment are sanitized to ';' so the
+  comma-join stays index-aligned — they are NOT a failure.
+
+  Status codes:
+    200 — post-processing completed (status may still be "failed" — errors don't 500 here)
+    403 — session belongs to another user
+    404 — session or history row missing
+    409 — session not complete yet AND force=false
+}

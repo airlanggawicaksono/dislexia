@@ -33,6 +33,7 @@ class FeatureService:
         db: AsyncSession,
         session_id: Optional[UUID] = None,
         generation_config: Optional[LLMGenerationConfigDTO] = None,
+        metadata: Optional[dict] = None,
     ) -> FeatureResponseDTO:
         session = await _resolve_session(session_id, user_id, feature, db)
         history = _to_llm_history(session)
@@ -54,6 +55,7 @@ class FeatureService:
             input_text=text,
             output_text=llm_res.content,
             db=db,
+            metadata=metadata,
         )
         return FeatureResponseDTO(
             result=llm_res.content,
@@ -71,6 +73,7 @@ class FeatureService:
         db: AsyncSession,
         session_id: Optional[UUID] = None,
         generation_config: Optional[LLMGenerationConfigDTO] = None,
+        metadata: Optional[dict] = None,
     ) -> AsyncGenerator[LLMChunkDTO, None]:
         session = await _resolve_session(session_id, user_id, feature, db)
         history = _to_llm_history(session)
@@ -96,6 +99,7 @@ class FeatureService:
             input_text=text,
             output_text=full_content,
             db=db,
+            metadata=metadata,
         )
 
     @staticmethod
