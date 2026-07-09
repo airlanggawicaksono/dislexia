@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+import '../../../core/api/api_client.dart';
 import '../../../core/api/api_helper.dart';
 import '../../../core/api/api_interceptor.dart';
 import '../../../core/cache/secure_local_storage.dart';
@@ -61,7 +62,7 @@ class AuthDependency {
       () => AuthLocalDatasourceImpl(getIt<SecureLocalStorage>()),
     );
     getIt.registerLazySingleton<AuthRemoteDatasource>(
-      () => AuthRemoteDatasourceImpl(getIt<ApiHelper>()),
+      () => AuthRemoteDatasourceImpl(getIt<ApiClient>()),
     );
     getIt.registerLazySingleton<AuthRepository>(
       () => AuthRepositoryImpl(

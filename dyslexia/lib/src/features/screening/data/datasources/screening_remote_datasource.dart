@@ -1,5 +1,4 @@
-import '../../../../core/api/api_helper.dart';
-import '../../../../core/api/api_url.dart';
+import '../../../../core/api/api_client.dart';
 import '../models/screening_model.dart';
 
 abstract class ScreeningRemoteDatasource {
@@ -8,25 +7,23 @@ abstract class ScreeningRemoteDatasource {
 }
 
 class ScreeningRemoteDatasourceImpl implements ScreeningRemoteDatasource {
-  final ApiHelper _api;
+  final ApiClient _api;
   const ScreeningRemoteDatasourceImpl(this._api);
 
   @override
-  Future<ScreeningResponseModel> start() async {
-    final res = await _api.execute(
-      method: Method.post,
-      url: '${ApiUrl.baseUrl}/me/screen/start',
+  Future<ScreeningResponseModel> start() {
+    return _api.postObject(
+      '/me/screen/start',
+      parse: ScreeningResponseModel.fromJson,
     );
-    return ScreeningResponseModel.fromJson(res);
   }
 
   @override
-  Future<ScreeningResponseModel> reply(ScreeningReplyRequestModel request) async {
-    final res = await _api.execute(
-      method: Method.post,
-      url: '${ApiUrl.baseUrl}/me/screen/reply',
-      data: request.toJson(),
+  Future<ScreeningResponseModel> reply(ScreeningReplyRequestModel request) {
+    return _api.postObject(
+      '/me/screen/reply',
+      body: request.toJson(),
+      parse: ScreeningResponseModel.fromJson,
     );
-    return ScreeningResponseModel.fromJson(res);
   }
 }

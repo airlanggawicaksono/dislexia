@@ -13,28 +13,34 @@ class ApiHelper {
     required String url,
     dynamic data,
     Map<String, dynamic>? queryParameters,
+    Map<String, dynamic>? headers,
   }) async {
+    // Per-request headers are merged on top of whatever the shared Dio /
+    // interceptors already set (e.g. the Authorization bearer). Passing null
+    // leaves the default headers untouched.
+    final options = headers == null ? null : Options(headers: headers);
     try {
       Response? response;
       switch (method) {
         case Method.get:
-          response = await _dio.get(url, queryParameters: queryParameters);
+          response = await _dio.get(url,
+              queryParameters: queryParameters, options: options);
           break;
         case Method.post:
           response = await _dio.post(url,
-              data: data, queryParameters: queryParameters);
+              data: data, queryParameters: queryParameters, options: options);
           break;
         case Method.put:
-          response =
-              await _dio.put(url, data: data, queryParameters: queryParameters);
+          response = await _dio.put(url,
+              data: data, queryParameters: queryParameters, options: options);
           break;
         case Method.patch:
           response = await _dio.patch(url,
-              data: data, queryParameters: queryParameters);
+              data: data, queryParameters: queryParameters, options: options);
           break;
         case Method.delete:
           response = await _dio.delete(url,
-              data: data, queryParameters: queryParameters);
+              data: data, queryParameters: queryParameters, options: options);
           break;
       }
 

@@ -1,5 +1,4 @@
-import '../../../../core/api/api_helper.dart';
-import '../../../../core/api/api_url.dart';
+import '../../../../core/api/api_client.dart';
 import '../models/define_model.dart';
 
 abstract class DefineRemoteDatasource {
@@ -7,16 +6,15 @@ abstract class DefineRemoteDatasource {
 }
 
 class DefineRemoteDatasourceImpl implements DefineRemoteDatasource {
-  final ApiHelper _api;
+  final ApiClient _api;
   const DefineRemoteDatasourceImpl(this._api);
 
   @override
-  Future<DefineResponseModel> define(DefineRequestModel request) async {
-    final res = await _api.execute(
-      method: Method.post,
-      url: '${ApiUrl.baseUrl}/me/define/process',
-      data: request.toJson(),
+  Future<DefineResponseModel> define(DefineRequestModel request) {
+    return _api.postObject(
+      '/me/define/process',
+      body: request.toJson(),
+      parse: DefineResponseModel.fromJson,
     );
-    return DefineResponseModel.fromJson(res);
   }
 }

@@ -50,6 +50,11 @@ class Settings(BaseSettings):
     JWT_SECRET_KEY: str = "your-secret-key-change-this-in-production"
     JWT_ALGORITHM: str = "HS256"
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    # Long-lived session for clients that opt in via the X-Long-Session header
+    # (e.g. the native mobile app). ~1000 years = effectively permanent, but a
+    # real `exp` claim is still stamped so token validators stay happy. Default
+    # login (web, admin, curl) ignores this and keeps JWT_ACCESS_TOKEN_EXPIRE_MINUTES.
+    JWT_REMEMBER_EXPIRE_MINUTES: int = 525600000
 
     # Swagger / Docs Protection
     SWAGGER_DOCS_ENABLED: bool = True

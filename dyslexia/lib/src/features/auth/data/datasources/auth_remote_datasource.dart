@@ -1,5 +1,6 @@
-import '../../../../core/api/api_helper.dart';
-import '../../../../core/api/api_url.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+
+import '../../../../core/api/api_client.dart';
 import '../models/auth_session_model.dart';
 
 abstract class AuthRemoteDatasource {
@@ -7,17 +8,20 @@ abstract class AuthRemoteDatasource {
 }
 
 class AuthRemoteDatasourceImpl implements AuthRemoteDatasource {
-  final ApiHelper _api;
+  final ApiClient _api;
   const AuthRemoteDatasourceImpl(this._api);
 
   @override
-  Future<AuthSessionModel> login(String accountNumber) async {
+  Future<AuthSessionModel> login(String accountNumber) {
     final cleaned = accountNumber.replaceAll(RegExp(r'\s+'), '');
-    final res = await _api.execute(
-      method: Method.post,
-      url: '${ApiUrl.baseUrl}/auth/login',
-      data: {'account_number': cleaned},
+    // Native (non-web) clients opt into an effectively-permanent session so
+    // users stay signed in. The web build omits the header and keeps the
+    // default short-lived token — same codebase, different lifetime.
+    return _api.postObject(
+      '/auth/login',
+      body: {'account_number': cleaned},
+      headers: kIsWeb ? null : const {'X-Long-Session': 'true'},
+      parse: AuthSessionModel.fromJson,
     );
-    return AuthSessionModel.fromJson(res);
   }
 }

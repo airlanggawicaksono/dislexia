@@ -1,5 +1,4 @@
-import '../../../../core/api/api_helper.dart';
-import '../../../../core/api/api_url.dart';
+import '../../../../core/api/api_client.dart';
 import '../models/professionalize_model.dart';
 
 abstract class ProfessionalizeRemoteDatasource {
@@ -7,16 +6,15 @@ abstract class ProfessionalizeRemoteDatasource {
 }
 
 class ProfessionalizeRemoteDatasourceImpl implements ProfessionalizeRemoteDatasource {
-  final ApiHelper _api;
+  final ApiClient _api;
   const ProfessionalizeRemoteDatasourceImpl(this._api);
 
   @override
-  Future<ProfessionalizeResponseModel> professionalize(ProfessionalizeRequestModel request) async {
-    final res = await _api.execute(
-      method: Method.post,
-      url: '${ApiUrl.baseUrl}/me/professionalize/process',
-      data: request.toJson(),
+  Future<ProfessionalizeResponseModel> professionalize(ProfessionalizeRequestModel request) {
+    return _api.postObject(
+      '/me/professionalize/process',
+      body: request.toJson(),
+      parse: ProfessionalizeResponseModel.fromJson,
     );
-    return ProfessionalizeResponseModel.fromJson(res);
   }
 }

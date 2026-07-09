@@ -1,5 +1,5 @@
 import '../../../configs/injector/injector_conf.dart' show getIt;
-import '../../../core/api/api_helper.dart';
+import '../../../core/api/api_client.dart';
 import '../data/datasources/summarize_remote_datasource.dart';
 import '../data/repositories/summarize_repository_impl.dart';
 import '../domain/repositories/summarize_repository.dart';
@@ -11,7 +11,7 @@ class SummarizeDependency {
 
   static void init() {
     getIt.registerLazySingleton<SummarizeRemoteDatasource>(
-      () => SummarizeRemoteDatasourceImpl(getIt<ApiHelper>()),
+      () => SummarizeRemoteDatasourceImpl(getIt<ApiClient>()),
     );
     getIt.registerLazySingleton<SummarizeRepository>(
       () => SummarizeRepositoryImpl(getIt<SummarizeRemoteDatasource>()),

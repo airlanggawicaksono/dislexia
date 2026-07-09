@@ -1,5 +1,4 @@
-import '../../../../core/api/api_helper.dart';
-import '../../../../core/api/api_url.dart';
+import '../../../../core/api/api_client.dart';
 import '../models/summarize_model.dart';
 
 abstract class SummarizeRemoteDatasource {
@@ -7,16 +6,15 @@ abstract class SummarizeRemoteDatasource {
 }
 
 class SummarizeRemoteDatasourceImpl implements SummarizeRemoteDatasource {
-  final ApiHelper _api;
+  final ApiClient _api;
   const SummarizeRemoteDatasourceImpl(this._api);
 
   @override
-  Future<SummarizeResponseModel> summarize(SummarizeRequestModel request) async {
-    final res = await _api.execute(
-      method: Method.post,
-      url: '${ApiUrl.baseUrl}/me/summarize/process',
-      data: request.toJson(),
+  Future<SummarizeResponseModel> summarize(SummarizeRequestModel request) {
+    return _api.postObject(
+      '/me/summarize/process',
+      body: request.toJson(),
+      parse: SummarizeResponseModel.fromJson,
     );
-    return SummarizeResponseModel.fromJson(res);
   }
 }

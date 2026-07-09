@@ -11,6 +11,8 @@ import '../../features/professionalize/di/professionalize_dependency.dart';
 import '../../features/define/di/define_dependency.dart';
 import '../../features/screening/di/screening_dependency.dart';
 import '../../features/upload/di/upload_dependency.dart';
+import '../../core/api/api_client.dart';
+import '../../core/api/api_helper.dart';
 import '../../core/blocs/theme/theme_bloc.dart';
 import '../../routes/app_route_conf.dart';
 import '../../core/cache/local_storage.dart';
@@ -30,6 +32,10 @@ void configureDepedencies() {
   SidebarDependency.init();
   LensDependency.init();
   ReaderDependency.init();
+
+  // Shared reusable HTTP client over the authenticated ApiHelper (registered
+  // by AuthDependency.init() above). Every datasource can ingest through this.
+  getIt.registerLazySingleton<ApiClient>(() => ApiClient(getIt<ApiHelper>()));
 
   getIt.registerLazySingleton(() => ThemeBloc());
   getIt.registerLazySingleton(() => AppRouteConf());

@@ -1,5 +1,5 @@
 import '../../../configs/injector/injector_conf.dart' show getIt;
-import '../../../core/api/api_helper.dart';
+import '../../../core/api/api_client.dart';
 import '../data/datasources/define_remote_datasource.dart';
 import '../data/repositories/define_repository_impl.dart';
 import '../domain/repositories/define_repository.dart';
@@ -11,7 +11,7 @@ class DefineDependency {
 
   static void init() {
     getIt.registerLazySingleton<DefineRemoteDatasource>(
-      () => DefineRemoteDatasourceImpl(getIt<ApiHelper>()),
+      () => DefineRemoteDatasourceImpl(getIt<ApiClient>()),
     );
     getIt.registerLazySingleton<DefineRepository>(
       () => DefineRepositoryImpl(getIt<DefineRemoteDatasource>()),

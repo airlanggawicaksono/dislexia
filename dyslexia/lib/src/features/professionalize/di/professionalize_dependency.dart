@@ -1,5 +1,5 @@
 import '../../../configs/injector/injector_conf.dart' show getIt;
-import '../../../core/api/api_helper.dart';
+import '../../../core/api/api_client.dart';
 import '../data/datasources/professionalize_remote_datasource.dart';
 import '../data/repositories/professionalize_repository_impl.dart';
 import '../domain/repositories/professionalize_repository.dart';
@@ -11,7 +11,7 @@ class ProfessionalizeDependency {
 
   static void init() {
     getIt.registerLazySingleton<ProfessionalizeRemoteDatasource>(
-      () => ProfessionalizeRemoteDatasourceImpl(getIt<ApiHelper>()),
+      () => ProfessionalizeRemoteDatasourceImpl(getIt<ApiClient>()),
     );
     getIt.registerLazySingleton<ProfessionalizeRepository>(
       () => ProfessionalizeRepositoryImpl(getIt<ProfessionalizeRemoteDatasource>()),

@@ -1,5 +1,5 @@
 import '../../../configs/injector/injector_conf.dart' show getIt;
-import '../../../core/api/api_helper.dart';
+import '../../../core/api/api_client.dart';
 import '../data/datasources/screening_remote_datasource.dart';
 import '../data/repositories/screening_repository_impl.dart';
 import '../domain/repositories/screening_repository.dart';
@@ -11,7 +11,7 @@ class ScreeningDependency {
 
   static void init() {
     getIt.registerLazySingleton<ScreeningRemoteDatasource>(
-      () => ScreeningRemoteDatasourceImpl(getIt<ApiHelper>()),
+      () => ScreeningRemoteDatasourceImpl(getIt<ApiClient>()),
     );
     getIt.registerLazySingleton<ScreeningRepository>(
       () => ScreeningRepositoryImpl(getIt<ScreeningRemoteDatasource>()),
