@@ -1,8 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:stream_transform/stream_transform.dart';
-import '../../../../../core/utils/font_utils.dart';
 import '../../../data/models/reader_model.dart';
-import '../../../domain/entities/reader_entity.dart';
 import '../../../domain/repositories/reader_repository.dart';
 import 'reader_event.dart';
 import 'reader_state.dart';

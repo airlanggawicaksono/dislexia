@@ -14,6 +14,13 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    kotlinOptions {
+        // Match the Java target above. Kotlin 2.2 otherwise defaults to the
+        // JDK running Gradle (21), which trips AGP's Java/Kotlin JVM-target
+        // consistency check.
+        jvmTarget = JavaVersion.VERSION_17.toString()
+    }
+
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.example.dyslexia"

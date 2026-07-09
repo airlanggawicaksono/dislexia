@@ -7,7 +7,7 @@ void main() {
     test('default baseUrl is the compile-time constant', () {
       // Reset to a known state in case some other test left an override.
       ApiUrl.configure();
-      expect(ApiUrl.baseUrl, 'https://dev.dyslexic.app/v1');
+      expect(ApiUrl.baseUrl, 'https://dev.dyslexic.app/api/v1');
     });
 
     test('configure() overrides the baseUrl', () {

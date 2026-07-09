@@ -6,7 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 /// forwards to the next handler without having to spin up a real
 /// [RequestInterceptorHandler].
 class _RecordingHandler extends RequestInterceptorHandler {
-  _RecordingHandler() : super(requestOptions: RequestOptions(path: '/'));
+  _RecordingHandler();
   RequestOptions? last;
 
   @override
@@ -14,6 +14,22 @@ class _RecordingHandler extends RequestInterceptorHandler {
     last = requestOptions;
     super.next(requestOptions);
   }
+}
+
+/// Error handler that swallows the terminal callbacks instead of
+/// completing its internal completer. Completing an [ErrorInterceptorHandler]
+/// with an error (what the real `next`/`reject` do) surfaces as an
+/// unobserved async error in tests, since nothing awaits `handler.future`.
+/// We only care that [AuthInterceptor.onError] fired the right side-effects.
+class _NoopErrorHandler extends ErrorInterceptorHandler {
+  @override
+  void next(DioException error) {}
+
+  @override
+  void resolve(Response response) {}
+
+  @override
+  void reject(DioException error, [bool callFollowingErrorInterceptor = false]) {}
 }
 
 void main() {
@@ -83,8 +99,7 @@ void main() {
           statusCode: 401,
         ),
       );
-      final next = _RecordingHandler();
-      interceptor.onError(err, ErrorInterceptorHandler());
+      interceptor.onError(err, _NoopErrorHandler());
 
       expect(captured, isNotNull);
       expect(captured?.path, '/me');
@@ -104,7 +119,7 @@ void main() {
           statusCode: 401,
         ),
       );
-      interceptor.onError(err, ErrorInterceptorHandler());
+      interceptor.onError(err, _NoopErrorHandler());
       expect(fired, isFalse);
     });
 
@@ -121,7 +136,7 @@ void main() {
           statusCode: 500,
         ),
       );
-      interceptor.onError(err, ErrorInterceptorHandler());
+      interceptor.onError(err, _NoopErrorHandler());
       expect(fired, isFalse);
     });
 
@@ -137,7 +152,7 @@ void main() {
         ),
       );
       // Should not throw even though no callback was registered.
-      expect(() => interceptor.onError(err, ErrorInterceptorHandler()),
+      expect(() => interceptor.onError(err, _NoopErrorHandler()),
           returnsNormally);
     });
   });

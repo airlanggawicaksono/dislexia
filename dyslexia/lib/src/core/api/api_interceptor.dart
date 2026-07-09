@@ -88,7 +88,7 @@ class AuthInterceptor extends Interceptor {
       logger.w('AuthInterceptor: 401 received on '
           '${err.requestOptions.method} ${err.requestOptions.path} '
           '— firing onUnauthorized');
-      _onUnauthorized!(err.requestOptions);
+      _onUnauthorized(err.requestOptions);
     } else if (status == 401) {
       logger.w('AuthInterceptor: 401 on bootstrap path '
           '${err.requestOptions.path} — not forcing logout');
