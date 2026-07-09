@@ -8,10 +8,12 @@ abstract class ProfessionalizeEvent extends Equatable {
 
 class ProfessionalizeTextEvent extends ProfessionalizeEvent {
   final String text;
-  const ProfessionalizeTextEvent(this.text);
+  final String? recipientName;
+  final String? senderName;
+  const ProfessionalizeTextEvent(this.text, {this.recipientName, this.senderName});
 
   @override
-  List<Object?> get props => [text];
+  List<Object?> get props => [text, recipientName, senderName];
 }
 
 class ClearProfessionalizeEvent extends ProfessionalizeEvent {}

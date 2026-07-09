@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/widgets/feature_page.dart';
+import '../../../../core/widgets/level_slider.dart';
+import '../../domain/entities/define_level.dart';
 import '../bloc/define_bloc.dart';
 import '../bloc/define_event.dart';
 import '../bloc/define_state.dart';
+
+const _levels = DefineLevel.values;
+const _levelPct = ['10%', '30%', '50%', '70%', '90%'];
 
 class DefinePage extends StatefulWidget {
   const DefinePage({super.key});
@@ -16,9 +21,17 @@ class _DefinePageState extends State<DefinePage> {
   bool _inputExpanded = true;
   String? _viewResultText;
   String? _viewResultTitle;
+  DefineLevel _level = DefineLevel.defaultLevel;
 
   @override
   void dispose() { _controller.dispose(); super.dispose(); }
+
+  Widget _levelControl() => LevelSlider(
+        label: 'Detail level',
+        valueLabels: _levelPct,
+        initialIndex: _levels.indexOf(_level),
+        onChanged: (i) => _level = _levels[i],
+      );
 
   @override
   Widget build(BuildContext context) => BlocBuilder<DefineBloc, DefineState>(
@@ -28,6 +41,7 @@ class _DefinePageState extends State<DefinePage> {
       return FeaturePage(
         controller: _controller,
         title: 'Define', resultTitle: 'Definition', heroTag: 'define',
+        controls: _levelControl(),
         resultText: hasResult ? state.result : '',
         viewResultText: _viewResultText,
         viewResultTitle: _viewResultTitle,
@@ -38,7 +52,9 @@ class _DefinePageState extends State<DefinePage> {
         onSubmit: () {
           setState(() { _viewResultText = null; _viewResultTitle = null; });
           final t = _controller.text.trim();
-          if (t.isNotEmpty) ctx.read<DefineBloc>().add(DefineTextEvent(t));
+          if (t.isNotEmpty) {
+            ctx.read<DefineBloc>().add(DefineTextEvent(t, level: _level));
+          }
         },
         onViewResult: (text, result) => setState(() {
           _controller.text = text;

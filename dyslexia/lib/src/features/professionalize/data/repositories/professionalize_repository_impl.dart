@@ -12,10 +12,18 @@ class ProfessionalizeRepositoryImpl implements ProfessionalizeRepository {
   const ProfessionalizeRepositoryImpl(this._remote);
 
   @override
-  Future<Either<Failure, ProfessionalizeResult>> professionalize(String text) async {
+  Future<Either<Failure, ProfessionalizeResult>> professionalize(
+    String text, {
+    String? recipientName,
+    String? senderName,
+  }) async {
     try {
       final res = await _remote.professionalize(
-        ProfessionalizeRequestModel(text: text),
+        ProfessionalizeRequestModel(
+          text: text,
+          recipientName: recipientName,
+          senderName: senderName,
+        ),
       );
       return right(ProfessionalizeResult(text: res.result, sessionId: res.sessionId));
     } on ApiException catch (e) {

@@ -47,6 +47,14 @@ class OcrFailure extends Failure {
   const OcrFailure();
 }
 
+class CameraFailure extends Failure {
+  final String message;
+  const CameraFailure([this.message = 'Camera error']);
+
+  @override
+  List<Object> get props => [message];
+}
+
 class TextExtractionFailure extends Failure {
   const TextExtractionFailure();
 }

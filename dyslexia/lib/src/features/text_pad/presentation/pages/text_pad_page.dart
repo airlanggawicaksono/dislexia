@@ -5,10 +5,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/utils/font_utils.dart';
 import '../../../../core/widgets/adaptive/adaptive.dart';
-import '../../../../features/display_settings/domain/entities/display_settings_entity.dart';
+import '../../../../core/widgets/reader_text_display.dart';
 import '../../../../features/display_settings/presentation/bloc/display_settings/display_settings_bloc.dart';
+import '../../../../features/display_settings/presentation/theme/display_colors.dart';
 import '../../../../routes/app_route_path.dart';
 
 bool get _isCupertino =>
@@ -26,8 +26,8 @@ class TextPadPage extends StatelessWidget {
     return BlocBuilder<DisplaySettingsBloc, DisplaySettingsState>(
       builder: (context, state) {
         final s = state.settings;
-        final bg = _bgColor(s.colorTheme);
-        final fg = _textColor(s.colorTheme);
+        final bg = bgColor(s.colorTheme);
+        final fg = fgColor(s.colorTheme);
 
         return AdaptiveScaffold(
           backgroundColor: bg,
@@ -58,41 +58,17 @@ class TextPadPage extends StatelessWidget {
               },
             ),
           ],
-          body: SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: SelectableText(
-              text,
-              style: applyDyslexiaFont(
-                font: s.font,
-                baseStyle: TextStyle(
-                  fontSize: s.fontSize,
-                  color: fg,
-                  height: s.lineSpacing,
-                  letterSpacing: s.letterSpacing,
-                  wordSpacing: s.wordSpacing,
-                ),
-              ),
-            ),
+          // Reuse the shared reader so every display setting applies here too
+          // (ruler, syllable dots, fonts, spacing, colour) — consistent with
+          // the reader and feature outputs.
+          body: ReaderTextDisplay(
+            text: text,
+            settings: s,
+            fgColor: fg,
+            bgColor: bg,
           ),
         );
       },
     );
   }
-
-  static const _themeColors = {
-    AppColorTheme.white: (Color(0xFFFFFFFF), Color(0xFF1A1A1A)),
-    AppColorTheme.cream: (Color(0xFFFFF8EE), Color(0xFF1A1A1A)),
-    AppColorTheme.softYellow: (Color(0xFFFFFBCC), Color(0xFF1A1A1A)),
-    AppColorTheme.mintGreen: (Color(0xFFE0F5E9), Color(0xFF1A1A1A)),
-    AppColorTheme.lavender: (Color(0xFFEDE7F6), Color(0xFF1A1A1A)),
-    AppColorTheme.skyBlue: (Color(0xFFE3F2FD), Color(0xFF1A1A1A)),
-    AppColorTheme.peach: (Color(0xFFFFE8D6), Color(0xFF1A1A1A)),
-    AppColorTheme.dark: (Color(0xFF1E1E1E), Color(0xFFE8E8E8)),
-  };
-
-  Color _bgColor(AppColorTheme theme) =>
-      _themeColors[theme]?.$1 ?? const Color(0xFFFFF8EE);
-
-  Color _textColor(AppColorTheme theme) =>
-      _themeColors[theme]?.$2 ?? const Color(0xFF1A1A1A);
 }

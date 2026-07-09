@@ -17,7 +17,11 @@ class ProfessionalizeBloc extends Bloc<ProfessionalizeEvent, ProfessionalizeStat
   Future<void> _onProfessionalize(
       ProfessionalizeTextEvent event, Emitter<ProfessionalizeState> emit) async {
     emit(ProfessionalizeLoading());
-    final result = await _professionalize(event.text);
+    final result = await _professionalize(
+      event.text,
+      recipientName: event.recipientName,
+      senderName: event.senderName,
+    );
     result.fold(
       (failure) => emit(ProfessionalizeErrorState(failure.props.toString())),
       (ProfessionalizeResult success) =>

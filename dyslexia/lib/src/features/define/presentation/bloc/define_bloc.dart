@@ -17,7 +17,7 @@ class DefineBloc extends Bloc<DefineEvent, DefineState> {
   Future<void> _onDefine(
       DefineTextEvent event, Emitter<DefineState> emit) async {
     emit(DefineLoading());
-    final result = await _define(event.text);
+    final result = await _define(event.text, level: event.level);
     result.fold(
       (failure) => emit(DefineErrorState(failure.props.toString())),
       (DefineResult success) =>

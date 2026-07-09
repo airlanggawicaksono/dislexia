@@ -44,11 +44,27 @@ class ReadingRuler extends StatelessWidget {
             ),
             Center(
               child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
                 onVerticalDragStart: (d) =>
                     onPositionChanged(rulerY + d.localPosition.dy - height / 2),
                 onVerticalDragUpdate: (d) =>
                     onPositionChanged(rulerY + d.delta.dy),
-                child: SizedBox(height: height, width: 120),
+                child: SizedBox(
+                  height: height,
+                  width: 120,
+                  // Visible grip so the ruler is discoverable + draggable on
+                  // touch (no hover to reveal it).
+                  child: Center(
+                    child: Container(
+                      width: 48,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFC8A000).withValues(alpha: 0.7),
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ),
           ],

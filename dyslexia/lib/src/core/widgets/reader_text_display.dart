@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart'
+    show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 
 import '../../features/display_settings/domain/entities/display_settings_entity.dart';
@@ -29,6 +31,13 @@ class ReaderTextDisplay extends StatefulWidget {
 class _ReaderTextDisplayState extends State<ReaderTextDisplay> {
   double _rulerY = 120.0;
   bool _isHovering = false;
+
+  /// Touch platforms have no mouse hover, so the ruler must be shown
+  /// persistently (and dragged) rather than following the cursor.
+  bool get _isTouch =>
+      !kIsWeb &&
+      (defaultTargetPlatform == TargetPlatform.android ||
+          defaultTargetPlatform == TargetPlatform.iOS);
 
   @override
   Widget build(BuildContext context) {
@@ -67,7 +76,9 @@ class _ReaderTextDisplayState extends State<ReaderTextDisplay> {
                         )
                       : _content(contentWidth, paragraphs, fg, s),
                 ),
-                if (s.rulerEnabled && _isHovering)
+                // Desktop: follow the cursor (hover). Touch: show it
+                // persistently so it can be dragged — there is no hover.
+                if (s.rulerEnabled && (_isHovering || _isTouch))
                   ReadingRuler(
                     height: rulerH,
                     rulerY: _rulerY,

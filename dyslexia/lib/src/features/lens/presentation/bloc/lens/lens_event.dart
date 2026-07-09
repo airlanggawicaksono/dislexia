@@ -5,16 +5,20 @@ abstract class LensEvent extends Equatable {
   List<Object?> get props => [];
 }
 
+/// Start the camera + live recognition.
+class StartLensEvent extends LensEvent {}
+
+/// Stop the camera and release resources.
+class StopLensEvent extends LensEvent {}
+
+/// Capture the current stabilised text into a document (for the reader).
 class CaptureTextEvent extends LensEvent {}
 
-class AnalyzeFrameEvent extends LensEvent {
-  final String scannedText;
-  final List<dynamic> rawElements;
-  AnalyzeFrameEvent(
-    this.scannedText, {
-    this.rawElements = const [],
-  });
+/// Internal: a new recognised frame arrived on the repository stream.
+class _FrameReceivedEvent extends LensEvent {
+  final RecognizedFrame frame;
+  _FrameReceivedEvent(this.frame);
 
   @override
-  List<Object?> get props => [scannedText, rawElements.length];
+  List<Object?> get props => [frame];
 }

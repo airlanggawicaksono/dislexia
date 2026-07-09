@@ -76,7 +76,7 @@ class _AuthPageState extends State<AuthPage> {
                       ),
                       const SizedBox(height: 24),
                       Text(
-                        'Dyslexia',
+                        'Dyslexic.app',
                         textAlign: TextAlign.center,
                         style: theme.textTheme.headlineMedium?.copyWith(
                           fontWeight: FontWeight.w700,

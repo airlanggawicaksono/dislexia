@@ -14,3 +14,17 @@ class SummaryLevel(str, Enum):
     PCT_50 = "50pct"  # core + deps + key details (default)
     PCT_70 = "70pct"  # most detail
     PCT_90 = "90pct"  # full detail, tightened prose
+
+
+class DefineLevel(str, Enum):
+    """Definition elaboration tiers. Reuses summarize's pct labels for a
+    familiar dial, but higher tier means MORE explanation LAYERS (not length):
+    core meaning → example → usage → related words → nuance/etymology.
+    Each tier is cumulative; lower tiers drop the deepest layers first.
+    """
+
+    PCT_10 = "10pct"  # core meaning only
+    PCT_30 = "30pct"  # + example
+    PCT_50 = "50pct"  # + usage/context (default)
+    PCT_70 = "70pct"  # + related words / distinctions
+    PCT_90 = "90pct"  # + nuance / etymology

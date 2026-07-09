@@ -4,7 +4,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field, ConfigDict, model_validator
 
 from app.policies import MIN_INPUT_CHARS, MAX_INPUT_CHARS
-from app.dto.feature.process.enums import SummaryLevel
+from app.dto.feature.process.enums import SummaryLevel, DefineLevel
 
 
 class FeatureRequestDTO(BaseModel):
@@ -53,6 +53,24 @@ class SummarizeRequestDTO(FeatureRequestDTO):
             "Summary length as pct of source (importance-ordered content): "
             "10pct (core only), 30pct (core+deps), 50pct (default), "
             "70pct, 90pct (near-verbatim)."
+        ),
+    )
+
+
+class DefineRequestDTO(FeatureRequestDTO):
+    """Request for /define/process.
+
+    Adds `level` — how many explanation layers to include. Content is layered
+    (core → example → usage → related words → nuance), so lower levels drop
+    the deepest layers first. Not a length dial; a depth dial.
+    """
+
+    level: DefineLevel = Field(
+        DefineLevel.PCT_50,
+        description=(
+            "Definition depth (cumulative explanation layers): "
+            "10pct (core meaning only), 30pct (+example), 50pct (+usage, default), "
+            "70pct (+related words), 90pct (+nuance/etymology)."
         ),
     )
 

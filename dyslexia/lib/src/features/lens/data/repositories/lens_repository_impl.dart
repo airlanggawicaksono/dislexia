@@ -1,33 +1,50 @@
+import 'package:camera/camera.dart';
 import 'package:fpdart/fpdart.dart';
 
-import '../../../../core/entities/document_entity.dart';
 import '../../../../core/errors/failures.dart';
-import '../../domain/entities/lens_frame_entity.dart';
-import '../../domain/entities/lens_scan_payload_entity.dart';
+import '../../domain/entities/recognized_frame.dart';
+import '../../domain/policies/ocr_stabilizer.dart';
 import '../../domain/repositories/lens_repository.dart';
-import '../datasources/lens_datasource.dart';
+import '../datasources/lens_scanner_datasource.dart';
 
 class LensRepositoryImpl implements LensRepository {
-  final LensDatasourceImpl _datasource;
-  LensRepositoryImpl(this._datasource);
+  final LensScannerDatasource _scanner;
+  final OcrStabilizer _stabilizer;
+
+  LensRepositoryImpl(this._scanner, this._stabilizer);
 
   @override
-  Future<Either<Failure, DocumentEntity>> captureAndExtract() async {
+  Stream<RecognizedFrame> get frames => _scanner.frames.map(
+        (f) => f.copyWith(fullText: _stabilizer.stabilize(f.fullText)),
+      );
+
+  @override
+  CameraController? get previewController => _scanner.previewController;
+
+  @override
+  Future<Either<Failure, Unit>> start() async {
     try {
-      return Right(await _datasource.captureAndExtract());
-    } catch (_) {
-      return Left(OcrFailure());
+      _stabilizer.reset();
+      await _scanner.start();
+      return right(unit);
+    } on CameraException catch (e) {
+      return left(CameraFailure(e.description ?? e.code));
+    } catch (e) {
+      return left(CameraFailure(e.toString()));
     }
   }
 
   @override
-  Future<Either<Failure, LensFrameEntity>> analyzeFrame(
-    LensScanPayloadEntity payload,
-  ) async {
+  Future<void> stop() => _scanner.stop();
+
+  @override
+  Future<Either<Failure, String>> captureText() async {
     try {
-      return Right(await _datasource.analyzeFrame(payload));
-    } catch (_) {
-      return Left(OcrFailure());
+      final text = await _scanner.captureStill();
+      if (text.trim().isEmpty) return left(const OcrFailure());
+      return right(text);
+    } catch (e) {
+      return left(CameraFailure(e.toString()));
     }
   }
 }

@@ -7,16 +7,21 @@ abstract class LensState extends Equatable {
 
 class LensInitialState extends LensState {}
 
-class LensLoadingState extends LensState {}
+/// Camera is initialising.
+class LensStartingState extends LensState {}
 
+/// Live scanning — carries the latest recognised frame (lines + boxes +
+/// stabilised text). Emitted with [RecognizedFrame.empty] first so the
+/// preview renders before the first OCR result.
 class LensLiveState extends LensState {
-  final LensFrameEntity frame;
+  final RecognizedFrame frame;
   LensLiveState(this.frame);
 
   @override
   List<Object?> get props => [frame];
 }
 
+/// Text captured — ready to hand off to the reader.
 class LensSuccessState extends LensState {
   final DocumentEntity document;
   LensSuccessState(this.document);

@@ -30,7 +30,7 @@ class AppSplash extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Text(
-              'Dyslexia',
+              'Dyslexic.app',
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.w700,
               ),

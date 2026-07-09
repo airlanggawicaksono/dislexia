@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
 
+import '../../domain/entities/define_level.dart';
+
 abstract class DefineEvent extends Equatable {
   const DefineEvent();
   @override
@@ -8,10 +10,11 @@ abstract class DefineEvent extends Equatable {
 
 class DefineTextEvent extends DefineEvent {
   final String text;
-  const DefineTextEvent(this.text);
+  final DefineLevel? level;
+  const DefineTextEvent(this.text, {this.level});
 
   @override
-  List<Object?> get props => [text];
+  List<Object?> get props => [text, level];
 }
 
 class ClearDefineEvent extends DefineEvent {}

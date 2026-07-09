@@ -8,6 +8,14 @@ class ProfessionalizeUseCase {
   final ProfessionalizeRepository _repository;
   const ProfessionalizeUseCase(this._repository);
 
-  Future<Either<Failure, ProfessionalizeResult>> call(String text) =>
-      _repository.professionalize(text);
+  Future<Either<Failure, ProfessionalizeResult>> call(
+    String text, {
+    String? recipientName,
+    String? senderName,
+  }) =>
+      _repository.professionalize(
+        text,
+        recipientName: recipientName,
+        senderName: senderName,
+      );
 }

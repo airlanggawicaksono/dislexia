@@ -23,6 +23,10 @@ class FeaturePage extends StatelessWidget {
   final ValueChanged<bool> onToggleInput;
   final void Function(String text, String result)? onViewResult;
 
+  /// Optional feature-specific knob controls (e.g. summarize level slider,
+  /// professionalize email fields). Rendered above the input field.
+  final Widget? controls;
+
   const FeaturePage({
     super.key,
     required this.title,
@@ -38,6 +42,7 @@ class FeaturePage extends StatelessWidget {
     required this.inputExpanded,
     required this.onToggleInput,
     this.onViewResult,
+    this.controls,
   });
 
   void _onPaste(BuildContext context) async {
@@ -157,7 +162,7 @@ class FeaturePage extends StatelessWidget {
                           direction: narrow ? Axis.vertical : Axis.horizontal,
                           children: [
                             if (inputExpanded) ...[
-                              Flexible(flex: 2, child: _inputField(theme)),
+                              Flexible(flex: 2, child: _inputColumn(theme, narrow)),
                               narrow
                                   ? const SizedBox(height: 12)
                                   : const SizedBox(width: 12),
@@ -176,13 +181,28 @@ class FeaturePage extends StatelessWidget {
                                       )),
                           ],
                         )
-                      : _inputField(theme),
+                      : _inputColumn(theme, narrow),
                 ),
               ],
             ),
           ),
         );
       },      );
+  }
+
+  // Input field with optional feature knob controls stacked above it.
+  // On narrow (mobile) the controls live in the quick-actions sheet instead,
+  // so we only stack them inline on wide layouts.
+  Widget _inputColumn(ThemeData theme, bool narrow) {
+    if (controls == null || narrow) return _inputField(theme);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        controls!,
+        const SizedBox(height: 12),
+        Expanded(child: _inputField(theme)),
+      ],
+    );
   }
 
   Widget _inputField(ThemeData theme) => TextField(
@@ -231,25 +251,87 @@ class FeaturePage extends StatelessWidget {
   }
 
   void _showQuickActions(BuildContext context) {
+    final theme = Theme.of(context);
+    final fg = theme.colorScheme.onSurface;
     showModalBottomSheet(
       context: context,
-      builder: (ctx) => SafeArea(
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          ListTile(
-              leading: const Icon(Icons.content_paste_rounded),
-              title: const Text('Paste from clipboard'),
-              onTap: () {
-                Navigator.pop(ctx);
-                _onPaste(context);
-              }),
-          ListTile(
-              leading: const Icon(Icons.upload_file_rounded),
-              title: const Text('Upload PDF'),
-              onTap: () {
-                Navigator.pop(ctx);
-                _pickPdf(context);
-              }),
-        ]),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.5,
+        minChildSize: 0.3,
+        maxChildSize: 0.92,
+        builder: (ctx, scrollController) => Container(
+          decoration: BoxDecoration(
+            // Same surface colour as the page.
+            color: theme.colorScheme.surface,
+            borderRadius:
+                const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            children: [
+              // Grip handle.
+              Container(
+                margin: const EdgeInsets.symmetric(vertical: 10),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: fg.withValues(alpha: 0.25),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Expanded(
+                // Fade content at the top/bottom edges as it scrolls under.
+                child: ShaderMask(
+                  shaderCallback: (rect) => const LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.transparent,
+                      Colors.black,
+                      Colors.black,
+                      Colors.transparent,
+                    ],
+                    stops: [0.0, 0.05, 0.93, 1.0],
+                  ).createShader(rect),
+                  blendMode: BlendMode.dstIn,
+                  child: ListView(
+                    controller: scrollController,
+                    padding: EdgeInsets.fromLTRB(
+                        16, 8, 16, 24 + MediaQuery.viewInsetsOf(ctx).bottom),
+                    children: [
+                      if (controls != null) ...[
+                        controls!,
+                        Divider(height: 28, color: fg.withValues(alpha: 0.1)),
+                      ],
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: Icon(Icons.content_paste_rounded, color: fg),
+                        title: Text('Paste from clipboard',
+                            style: TextStyle(color: fg)),
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          _onPaste(context);
+                        },
+                      ),
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: Icon(Icons.upload_file_rounded, color: fg),
+                        title:
+                            Text('Upload PDF', style: TextStyle(color: fg)),
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          _pickPdf(context);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

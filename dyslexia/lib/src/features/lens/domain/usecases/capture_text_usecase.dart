@@ -1,15 +1,13 @@
 import 'package:fpdart/fpdart.dart';
 
 import '../../../../core/errors/failures.dart';
-import '../../../../core/entities/document_entity.dart';
-import '../../../../core/usecases/usecase.dart';
 import '../repositories/lens_repository.dart';
 
-class CaptureTextUseCase implements UseCase<DocumentEntity, NoParams> {
+/// Capture a sharp still and return its recognised text (higher accuracy
+/// than the live frames).
+class CaptureTextUseCase {
   final LensRepository _repository;
-  CaptureTextUseCase(this._repository);
+  const CaptureTextUseCase(this._repository);
 
-  @override
-  Future<Either<Failure, DocumentEntity>> call(NoParams params) =>
-      _repository.captureAndExtract();
+  Future<Either<Failure, String>> call() => _repository.captureText();
 }
