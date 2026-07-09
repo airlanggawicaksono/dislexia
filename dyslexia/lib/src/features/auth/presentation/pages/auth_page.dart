@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/widgets/app_splash.dart';
 import '../bloc/auth/auth_bloc.dart';
 import '../widgets/auth_text_field.dart';
 
@@ -49,7 +50,13 @@ class _AuthPageState extends State<AuthPage> {
               }
             },
             builder: (context, state) {
-              final isLoading = state is AuthLoading;
+              // While the session is being restored on boot (AuthInitial) or a
+              // login/restore call is in flight (AuthLoading), show the branded
+              // splash instead of the form. Continues seamlessly from the
+              // native launch splash — no flash of the empty form or main app.
+              if (state is AuthInitial || state is AuthLoading) {
+                return const AppSplash();
+              }
 
               return SingleChildScrollView(
                 padding:
@@ -88,7 +95,6 @@ class _AuthPageState extends State<AuthPage> {
                       AuthTextField(
                         controller: _accountController,
                         label: '6-digit account number',
-                        enabled: !isLoading,
                         keyboardType: TextInputType.number,
                         inputFormatters: [
                           FilteringTextInputFormatter.digitsOnly,
@@ -107,25 +113,17 @@ class _AuthPageState extends State<AuthPage> {
                       ),
                       const SizedBox(height: 24),
                       FilledButton(
-                        onPressed: isLoading ? null : _submit,
+                        onPressed: _submit,
                         style: FilledButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
-                        child: isLoading
-                            ? const SizedBox(
-                                height: 18,
-                                width: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Text(
-                                'Log in',
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
+                        child: const Text(
+                          'Log in',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
                     ],
                   ),

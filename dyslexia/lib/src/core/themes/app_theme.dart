@@ -8,6 +8,75 @@ import 'app_font.dart';
 class AppTheme {
   AppTheme._();
 
+  /// Off-white surface used for the pre-login experience (splash + auth).
+  static const authSurface = AppColor.cream; // #FFF8EE
+  static const authForeground = Color(0xFF1A1A1A);
+
+  /// Build a theme whose surface/scaffold background is [background] and
+  /// text colour [foreground]. Reuses [data] for fonts/buttons, then swaps
+  /// the colours. Used to make the whole app follow either the off-white
+  /// auth palette (logged out) or the user's display-settings colour
+  /// (logged in) — see MyApp.
+  static ThemeData fromColors({
+    required Color background,
+    required Color foreground,
+    required bool isDark,
+  }) {
+    final brightness = isDark ? Brightness.dark : Brightness.light;
+    // Derive a full palette from the background so accents (buttons,
+    // dialogs, snackbars) harmonise with the theme instead of falling back
+    // to Material's default purple. Pin surface/onSurface to the exact
+    // chosen colours.
+    final scheme = ColorScheme.fromSeed(
+      seedColor: background,
+      brightness: brightness,
+    ).copyWith(
+      surface: background,
+      onSurface: foreground,
+    );
+
+    final base = data(isDark);
+    return base.copyWith(
+      brightness: brightness,
+      scaffoldBackgroundColor: background,
+      canvasColor: background,
+      colorScheme: scheme,
+      // Kill the hardcoded purple from data() — make these follow the scheme.
+      appBarTheme: base.appBarTheme.copyWith(
+        backgroundColor: scheme.surface,
+        foregroundColor: scheme.onSurface,
+      ),
+      floatingActionButtonTheme: base.floatingActionButtonTheme.copyWith(
+        backgroundColor: scheme.primaryContainer,
+        foregroundColor: scheme.onPrimaryContainer,
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: scheme.primary,
+          foregroundColor: scheme.onPrimary,
+          elevation: 2.0,
+          textStyle: AppFont.normal.copyWith(fontSize: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(6.0),
+          ),
+        ),
+      ),
+      // "Notifications"/alerts — snackbars + dialogs follow the palette.
+      snackBarTheme: base.snackBarTheme.copyWith(
+        backgroundColor: scheme.inverseSurface,
+        contentTextStyle: AppFont.normal.copyWith(
+          fontSize: 14,
+          color: scheme.onInverseSurface,
+        ),
+        actionTextColor: scheme.inversePrimary,
+        behavior: SnackBarBehavior.floating,
+      ),
+      dialogTheme: base.dialogTheme.copyWith(
+        backgroundColor: scheme.surface,
+      ),
+    );
+  }
+
   static ThemeData data(bool isDark) {
     return ThemeData(
       brightness: isDark ? Brightness.dark : Brightness.light,
