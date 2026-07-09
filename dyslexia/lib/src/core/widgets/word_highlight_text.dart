@@ -85,7 +85,7 @@ class _WordHighlightTextState extends State<WordHighlightText> {
               TextSpan(
                 text: selectedText,
                 style: TextStyle(
-                  backgroundColor: widget.style.color!.withOpacity(0.12),
+                  backgroundColor: widget.style.color!.withValues(alpha: 0.12),
                 ),
               ),
               TextSpan(text: afterText),

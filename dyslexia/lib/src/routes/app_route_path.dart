@@ -10,7 +10,11 @@ enum AppRoute {
   upload(path: "/upload"),
   scanPaste(path: "/scan-paste"),
   lens(path: "/lens"),
-  textPad(path: "/text-pad");
+  textPad(path: "/text-pad"),
+  summarize(path: "/summarize"),
+  define(path: "/define"),
+  professionalize(path: "/professionalize"),
+  screening(path: "/screening");
 
   final String path;
   const AppRoute({required this.path});

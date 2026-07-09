@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -46,7 +45,7 @@ class PlaceholderPanel extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             Text(
-              '${section.label}',
+              section.label,
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.w700,
                 color: fg,

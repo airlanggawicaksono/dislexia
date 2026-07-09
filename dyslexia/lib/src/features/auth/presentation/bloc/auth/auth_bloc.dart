@@ -59,6 +59,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   /// Keeping it as a function (not a state mutation) means the BLoC's
   /// normal lifecycle still applies.
   void seedAuthenticated(AuthSessionEntity session) {
+    // ignore: invalid_use_of_visible_for_testing_member — deliberate synchronous seed from DI
     emit(Authenticated(session));
   }
 

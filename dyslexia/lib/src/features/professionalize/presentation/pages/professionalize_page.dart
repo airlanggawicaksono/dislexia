@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/utils/font_utils.dart';
 import '../../../../core/widgets/adaptive/adaptive.dart';
 import '../../../../core/widgets/feature_page.dart';
+import '../../../display_settings/presentation/bloc/display_settings/display_settings_bloc.dart';
 import '../bloc/professionalize_bloc.dart';
 import '../bloc/professionalize_event.dart';
 import '../bloc/professionalize_state.dart';
@@ -38,6 +40,7 @@ class _ProfessionalizePageState extends State<ProfessionalizePage> {
       return FeaturePage(
         controller: _controller,
         title: 'Professionalize', resultTitle: 'Professionalized text', heroTag: 'professionalize',
+        controlsInline: true,
         controls: _EmailControls(
           recipient: _recipient,
           sender: _sender,
@@ -67,6 +70,13 @@ class _ProfessionalizePageState extends State<ProfessionalizePage> {
                 recipientName: _emailMode ? rcp : null,
                 senderName: _emailMode ? snd : null,
               ));
+        },
+        onReset: () {
+          _controller.clear();
+          _recipient.clear();
+          _sender.clear();
+          setState(() { _viewResultText = null; _viewResultTitle = null; });
+          ctx.read<ProfessionalizeBloc>().add(ClearProfessionalizeEvent());
         },
         onViewResult: (text, result) => setState(() {
           _controller.text = text;
@@ -101,9 +111,11 @@ class _EmailControls extends StatefulWidget {
 class _EmailControlsState extends State<_EmailControls> {
   late bool _on = widget.initialOn;
 
-  Widget _nameField(TextEditingController c, String hint, Color fg) => TextField(
+  Widget _nameField(
+          TextEditingController c, String hint, Color fg, TextStyle style) =>
+      TextField(
         controller: c,
-        style: TextStyle(color: fg, fontSize: 14),
+        style: style,
         decoration: InputDecoration(
           hintText: hint,
           hintStyle: TextStyle(color: fg.withValues(alpha: 0.4)),
@@ -122,6 +134,8 @@ class _EmailControlsState extends State<_EmailControls> {
   @override
   Widget build(BuildContext context) {
     final fg = Theme.of(context).colorScheme.onSurface;
+    final settings = context.watch<DisplaySettingsBloc>().state.settings;
+    final fieldStyle = dyslexiaTextStyle(settings, fg);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -134,7 +148,7 @@ class _EmailControlsState extends State<_EmailControls> {
             ),
             Switch(
               value: _on,
-              activeColor: const Color(0xFF3D5A99),
+              activeThumbColor: const Color(0xFF3D5A99),
               onChanged: (v) {
                 setState(() => _on = v);
                 widget.onModeChanged(v);
@@ -146,9 +160,13 @@ class _EmailControlsState extends State<_EmailControls> {
           const SizedBox(height: 4),
           Row(
             children: [
-              Expanded(child: _nameField(widget.recipient, 'To (recipient)', fg)),
+              Expanded(
+                  child: _nameField(
+                      widget.recipient, 'To (recipient)', fg, fieldStyle)),
               const SizedBox(width: 8),
-              Expanded(child: _nameField(widget.sender, 'From (you)', fg)),
+              Expanded(
+                  child:
+                      _nameField(widget.sender, 'From (you)', fg, fieldStyle)),
             ],
           ),
         ],

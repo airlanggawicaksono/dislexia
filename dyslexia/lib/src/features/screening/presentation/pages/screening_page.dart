@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/utils/font_utils.dart';
+import '../../../../core/widgets/adaptive/adaptive.dart';
 import '../../../../core/widgets/history_panel.dart';
 import '../../../../core/widgets/reader_text_display.dart';
 import '../../../display_settings/domain/entities/display_settings_entity.dart';
@@ -19,6 +22,7 @@ class ScreeningPage extends StatefulWidget {
 class _ScreeningPageState extends State<ScreeningPage> {
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
+  bool _completing = false;
 
   @override
   void initState() {
@@ -62,7 +66,8 @@ class _ScreeningPageState extends State<ScreeningPage> {
       context: context,
       isScrollControlled: true,
       builder: (ctx) => HistoryPanel(
-        feature: 'screening',
+        // Backend FeatureType enum value is 'screen', not 'screening'.
+        feature: 'screen',
         onSelectInput: (text) => Navigator.pop(ctx),
         onSelectResult: (item) => Navigator.pop(ctx),
       ),
@@ -111,6 +116,24 @@ class _ScreeningPageState extends State<ScreeningPage> {
       ),
       body: BlocConsumer<ScreeningBloc, ScreeningState>(
         listener: (ctx, state) {
+          // is_complete == true → screening done. On mobile (pushed route)
+          // close the page immediately, and reset the singleton bloc so the
+          // next visit starts a fresh session. On web (tab, can't pop) fall
+          // through to the in-page completion UI.
+          if (state is ScreeningQuestionState &&
+              state.isComplete &&
+              !_completing &&
+              Navigator.of(ctx).canPop()) {
+            _completing = true;
+            final bloc = ctx.read<ScreeningBloc>();
+            ScaffoldMessenger.of(ctx).showSnackBar(
+              const SnackBar(
+                  content: Text('Screening complete — saved to history')),
+            );
+            Navigator.of(ctx).pop();
+            bloc.add(ResetScreeningEvent());
+            return;
+          }
           if (state is ScreeningQuestionState || state is ScreeningLoading) {
             _scrollToBottom();
           }
@@ -199,6 +222,8 @@ class _ScreeningPageState extends State<ScreeningPage> {
                   controller: _controller,
                   enabled: !isLoading,
                   theme: theme,
+                  textStyle:
+                      dyslexiaTextStyle(s, theme.colorScheme.onSurface),
                   onSend: _send,
                 ),
             ],
@@ -267,25 +292,37 @@ class _AssistantCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (isSummary)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Row(
-                children: [
-                  Icon(Icons.check_circle,
-                      size: 18, color: Colors.green.shade400),
-                  const SizedBox(width: 6),
-                  Text(
-                    'Screening Complete',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 13,
-                      color: Colors.green.shade400,
-                    ),
+          Row(
+            children: [
+              if (isSummary) ...[
+                Icon(Icons.check_circle,
+                    size: 18, color: Colors.green.shade400),
+                const SizedBox(width: 6),
+                Text(
+                  'Screening Complete',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                    color: Colors.green.shade400,
                   ),
-                ],
+                ),
+              ],
+              const Spacer(),
+              // Every result is copyable.
+              InkWell(
+                onTap: () {
+                  Clipboard.setData(ClipboardData(text: text));
+                  showAdaptiveFeedback(context, 'Copied to clipboard');
+                },
+                borderRadius: BorderRadius.circular(6),
+                child: Padding(
+                  padding: const EdgeInsets.all(4),
+                  child: Icon(Icons.copy_rounded,
+                      size: 16, color: fg.withValues(alpha: 0.6)),
+                ),
               ),
-            ),
+            ],
+          ),
           ReaderTextDisplay(
             text: text,
             settings: settings,
@@ -303,12 +340,14 @@ class _InputBar extends StatelessWidget {
   final TextEditingController controller;
   final bool enabled;
   final ThemeData theme;
+  final TextStyle textStyle;
   final VoidCallback onSend;
 
   const _InputBar({
     required this.controller,
     required this.enabled,
     required this.theme,
+    required this.textStyle,
     required this.onSend,
   });
 
@@ -332,7 +371,7 @@ class _InputBar extends StatelessWidget {
                 maxLines: 4,
                 minLines: 1,
                 textCapitalization: TextCapitalization.sentences,
-                style: TextStyle(color: fg, fontSize: 15),
+                style: textStyle,
                 decoration: InputDecoration(
                   hintText: 'Type your answer…',
                   hintStyle: TextStyle(color: fg.withValues(alpha: 0.4)),

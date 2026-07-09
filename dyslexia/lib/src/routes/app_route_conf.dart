@@ -16,6 +16,14 @@ import '../features/scan_paste/presentation/pages/scan_paste_page.dart';
 import '../features/text_pad/presentation/pages/text_pad_page.dart';
 import '../features/upload/presentation/bloc/upload/upload_bloc.dart';
 import '../features/upload/presentation/pages/upload_page.dart';
+import '../features/summarize/presentation/bloc/summarize_bloc.dart';
+import '../features/summarize/presentation/pages/summarize_page.dart';
+import '../features/define/presentation/bloc/define_bloc.dart';
+import '../features/define/presentation/pages/define_page.dart';
+import '../features/professionalize/presentation/bloc/professionalize_bloc.dart';
+import '../features/professionalize/presentation/pages/professionalize_page.dart';
+import '../features/screening/presentation/bloc/screening_bloc.dart';
+import '../features/screening/presentation/pages/screening_page.dart';
 import 'app_route_path.dart';
 
 class AppRouteConf {
@@ -111,6 +119,42 @@ class AppRouteConf {
               sourceName: extra?['sourceName'] as String?,
             );
           },
+        ),
+        // These blocs are lazySingletons (see *_dependency.dart). Use
+        // BlocProvider.value so navigating away doesn't close the singleton
+        // (create: would close it on pop → "add after close" on next visit).
+        // .value also lets the last result survive navigate-away-and-back.
+        GoRoute(
+          path: AppRoute.summarize.path,
+          name: AppRoute.summarize.name,
+          builder: (_, __) => BlocProvider.value(
+            value: getIt<SummarizeBloc>(),
+            child: const SummarizePage(),
+          ),
+        ),
+        GoRoute(
+          path: AppRoute.define.path,
+          name: AppRoute.define.name,
+          builder: (_, __) => BlocProvider.value(
+            value: getIt<DefineBloc>(),
+            child: const DefinePage(),
+          ),
+        ),
+        GoRoute(
+          path: AppRoute.professionalize.path,
+          name: AppRoute.professionalize.name,
+          builder: (_, __) => BlocProvider.value(
+            value: getIt<ProfessionalizeBloc>(),
+            child: const ProfessionalizePage(),
+          ),
+        ),
+        GoRoute(
+          path: AppRoute.screening.path,
+          name: AppRoute.screening.name,
+          builder: (_, __) => BlocProvider.value(
+            value: getIt<ScreeningBloc>(),
+            child: const ScreeningPage(),
+          ),
         ),
       ],
     );

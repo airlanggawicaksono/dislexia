@@ -11,13 +11,14 @@ from app.dto.feature.chat.base import FeatureHistoryListDTO
 from app.dto.feature.process import DefineRequestDTO, FeatureResponseDTO, DefineLevel
 from app.dto.auth.userdata import UserResponseDTO
 from app.openapi import LLM_RESPONSES, SSE_RESPONSE
+from app.utils.lenient_json_route import LenientJSONRoute
 
 TAG = {
     "name": "Define",
     "description": "Define a word or concept using simple vocabulary and short sentences.",
 }
 
-router = APIRouter(prefix="/api/v1/me/define", tags=[TAG["name"]])
+router = APIRouter(prefix="/api/v1/me/define", tags=[TAG["name"]], route_class=LenientJSONRoute)
 
 # Which explanation layers to include, per level. Cumulative: higher tiers add
 # depth. Ordered so lower tiers drop the deepest layers first (mirrors the

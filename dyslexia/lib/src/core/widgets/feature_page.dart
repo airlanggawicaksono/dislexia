@@ -3,7 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../features/display_settings/domain/entities/display_settings_entity.dart';
+import '../../features/display_settings/presentation/bloc/display_settings/display_settings_bloc.dart';
 import '../../features/upload/data/datasources/pdf_extractor_service.dart';
+import '../utils/font_utils.dart';
 import '../widgets/adaptive/adaptive.dart';
 import '../widgets/feature_result_card.dart';
 import '../widgets/history_panel.dart';
@@ -23,9 +26,17 @@ class FeaturePage extends StatelessWidget {
   final ValueChanged<bool> onToggleInput;
   final void Function(String text, String result)? onViewResult;
 
+  /// Clears the input + result. When null, no reset button is shown.
+  final VoidCallback? onReset;
+
   /// Optional feature-specific knob controls (e.g. summarize level slider,
   /// professionalize email fields). Rendered above the input field.
   final Widget? controls;
+
+  /// When true, [controls] always render inline above the input field (both
+  /// widths) instead of moving into the mobile quick-actions sheet. Use for
+  /// controls that belong next to the field — e.g. email recipient/sender.
+  final bool controlsInline;
 
   const FeaturePage({
     super.key,
@@ -42,7 +53,9 @@ class FeaturePage extends StatelessWidget {
     required this.inputExpanded,
     required this.onToggleInput,
     this.onViewResult,
+    this.onReset,
     this.controls,
+    this.controlsInline = false,
   });
 
   void _onPaste(BuildContext context) async {
@@ -68,6 +81,7 @@ class FeaturePage extends StatelessWidget {
         showAdaptiveFeedback(context, 'Could not read file data');
         return;
       }
+      if (!context.mounted) return;
       final text = await context.read<PdfExtractorService>().extractText(bytes);
       if (!context.mounted) return;
       if (text.trim().isEmpty) {
@@ -85,6 +99,8 @@ class FeaturePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    // Display settings drive the input text style too — every text box.
+    final settings = context.watch<DisplaySettingsBloc>().state.settings;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -109,6 +125,14 @@ class FeaturePage extends StatelessWidget {
             title: Text(title, style: TextStyle(color: theme.colorScheme.onSurface)),
             actions: narrow
                 ? [
+                    if (onReset != null) ...[
+                      _FeatureBarAction(
+                          icon: Icons.refresh_rounded,
+                          label: 'Reset',
+                          color: theme.colorScheme.onSurface,
+                          onTap: onReset),
+                      const SizedBox(width: 4),
+                    ],
                     _FeatureBarAction(
                         icon: Icons.history_rounded,
                         label: 'History',
@@ -124,6 +148,14 @@ class FeaturePage extends StatelessWidget {
                     const SizedBox(width: 12),
                   ]
                 : [
+                    if (onReset != null) ...[
+                      _FeatureBarAction(
+                          icon: Icons.refresh_rounded,
+                          label: 'Reset',
+                          color: theme.colorScheme.onSurface,
+                          onTap: onReset),
+                      const SizedBox(width: 4),
+                    ],
                     _FeatureBarAction(
                         icon: Icons.history_rounded,
                         label: 'History',
@@ -162,7 +194,7 @@ class FeaturePage extends StatelessWidget {
                           direction: narrow ? Axis.vertical : Axis.horizontal,
                           children: [
                             if (inputExpanded) ...[
-                              Flexible(flex: 2, child: _inputColumn(theme, narrow)),
+                              Flexible(flex: 2, child: _inputColumn(theme, narrow, settings)),
                               narrow
                                   ? const SizedBox(height: 12)
                                   : const SizedBox(width: 12),
@@ -181,7 +213,7 @@ class FeaturePage extends StatelessWidget {
                                       )),
                           ],
                         )
-                      : _inputColumn(theme, narrow),
+                      : _inputColumn(theme, narrow, settings),
                 ),
               ],
             ),
@@ -192,25 +224,28 @@ class FeaturePage extends StatelessWidget {
 
   // Input field with optional feature knob controls stacked above it.
   // On narrow (mobile) the controls live in the quick-actions sheet instead,
-  // so we only stack them inline on wide layouts.
-  Widget _inputColumn(ThemeData theme, bool narrow) {
-    if (controls == null || narrow) return _inputField(theme);
+  // so we only stack them inline on wide layouts — unless controlsInline is
+  // set, in which case they always sit above the field.
+  Widget _inputColumn(ThemeData theme, bool narrow, DisplaySettingsEntity settings) {
+    if (controls == null || (narrow && !controlsInline)) {
+      return _inputField(theme, settings);
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         controls!,
         const SizedBox(height: 12),
-        Expanded(child: _inputField(theme)),
+        Expanded(child: _inputField(theme, settings)),
       ],
     );
   }
 
-  Widget _inputField(ThemeData theme) => TextField(
+  Widget _inputField(ThemeData theme, DisplaySettingsEntity settings) => TextField(
         controller: controller,
         maxLines: null,
         expands: true,
         textAlignVertical: TextAlignVertical.top,
-        style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 15),
+        style: dyslexiaTextStyle(settings, theme.colorScheme.onSurface),
         decoration: InputDecoration(
           hintText: 'Type text to ${title.toLowerCase()}…',
           hintStyle: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.4)),
@@ -301,7 +336,8 @@ class FeaturePage extends StatelessWidget {
                     padding: EdgeInsets.fromLTRB(
                         16, 8, 16, 24 + MediaQuery.viewInsetsOf(ctx).bottom),
                     children: [
-                      if (controls != null) ...[
+                      // Inline controls stay with the field; don't duplicate here.
+                      if (controls != null && !controlsInline) ...[
                         controls!,
                         Divider(height: 28, color: fg.withValues(alpha: 0.1)),
                       ],

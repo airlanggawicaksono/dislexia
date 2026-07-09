@@ -12,13 +12,14 @@ from app.dto.feature.process import SummarizeRequestDTO, FeatureResponseDTO, Sum
 from app.dto.feature.llm import LLMGenerationConfigDTO
 from app.dto.auth.userdata import UserResponseDTO
 from app.openapi import LLM_RESPONSES, SSE_RESPONSE
+from app.utils.lenient_json_route import LenientJSONRoute
 
 TAG = {
     "name": "Summarize",
     "description": "Summarize long text into clear, accessible prose for dyslexic readers.",
 }
 
-router = APIRouter(prefix="/api/v1/me/summarize", tags=[TAG["name"]])
+router = APIRouter(prefix="/api/v1/me/summarize", tags=[TAG["name"]], route_class=LenientJSONRoute)
 
 
 # pct of source-text characters preserved in summary, per level.
@@ -40,9 +41,14 @@ _LEVEL_LAYERS: dict[SummaryLevel, str] = {
 }
 
 # Floors/ceilings to keep tiny inputs usable and giant inputs sane.
-_MIN_TARGET_CHARS = 80
+_MIN_TARGET_CHARS = 240  # floor so short inputs still get a usable summary
 _CHARS_PER_TOKEN = 4  # rough english heuristic
-_MAX_TOKENS_SLACK = 1.5  # ceiling above target, catches overshoot before hard cut
+# Token budget is HEADROOM, not the length dial. It must be generous so the
+# model finishes cleanly on a full sentence — length is steered by the prompt
+# target, never by truncating the output mid-thought (that was the "too short"
+# bug). ~3x the target's token estimate, with a comfortable floor.
+_MAX_TOKENS_HEADROOM = 3.0
+_MIN_MAX_TOKENS = 512
 _MAX_TOKENS_HARD_CAP = 4096
 
 
@@ -59,7 +65,7 @@ def _build_prompt_and_config(
     target_chars = max(_MIN_TARGET_CHARS, int(src_chars * pct))
     max_tokens = min(
         _MAX_TOKENS_HARD_CAP,
-        max(64, int(target_chars / _CHARS_PER_TOKEN * _MAX_TOKENS_SLACK)),
+        max(_MIN_MAX_TOKENS, int(target_chars / _CHARS_PER_TOKEN * _MAX_TOKENS_HEADROOM)),
     )
     layers = _LEVEL_LAYERS[level]
     metadata = {
@@ -76,11 +82,12 @@ def _build_prompt_and_config(
         "1. CORE — the single most critical idea. Always the first sentence.\n"
         "2. DEPENDENCIES — the facts, claims, or context the CORE idea rests on.\n"
         "3. DETAILS — supporting examples, numbers, and nuance.\n\n"
-        f"For THIS summary include {layers}. Stop after the last included layer.\n\n"
-        f"Length constraints (HARD RULES):\n"
+        f"For THIS summary include {layers}.\n\n"
+        f"Length (aim for the target — do not stop far short of it):\n"
         f"- Original text is {src_chars} characters (whitespace-normalized).\n"
-        f"- Target approximately {target_chars} characters.\n"
-        f"- Your summary MUST be shorter than the original ({src_chars} chars).\n"
+        f"- Write approximately {target_chars} characters (roughly {max(1, target_chars // 90)} short sentences).\n"
+        f"- Fill out the target by developing the included layers fully; do not pad with filler.\n"
+        f"- Keep it shorter than the original ({src_chars} chars), but no shorter than needed to cover the layers above.\n"
         "- End on a complete sentence. Never trail off mid-word or mid-clause.\n\n"
         "Style:\n"
         "- Use simple, accessible language.\n"

@@ -56,6 +56,11 @@ class _DefinePageState extends State<DefinePage> {
             ctx.read<DefineBloc>().add(DefineTextEvent(t, level: _level));
           }
         },
+        onReset: () {
+          _controller.clear();
+          setState(() { _viewResultText = null; _viewResultTitle = null; });
+          ctx.read<DefineBloc>().add(ClearDefineEvent());
+        },
         onViewResult: (text, result) => setState(() {
           _controller.text = text;
           _viewResultText = result;

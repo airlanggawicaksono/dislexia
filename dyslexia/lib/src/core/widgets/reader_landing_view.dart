@@ -100,14 +100,13 @@ class _ReaderLandingViewState extends State<ReaderLandingView> {
       if (result == null || result.files.isEmpty || !context.mounted) return;
       final file = result.files.first;
       final bytes = file.bytes;
-      // ignore: use_build_context_synchronously
       if (bytes == null) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Could not read file data')),
         );
         return;
       }
-      // ignore: use_build_context_synchronously — mounted is checked on line above
       await _processPdfBytes(bytes, file.name);
     } catch (e) {
       if (mounted) {

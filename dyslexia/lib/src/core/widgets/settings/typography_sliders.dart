@@ -29,7 +29,7 @@ class TypographySliders extends StatelessWidget {
         return Column(
           children: [
             _labeledSlider('Size', '${s.fontSize.toStringAsFixed(0)}px', s.fontSize, 12, 32, (v) => bloc.add(UpdateFontSizeEvent(v))),
-            _labeledSlider('Line Height', '${s.lineSpacing.toStringAsFixed(1)}', s.lineSpacing, 1.0, 3.0, (v) => bloc.add(UpdateLineSpacingEvent(v))),
+            _labeledSlider('Line Height', s.lineSpacing.toStringAsFixed(1), s.lineSpacing, 1.0, 3.0, (v) => bloc.add(UpdateLineSpacingEvent(v))),
             _labeledSlider('Letter Spacing', '${s.letterSpacing.toStringAsFixed(1)}px', s.letterSpacing, 0.0, 2.0, (v) => bloc.add(UpdateLetterSpacingEvent(v))),
             _labeledSlider('Word Spacing', '${s.wordSpacing.toStringAsFixed(0)}px', s.wordSpacing, 0.0, 8.0, (v) => bloc.add(UpdateWordSpacingEvent(v))),
           ],

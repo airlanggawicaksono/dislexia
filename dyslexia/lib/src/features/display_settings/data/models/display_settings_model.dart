@@ -53,6 +53,7 @@ class DisplaySettingsModel extends DisplaySettingsEntity {
         syllablesEnabled: map['syllablesEnabled'] as bool? ?? true,
       );
 
+  @override
   DisplaySettingsModel copyWith({
     double? fontSize,
     double? lineSpacing,

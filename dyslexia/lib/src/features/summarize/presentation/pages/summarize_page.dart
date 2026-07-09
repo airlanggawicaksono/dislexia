@@ -56,6 +56,11 @@ class _SummarizePageState extends State<SummarizePage> {
             ctx.read<SummarizeBloc>().add(SummarizeTextEvent(t, level: _level));
           }
         },
+        onReset: () {
+          _controller.clear();
+          setState(() { _viewResultText = null; _viewResultTitle = null; });
+          ctx.read<SummarizeBloc>().add(ClearSummarizeEvent());
+        },
         onViewResult: (text, result) => setState(() {
           _controller.text = text;
           _viewResultText = result;

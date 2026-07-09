@@ -25,7 +25,7 @@ class AuthDependency {
     if (!getIt.isRegistered<FlutterSecureStorage>()) {
       getIt.registerLazySingleton<FlutterSecureStorage>(
         () => const FlutterSecureStorage(
-          aOptions: AndroidOptions(encryptedSharedPreferences: true),
+          aOptions: AndroidOptions(),
         ),
       );
     }

@@ -17,6 +17,7 @@ class ReaderModel extends ReaderEntity {
         rulerHeight: e.rulerHeight,
       );
 
+  @override
   ReaderModel copyWith({
     String? text,
     String? sourceName,

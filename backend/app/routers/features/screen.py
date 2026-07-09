@@ -17,6 +17,7 @@ from app.dto.feature.screening import (
 from app.services.screening import ScreeningService
 from app.services.feature_service import FeatureService
 from app.openapi import LLM_RESPONSES
+from app.utils.lenient_json_route import LenientJSONRoute
 
 TAG = {
     "name": "Screening",
@@ -26,7 +27,7 @@ TAG = {
     ),
 }
 
-router = APIRouter(prefix="/api/v1/me/screen", tags=[TAG["name"]])
+router = APIRouter(prefix="/api/v1/me/screen", tags=[TAG["name"]], route_class=LenientJSONRoute)
 
 
 @router.post(

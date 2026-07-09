@@ -11,6 +11,7 @@ from app.dto.auth.admin import (
     AdminTokenResponseDTO,
 )
 from app.openapi import AUTH_RESPONSES
+from app.utils.lenient_json_route import LenientJSONRoute
 
 
 TAG = {
@@ -18,7 +19,7 @@ TAG = {
     "description": "Admin login + password rotation. Separate auth flow from end users.",
 }
 
-router = APIRouter(prefix="/api/v1/admin", tags=[TAG["name"]])
+router = APIRouter(prefix="/api/v1/admin", tags=[TAG["name"]], route_class=LenientJSONRoute)
 
 
 def _service(db: AsyncSession = Depends(get_db)) -> AdminService:

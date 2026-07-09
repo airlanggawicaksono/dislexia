@@ -36,6 +36,7 @@ class DisplaySettingsBloc
       // (still at defaults). This prevents the async load from overwriting
       // a user-initiated change that arrived before load completed.
       if (!isClosed && state.settings == DisplaySettingsModel.defaults()) {
+        // ignore: invalid_use_of_visible_for_testing_member — async initial load, not an event handler
         emit(DisplaySettingsState(settings: settings));
       }
     } catch (_) {

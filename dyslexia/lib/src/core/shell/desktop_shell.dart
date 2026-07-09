@@ -28,7 +28,6 @@ import '../../features/sidebar/presentation/bloc/sidebar/sidebar_bloc.dart';
 import '../../features/sidebar/presentation/bloc/sidebar/sidebar_event.dart';
 import '../../features/sidebar/presentation/bloc/sidebar/sidebar_state.dart';
 import '../../features/sidebar/presentation/pages/sidebar_shell_page.dart';
-import '../../features/sidebar/presentation/widgets/placeholder_panel.dart';
 import '../../features/auth/presentation/widgets/auth_user_menu.dart';
 import '../widgets/reader_landing_view.dart';
 
@@ -77,13 +76,17 @@ class _DesktopShellState extends State<DesktopShell> {
       builder: (context, child) {
         return MultiBlocProvider(
           providers: [
-            BlocProvider(create: (_) => getIt<ThemeBloc>()),
-            BlocProvider(create: (_) => getIt<DisplaySettingsBloc>()),
-            BlocProvider(create: (_) => getIt<SummarizeBloc>()),
-            BlocProvider(create: (_) => getIt<DefineBloc>()),
-            BlocProvider(create: (_) => getIt<ProfessionalizeBloc>()),
-            BlocProvider(create: (_) => getIt<ScreeningBloc>()),
-            BlocProvider(create: (_) => getIt<ReaderBloc>()),
+            // getIt-backed blocs are lazySingletons — use .value so this shell
+            // doesn't close them on dispose (create: would, killing the
+            // singleton with "add after close" on next use). Only the two
+            // genuinely per-shell blocs below are created with create:.
+            BlocProvider.value(value: getIt<ThemeBloc>()),
+            BlocProvider.value(value: getIt<DisplaySettingsBloc>()),
+            BlocProvider.value(value: getIt<SummarizeBloc>()),
+            BlocProvider.value(value: getIt<DefineBloc>()),
+            BlocProvider.value(value: getIt<ProfessionalizeBloc>()),
+            BlocProvider.value(value: getIt<ScreeningBloc>()),
+            BlocProvider.value(value: getIt<ReaderBloc>()),
             BlocProvider(create: (_) => SidebarBloc()),
             BlocProvider(create: (_) => ReaderShellBloc()),
             Provider.value(value: getIt<PdfExtractorService>()),
@@ -131,7 +134,6 @@ class _DesktopShellState extends State<DesktopShell> {
                                                       const ProfessionalizePage(),
                                                     SidebarSection.screening =>
                                                       const ScreeningPage(),
-                                                    _ => PlaceholderPanel(section: sidebar.section),
                                                   },
                                           ),
                                           _BottomNavBar(
@@ -174,9 +176,6 @@ class _DesktopShellState extends State<DesktopShell> {
                                               const ProfessionalizePage(),
                                             SidebarSection.screening =>
                                               const ScreeningPage(),
-                                            _ => PlaceholderPanel(
-                                                section: sidebar.section,
-                                              ),
                                           },
                                         ),
                                         if (!hiddenSidebar && _settingsPanelOpen)

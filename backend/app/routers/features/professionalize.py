@@ -11,6 +11,7 @@ from app.dto.feature.chat.base import FeatureHistoryListDTO
 from app.dto.feature.process import ProfessionalizeRequestDTO, FeatureResponseDTO
 from app.dto.auth.userdata import UserResponseDTO
 from app.openapi import LLM_RESPONSES, SSE_RESPONSE
+from app.utils.lenient_json_route import LenientJSONRoute
 
 TAG = {
     "name": "Professionalize",
@@ -21,7 +22,7 @@ TAG = {
     ),
 }
 
-router = APIRouter(prefix="/api/v1/me/professionalize", tags=[TAG["name"]])
+router = APIRouter(prefix="/api/v1/me/professionalize", tags=[TAG["name"]], route_class=LenientJSONRoute)
 
 _PLAIN_PROMPT = (
     "You are a professional writing assistant. "

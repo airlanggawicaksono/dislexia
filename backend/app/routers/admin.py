@@ -13,6 +13,7 @@ from app.dto.admin.users import AdminCreateUserResponseDTO
 from app.services.chat_history_service import ChatHistoryService
 from app.services.admin_service import AdminService
 from app.openapi import AUTH_RESPONSES, NOT_FOUND_RESPONSE
+from app.utils.lenient_json_route import LenientJSONRoute
 
 
 TAG = {
@@ -20,7 +21,7 @@ TAG = {
     "description": "Admin-only endpoints. Requires an admin-scoped JWT.",
 }
 
-router = APIRouter(prefix="/api/v1/admin", tags=[TAG["name"]])
+router = APIRouter(prefix="/api/v1/admin", tags=[TAG["name"]], route_class=LenientJSONRoute)
 
 
 @router.get(

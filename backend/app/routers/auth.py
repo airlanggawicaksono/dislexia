@@ -8,6 +8,7 @@ from app.services.user_service import UserService
 from app.dto.auth.auth import GenerateResponseDTO, LoginRequestDTO
 from app.dto.auth.userdata import TokenResponseDTO
 from app.openapi import AUTH_RESPONSES
+from app.utils.lenient_json_route import LenientJSONRoute
 
 _TRUTHY = {"1", "true", "yes", "on"}
 
@@ -22,7 +23,7 @@ TAG = {
     ),
 }
 
-router = APIRouter(prefix="/api/v1/auth", tags=[TAG["name"]])
+router = APIRouter(prefix="/api/v1/auth", tags=[TAG["name"]], route_class=LenientJSONRoute)
 
 
 def get_user_service(db: AsyncSession = Depends(get_db)) -> UserService:

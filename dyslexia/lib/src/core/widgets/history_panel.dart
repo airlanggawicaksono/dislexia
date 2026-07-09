@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../configs/injector/injector_conf.dart';
+import '../../features/display_settings/domain/entities/display_settings_entity.dart';
+import '../../features/display_settings/presentation/bloc/display_settings/display_settings_bloc.dart';
 import '../api/api_helper.dart';
 import '../api/feature_history_datasource.dart';
+import '../utils/font_utils.dart';
 
 class HistoryPanel extends StatefulWidget {
   final String? feature;
@@ -28,7 +32,7 @@ class _HistoryPanelState extends State<HistoryPanel> {
   @override
   void initState() {
     super.initState();
-    _ds = FeatureHistoryDatasource(context.read<ApiHelper>());
+    _ds = FeatureHistoryDatasource(getIt<ApiHelper>());
     _load();
   }
 
@@ -81,6 +85,8 @@ class _HistoryPanelState extends State<HistoryPanel> {
                           separatorBuilder: (_, __) => const SizedBox(height: 8),
                           itemBuilder: (_, i) => _HistoryTile(
                             item: _items![i],
+                            settings:
+                                context.watch<DisplaySettingsBloc>().state.settings,
                             onTap: () => widget.onSelectResult(_items![i]),
                           ),
                         ),
@@ -94,13 +100,31 @@ class _HistoryPanelState extends State<HistoryPanel> {
 
 class _HistoryTile extends StatelessWidget {
   final FeatureHistoryItem item;
+  final DisplaySettingsEntity settings;
   final VoidCallback onTap;
-  const _HistoryTile({required this.item, required this.onTap});
+  const _HistoryTile(
+      {required this.item, required this.settings, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     final preview = item.inputText.length > 80 ? '${item.inputText.substring(0, 80)}…' : item.inputText;
     final date = '${item.createdAt.month}/${item.createdAt.day} ${item.createdAt.hour.toString().padLeft(2, '0')}:${item.createdAt.minute.toString().padLeft(2, '0')}';
+    // Respect the user's font choice + letter spacing, but keep the compact
+    // list sizes (don't force the reader font size onto previews).
+    final previewStyle = applyDyslexiaFont(
+      font: settings.font,
+      baseStyle: TextStyle(
+          fontSize: 12,
+          color: Colors.black54,
+          letterSpacing: settings.letterSpacing),
+    );
+    final outputStyle = applyDyslexiaFont(
+      font: settings.font,
+      baseStyle: TextStyle(
+          fontSize: 11,
+          color: Colors.black87,
+          letterSpacing: settings.letterSpacing),
+    );
 
     return Card(
       margin: EdgeInsets.zero,
@@ -116,14 +140,14 @@ class _HistoryTile extends StatelessWidget {
                 children: [
                   const Icon(Icons.history_rounded, size: 14, color: Colors.black45),
                   const SizedBox(width: 6),
-                  Expanded(child: Text(preview, style: const TextStyle(fontSize: 12, color: Colors.black54), maxLines: 2, overflow: TextOverflow.ellipsis)),
+                  Expanded(child: Text(preview, style: previewStyle, maxLines: 2, overflow: TextOverflow.ellipsis)),
                   Text(date, style: const TextStyle(fontSize: 10, color: Colors.black38)),
                 ],
               ),
               if (item.outputText.isNotEmpty) ...[
                 const SizedBox(height: 8),
                 Text(item.outputText.length > 80 ? '${item.outputText.substring(0, 80)}…' : item.outputText,
-                    style: const TextStyle(fontSize: 11, color: Colors.black87), maxLines: 2, overflow: TextOverflow.ellipsis),
+                    style: outputStyle, maxLines: 2, overflow: TextOverflow.ellipsis),
               ],
             ],
           ),
