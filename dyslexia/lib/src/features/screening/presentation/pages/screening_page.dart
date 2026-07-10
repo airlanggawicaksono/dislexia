@@ -26,8 +26,10 @@ class _ScreeningPageState extends State<ScreeningPage> {
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
 
-  // Past completed pre-screening results (from history metadata.ahrq_*).
-  List<FeatureHistoryItem>? _results;
+  // Idle-screen data, grouped by session from history.
+  bool _loadingResults = true;
+  List<FeatureHistoryItem> _completed = const []; // rows carrying ahrq result
+  List<_PreScreenSession> _incomplete = const []; // resumable sessions
 
   @override
   void initState() {
@@ -38,20 +40,38 @@ class _ScreeningPageState extends State<ScreeningPage> {
   }
 
   Future<void> _loadResults() async {
+    if (mounted) setState(() => _loadingResults = true);
     try {
       final items = await FeatureHistoryDatasource(getIt<ApiHelper>())
           .getHistory(feature: 'screen');
-      // A completed run is a history row carrying the ARHQ result.
-      final done = items
-          .where((i) => i.metadata?['ahrq_severity'] != null)
-          .toList();
-      if (mounted) setState(() => _results = done);
+      final grouped = _groupSessions(items);
+      if (mounted) {
+        setState(() {
+          _completed =
+              items.where((i) => i.metadata?['ahrq_severity'] != null).toList();
+          _incomplete = grouped.where((s) => !s.complete).toList();
+          _loadingResults = false;
+        });
+      }
     } catch (_) {
-      if (mounted) setState(() => _results = const []);
+      if (mounted) {
+        setState(() {
+          _completed = const [];
+          _incomplete = const [];
+          _loadingResults = false;
+        });
+      }
     }
   }
 
   void _start() => context.read<ScreeningBloc>().add(StartScreeningEvent());
+
+  // Rehydrate an incomplete session and continue it.
+  void _continue(_PreScreenSession s) {
+    context
+        .read<ScreeningBloc>()
+        .add(ResumeScreeningEvent(s.sessionId, s.messages));
+  }
 
   @override
   void dispose() {
@@ -141,8 +161,11 @@ class _ScreeningPageState extends State<ScreeningPage> {
           if (state is ScreeningInitial) {
             return _IntroView(
               fg: theme.colorScheme.onSurface,
-              results: _results,
+              loading: _loadingResults,
+              completed: _completed,
+              incomplete: _incomplete,
               onStart: _start,
+              onContinue: _continue,
             );
           }
           if (state is ScreeningErrorState && state.messages.isEmpty) {
