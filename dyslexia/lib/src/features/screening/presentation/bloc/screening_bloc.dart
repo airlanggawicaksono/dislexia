@@ -12,6 +12,11 @@ class ScreeningBloc extends Bloc<ScreeningEvent, ScreeningState> {
         super(ScreeningInitial()) {
     on<StartScreeningEvent>(_onStart);
     on<ReplyScreeningEvent>(_onReply);
+    on<ResumeScreeningEvent>((e, emit) => emit(ScreeningQuestionState(
+          sessionId: e.sessionId,
+          messages: e.messages,
+          isComplete: false,
+        )));
     on<ResetScreeningEvent>((_, emit) => emit(ScreeningInitial()));
   }
 

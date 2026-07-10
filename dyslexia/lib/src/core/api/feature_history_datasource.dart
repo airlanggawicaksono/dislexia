@@ -3,6 +3,7 @@ import 'api_url.dart';
 
 class FeatureHistoryItem {
   final String id;
+  final String sessionId;
   final String inputText;
   final String outputText;
   final DateTime createdAt;
@@ -11,6 +12,7 @@ class FeatureHistoryItem {
 
   const FeatureHistoryItem({
     required this.id,
+    required this.sessionId,
     required this.inputText,
     required this.outputText,
     required this.createdAt,
@@ -21,6 +23,7 @@ class FeatureHistoryItem {
   factory FeatureHistoryItem.fromJson(Map<String, dynamic> json) =>
       FeatureHistoryItem(
         id: json['id'] as String,
+        sessionId: json['session_id'] as String? ?? '',
         inputText: json['input_text'] as String? ?? '',
         outputText: json['output_text'] as String? ?? '',
         createdAt: DateTime.parse(json['created_at'] as String),
