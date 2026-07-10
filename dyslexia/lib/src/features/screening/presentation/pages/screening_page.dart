@@ -387,12 +387,17 @@ List<_PreScreenSession> _groupSessions(List<FeatureHistoryItem> items) {
       }
     }
     final last = rows.last;
+    final answered = (last.metadata?['answered_count'] as num?)?.toInt() ?? 0;
     sessions.add(_PreScreenSession(
       sessionId: sid,
       messages: messages,
-      answered: (last.metadata?['answered_count'] as num?)?.toInt() ?? 0,
+      answered: answered,
       date: last.createdAt,
-      complete: rows.any((r) => r.metadata?['ahrq_severity'] != null),
+      // Complete once all topics are answered OR scoring metadata landed —
+      // scoring runs in the background, so a just-finished (or failed-scoring)
+      // session must not resurface as "continue where you left off".
+      complete: answered >= _totalTopics ||
+          rows.any((r) => r.metadata?['ahrq_status'] != null),
     ));
   });
   sessions.sort((a, b) => b.date.compareTo(a.date)); // newest first

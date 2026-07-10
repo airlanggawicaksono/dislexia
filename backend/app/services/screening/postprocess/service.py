@@ -71,7 +71,11 @@ class PostProcessService:
             session_id, user_id, db
         )
 
-        metadata = await PostProcessService._extract_and_score(session)
+        # Merge with the row's existing metadata — it carries the answer-gate
+        # progress (answered_count/reask_count) which resume relies on;
+        # overwriting it would reset a finished session back to topic 0.
+        result_meta = await PostProcessService._extract_and_score(session)
+        metadata = {**(last_item.metadata or {}), **result_meta}
         await ChatHistoryService.set_feature_history_metadata(last_item.id, metadata, db)
 
         return PostProcessRunDTO(

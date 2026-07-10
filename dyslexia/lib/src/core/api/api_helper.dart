@@ -48,8 +48,25 @@ class ApiHelper {
     } on SocketException {
       throw FetchDataException('No Internet connection');
     } on DioException catch (e) {
-      return _returnResponse(e.response!);
+      // Timeouts / connection failures carry no response — surface them as a
+      // clean network failure instead of a null-assertion TypeError.
+      final response = e.response;
+      if (response == null) {
+        throw FetchDataException('No Internet connection');
+      }
+      return _returnResponse(response);
     }
+  }
+
+  /// Human-readable error text from an error body. The backend (FastAPI)
+  /// puts it under `detail`; keep `message` as a fallback for other hosts.
+  String _errorMessage(Response response) {
+    final data = response.data;
+    if (data is Map) {
+      final msg = data['detail'] ?? data['message'];
+      if (msg != null) return msg.toString();
+    }
+    return data?.toString() ?? 'Unknown error';
   }
 
   Map<String, dynamic> _returnResponse(Response response) {
@@ -59,18 +76,17 @@ class ApiHelper {
       case 201:
         return response.data;
       case 400:
-        throw BadRequestException(response.data["message"].toString());
+        throw BadRequestException(_errorMessage(response));
       case 401:
-        throw UnauthorizedException(response.data["message"].toString());
+        throw UnauthorizedException(_errorMessage(response));
       case 403:
-        throw ForbiddenException(response.data["message"].toString());
+        throw ForbiddenException(_errorMessage(response));
       case 404:
-        throw NotFoundException(response.data["message"].toString());
+        throw NotFoundException(_errorMessage(response));
       case 422:
-        throw UnprocessableContentException(
-            response.data["message"].toString());
+        throw UnprocessableContentException(_errorMessage(response));
       case 500:
-        throw InternalServerException(response.data["message"].toString());
+        throw InternalServerException(_errorMessage(response));
       default:
         throw FetchDataException(
             'Error occured while Communication with Server with StatusCode : ${response.statusCode}');

@@ -37,16 +37,22 @@ class ScreeningBloc extends Bloc<ScreeningEvent, ScreeningState> {
   Future<void> _onReply(
       ReplyScreeningEvent event, Emitter<ScreeningState> emit) async {
     final current = state;
+    // ScreeningErrorState keeps its sessionId/messages so the user can retry
+    // after a failed turn instead of facing a dead input.
     final sessionId = current is ScreeningQuestionState
         ? current.sessionId
         : current is ScreeningLoading
             ? current.sessionId
-            : null;
+            : current is ScreeningErrorState
+                ? current.sessionId
+                : null;
     if (sessionId == null) return;
 
     final currentMessages = current is ScreeningQuestionState
         ? current.messages
-        : <ChatMessage>[];
+        : current is ScreeningErrorState
+            ? current.messages
+            : <ChatMessage>[];
 
     final updatedMessages = [
       ...currentMessages,

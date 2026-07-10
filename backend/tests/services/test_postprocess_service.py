@@ -100,6 +100,23 @@ async def test_run_success_persists_and_returns_scores(monkeypatch):
     assert save.await_args.args[0] == last_item.id
 
 
+@pytest.mark.asyncio
+async def test_run_merges_existing_metadata(monkeypatch):
+    # The final row carries the answer-gate progress; scoring must ADD its
+    # keys, not replace the dict (resume relies on answered_count).
+    session = _session(_N)
+    last_item = _history_item(metadata={"answered_count": _N, "reask_count": 0})
+    save = _patch_store(monkeypatch, session=session, last_item=last_item)
+    _patch_extract(monkeypatch, returns=_valid_json())
+
+    out = await PostProcessService.run(session.session_id, session.user_id, AsyncMock())
+
+    persisted = save.await_args.args[1]
+    assert persisted["answered_count"] == _N
+    assert persisted["ahrq_status"] == PostProcessStatus.SUCCESS.value
+    assert out.metadata["answered_count"] == _N
+
+
 # ─── run: failure paths all persist failure metadata, never raise ───────────
 
 @pytest.mark.asyncio
