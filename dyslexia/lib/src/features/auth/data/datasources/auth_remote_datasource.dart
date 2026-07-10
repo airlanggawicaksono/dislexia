@@ -5,11 +5,21 @@ import '../models/auth_session_model.dart';
 
 abstract class AuthRemoteDatasource {
   Future<AuthSessionModel> login(String accountNumber);
+
+  /// Validate a restored session against the server. Throws
+  /// [UnauthorizedException] (401) if the account no longer exists / is
+  /// inactive. The token is passed explicitly because during session-restore
+  /// the interceptor's TokenHolder isn't populated yet.
+  Future<void> validateSession(String accessToken);
 }
 
 class AuthRemoteDatasourceImpl implements AuthRemoteDatasource {
   final ApiClient _api;
   const AuthRemoteDatasourceImpl(this._api);
+
+  @override
+  Future<void> validateSession(String accessToken) =>
+      _api.get('/auth/me', headers: {'Authorization': 'Bearer $accessToken'});
 
   @override
   Future<AuthSessionModel> login(String accountNumber) {

@@ -4,9 +4,10 @@ from fastapi import APIRouter, Depends, Header, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config.database import get_db
+from app.dependencies import get_current_user
 from app.services.user_service import UserService
 from app.dto.auth.auth import GenerateResponseDTO, LoginRequestDTO
-from app.dto.auth.userdata import TokenResponseDTO
+from app.dto.auth.userdata import TokenResponseDTO, UserResponseDTO
 from app.openapi import AUTH_RESPONSES
 from app.utils.lenient_json_route import LenientJSONRoute
 
@@ -72,3 +73,27 @@ async def login(
     expires normally (JWT_ACCESS_TOKEN_EXPIRE_MINUTES).
     """
     return await user_service.login(request.account_number, long_session=_is_truthy(x_long_session))
+
+
+@router.get(
+    "/me",
+    response_model=UserResponseDTO,
+    status_code=status.HTTP_200_OK,
+    summary="Current user (session validation)",
+    responses=AUTH_RESPONSES,
+)
+async def me(user: UserResponseDTO = Depends(get_current_user)):
+    """
+    Return the authenticated user — a cheap "whoami".
+
+    Clients (the mobile app) call this on load to validate a restored session:
+    it runs the normal token check, so a token whose account was deleted or
+    deactivated returns **401** and the client can log the user out.
+
+    ```
+    GET /auth/me   (Authorization: Bearer <token>)
+    → 200 { user profile }        # session valid
+    → 401                         # token invalid / account gone / inactive
+    ```
+    """
+    return user

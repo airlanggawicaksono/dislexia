@@ -7,6 +7,7 @@ import '../../../../core/widgets/settings/color_selector.dart';
 import '../../../../core/widgets/settings/font_selector.dart';
 import '../../../../core/widgets/settings/live_preview.dart';
 import '../../../../core/widgets/settings/typography_sliders.dart';
+import '../../../auth/presentation/bloc/auth/auth_bloc.dart';
 import '../../domain/entities/display_settings_entity.dart';
 import '../bloc/display_settings/display_settings_bloc.dart';
 
@@ -76,10 +77,68 @@ class DisplaySettingsPage extends StatelessWidget {
                     selected: s.preset == p,
                     onTap: () => bloc.add(ApplyPresetEvent(p)),
                   )),
+              const SizedBox(height: 24),
+              _SectionLabel(title: 'ACCOUNT'),
+              const _LogoutButton(),
               const SizedBox(height: 32),
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+class _LogoutButton extends StatelessWidget {
+  const _LogoutButton();
+
+  Future<void> _confirmAndLogout(BuildContext context) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Log out?'),
+        content: const Text('You will need to sign in again to continue.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: const Color(0xFFC62828)),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Log out'),
+          ),
+        ],
+      ),
+    );
+    if (ok == true && context.mounted) {
+      // Router redirect bounces to /auth once the bloc goes Unauthenticated.
+      context.read<AuthBloc>().add(const LogoutEvent());
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => _confirmAndLogout(context),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: const Color(0xFFC62828).withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFC62828).withValues(alpha: 0.3)),
+        ),
+        child: const Row(
+          children: [
+            Icon(Icons.logout_rounded, size: 20, color: Color(0xFFC62828)),
+            SizedBox(width: 12),
+            Text('Log out',
+                style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                    color: Color(0xFFC62828))),
+          ],
+        ),
       ),
     );
   }

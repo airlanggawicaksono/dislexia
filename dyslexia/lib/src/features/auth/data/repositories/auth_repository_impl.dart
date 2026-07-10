@@ -57,14 +57,29 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<Either<Failure, AuthSessionEntity?>> restoreSession() async {
+    final AuthSessionEntity? session;
     try {
-      final session = await _local.readSession();
-      if (session == null) {
-        return const Left(EmptyFailure());
-      }
-      return Right(session);
+      session = await _local.readSession();
     } catch (_) {
       return const Left(CacheFailure());
     }
+    if (session == null) {
+      return const Left(EmptyFailure());
+    }
+    // Verify the account still exists / is active before trusting the stored
+    // token (mobile uses a no-expiry JWT, so a deleted account would otherwise
+    // stay "logged in" until its first feature call).
+    try {
+      await _remote.validateSession(session.accessToken);
+    } on UnauthorizedException {
+      // 401 → account gone / deactivated → drop the dead session.
+      await _local.clearSession();
+      return const Left(EmptyFailure());
+    } catch (_) {
+      // Network / server hiccup → stay signed in (offline tolerant); the next
+      // authenticated request re-checks and logs out on a real 401.
+      return Right(session);
+    }
+    return Right(session);
   }
 }

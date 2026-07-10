@@ -81,11 +81,14 @@ class UserService:
         result = await self.db.execute(select(User).where(User.user_id == UUID(payload["sub"])))
         user = result.scalar_one_or_none()
 
+        # Token is valid but its principal no longer exists / is disabled → the
+        # session itself is invalid. Return 401 (not 404/403) so the client's
+        # auth interceptor auto-logs-out on the next authenticated request.
         if not user:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Session no longer valid")
 
         if not user.is_active:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account deactivated")
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Account is inactive")
 
         return _to_user_dto(user)
 
