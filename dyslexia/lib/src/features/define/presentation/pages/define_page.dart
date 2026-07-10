@@ -11,7 +11,8 @@ const _levels = DefineLevel.values;
 const _levelPct = ['10%', '30%', '50%', '70%', '90%'];
 
 class DefinePage extends StatefulWidget {
-  const DefinePage({super.key});
+  final String? initialText;
+  const DefinePage({super.key, this.initialText});
   @override
   State<DefinePage> createState() => _DefinePageState();
 }
@@ -22,6 +23,15 @@ class _DefinePageState extends State<DefinePage> {
   String? _viewResultText;
   String? _viewResultTitle;
   DefineLevel _level = DefineLevel.defaultLevel;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialText?.isNotEmpty ?? false) {
+      _controller.text = widget.initialText!;
+      context.read<DefineBloc>().add(ClearDefineEvent());
+    }
+  }
 
   @override
   void dispose() { _controller.dispose(); super.dispose(); }

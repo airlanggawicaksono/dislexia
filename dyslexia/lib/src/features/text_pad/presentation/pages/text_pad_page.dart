@@ -61,14 +61,112 @@ class TextPadPage extends StatelessWidget {
           // Reuse the shared reader so every display setting applies here too
           // (ruler, syllable dots, fonts, spacing, colour) — consistent with
           // the reader and feature outputs.
-          body: ReaderTextDisplay(
-            text: text,
-            settings: s,
-            fgColor: fg,
-            bgColor: bg,
+          body: Column(
+            children: [
+              Expanded(
+                child: ReaderTextDisplay(
+                  text: text,
+                  settings: s,
+                  fgColor: fg,
+                  bgColor: bg,
+                ),
+              ),
+              // Shoot the captured/pasted text straight into an LLM feature.
+              if (text.trim().isNotEmpty) _SendToBar(text: text, bg: bg, fg: fg),
+            ],
           ),
         );
       },
+    );
+  }
+}
+
+/// Bottom action bar: send the current text into Summarize / Define /
+/// Professionalize with it pre-filled. Shared by every source that lands on
+/// TextPad (lens, scanner, paste, upload).
+class _SendToBar extends StatelessWidget {
+  final String text;
+  final Color bg;
+  final Color fg;
+  const _SendToBar({required this.text, required this.bg, required this.fg});
+
+  void _send(BuildContext context, AppRoute route) =>
+      context.pushNamed(route.name, extra: {'text': text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: bg,
+        border: Border(top: BorderSide(color: fg.withValues(alpha: 0.12))),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+          child: Row(
+            children: [
+              Expanded(
+                child: _SendButton(
+                    icon: Icons.summarize_rounded,
+                    label: 'Summarize',
+                    onTap: () => _send(context, AppRoute.summarize)),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _SendButton(
+                    icon: Icons.menu_book_rounded,
+                    label: 'Define',
+                    onTap: () => _send(context, AppRoute.define)),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _SendButton(
+                    icon: Icons.business_center_rounded,
+                    label: 'Formalize',
+                    onTap: () => _send(context, AppRoute.professionalize)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SendButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  const _SendButton(
+      {required this.icon, required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: const Color(0xFF3D5A99),
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 20, color: Colors.white),
+              const SizedBox(height: 4),
+              Text(label,
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

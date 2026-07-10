@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../configs/injector/injector_conf.dart';
+import '../../../../core/api/api_helper.dart';
+import '../../../../core/api/feature_history_datasource.dart';
 import '../../../../core/utils/font_utils.dart';
 import '../../../../core/widgets/adaptive/adaptive.dart';
 import '../../../../core/widgets/history_panel.dart';
@@ -22,18 +25,33 @@ class ScreeningPage extends StatefulWidget {
 class _ScreeningPageState extends State<ScreeningPage> {
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
-  bool _completing = false;
+
+  // Past completed pre-screening results (from history metadata.ahrq_*).
+  List<FeatureHistoryItem>? _results;
 
   @override
   void initState() {
     super.initState();
-    // Only start screening if the session hasn't already begun.
-    // This preserves the conversation when navigating away and back.
-    final bloc = context.read<ScreeningBloc>();
-    if (bloc.state is ScreeningInitial) {
-      bloc.add(StartScreeningEvent());
+    // Do NOT auto-start — show the intro + past results first, start on tap.
+    // (Preserves any in-progress session across navigate-away-and-back.)
+    _loadResults();
+  }
+
+  Future<void> _loadResults() async {
+    try {
+      final items = await FeatureHistoryDatasource(getIt<ApiHelper>())
+          .getHistory(feature: 'screen');
+      // A completed run is a history row carrying the ARHQ result.
+      final done = items
+          .where((i) => i.metadata?['ahrq_severity'] != null)
+          .toList();
+      if (mounted) setState(() => _results = done);
+    } catch (_) {
+      if (mounted) setState(() => _results = const []);
     }
   }
+
+  void _start() => context.read<ScreeningBloc>().add(StartScreeningEvent());
 
   @override
   void dispose() {
@@ -77,9 +95,8 @@ class _ScreeningPageState extends State<ScreeningPage> {
   void _reset() {
     context.read<ScreeningBloc>().add(ResetScreeningEvent());
     _controller.clear();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ScreeningBloc>().add(StartScreeningEvent());
-    });
+    // Back to the intro; refresh the results list (a run may have completed).
+    _loadResults();
   }
 
   @override
@@ -96,7 +113,7 @@ class _ScreeningPageState extends State<ScreeningPage> {
         backgroundColor: theme.colorScheme.surface,
         elevation: 0,
         centerTitle: false,
-        title: Text('Screening', style: TextStyle(color: theme.colorScheme.onSurface)),
+        title: Text('Pre-Screening', style: TextStyle(color: theme.colorScheme.onSurface)),
         actions: [
           _BarAction(
             icon: Icons.history_rounded,
@@ -116,31 +133,17 @@ class _ScreeningPageState extends State<ScreeningPage> {
       ),
       body: BlocConsumer<ScreeningBloc, ScreeningState>(
         listener: (ctx, state) {
-          // is_complete == true → screening done. On mobile (pushed route)
-          // close the page immediately, and reset the singleton bloc so the
-          // next visit starts a fresh session. On web (tab, can't pop) fall
-          // through to the in-page completion UI.
-          if (state is ScreeningQuestionState &&
-              state.isComplete &&
-              !_completing &&
-              Navigator.of(ctx).canPop()) {
-            _completing = true;
-            final bloc = ctx.read<ScreeningBloc>();
-            ScaffoldMessenger.of(ctx).showSnackBar(
-              const SnackBar(
-                  content: Text('Screening complete — saved to history')),
-            );
-            Navigator.of(ctx).pop();
-            bloc.add(ResetScreeningEvent());
-            return;
-          }
           if (state is ScreeningQuestionState || state is ScreeningLoading) {
             _scrollToBottom();
           }
         },
         builder: (ctx, state) {
           if (state is ScreeningInitial) {
-            return const Center(child: CircularProgressIndicator());
+            return _IntroView(
+              fg: theme.colorScheme.onSurface,
+              results: _results,
+              onStart: _start,
+            );
           }
           if (state is ScreeningErrorState && state.messages.isEmpty) {
             return Center(
@@ -153,7 +156,7 @@ class _ScreeningPageState extends State<ScreeningPage> {
                         size: 48, color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
                     const SizedBox(height: 16),
                     Text(
-                      'Failed to start screening: ${state.message}',
+                      'Failed to start: ${state.message}',
                       style: TextStyle(color: theme.colorScheme.onSurface),
                       textAlign: TextAlign.center,
                     ),
@@ -187,7 +190,7 @@ class _ScreeningPageState extends State<ScreeningPage> {
               Expanded(
                 child: messages.isEmpty
                     ? Center(
-                        child: Text('Starting screening…',
+                        child: Text('Starting…',
                             style: TextStyle(color: theme.colorScheme.onSurface)))                      : ListView.builder(
                         controller: _scrollController,
                         padding: const EdgeInsets.symmetric(
@@ -196,7 +199,7 @@ class _ScreeningPageState extends State<ScreeningPage> {
                         itemBuilder: (ctx, i) {
                           final msg = messages[i];
                           if (msg.isUser) {
-                            return _UserBubble(text: msg.text);
+                            return _UserBubble(text: msg.text, settings: s);
                           }
                           return _AssistantCard(
                             text: msg.text,
@@ -214,7 +217,7 @@ class _ScreeningPageState extends State<ScreeningPage> {
                   child: FilledButton.icon(
                     onPressed: _reset,
                     icon: const Icon(Icons.refresh),
-                    label: const Text('Start New Screening'),
+                    label: const Text('Done'),
                   ),
                 ),
               if (!isComplete)
@@ -234,9 +237,131 @@ class _ScreeningPageState extends State<ScreeningPage> {
   }
 }
 
+/// Idle view: short intro + Start button + archive of past results.
+class _IntroView extends StatelessWidget {
+  final Color fg;
+  final List<FeatureHistoryItem>? results;
+  final VoidCallback onStart;
+
+  const _IntroView({
+    required this.fg,
+    required this.results,
+    required this.onStart,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
+      children: [
+        Icon(Icons.fact_check_rounded, size: 48, color: fg.withValues(alpha: 0.8)),
+        const SizedBox(height: 16),
+        Text('Pre-Screening',
+            style: TextStyle(
+                fontSize: 22, fontWeight: FontWeight.bold, color: fg),
+            textAlign: TextAlign.center),
+        const SizedBox(height: 8),
+        Text(
+          'A short set of questions about your reading habits. '
+          'This is an informal check-in, not a diagnosis.',
+          style: TextStyle(fontSize: 14, color: fg.withValues(alpha: 0.7), height: 1.4),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 20),
+        FilledButton.icon(
+          onPressed: onStart,
+          icon: const Icon(Icons.play_arrow_rounded),
+          label: const Text('Start pre-screening'),
+        ),
+        const SizedBox(height: 28),
+        Text('Your results',
+            style: TextStyle(
+                fontSize: 15, fontWeight: FontWeight.w600, color: fg)),
+        const SizedBox(height: 12),
+        if (results == null)
+          const Center(child: Padding(
+            padding: EdgeInsets.all(16),
+            child: SizedBox(
+                width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2)),
+          ))
+        else if (results!.isEmpty)
+          Text('No results yet — complete a pre-screening to see it here.',
+              style: TextStyle(fontSize: 13, color: fg.withValues(alpha: 0.5)))
+        else
+          ...results!.map((r) => _ResultCard(item: r, fg: fg)),
+      ],
+    );
+  }
+}
+
+class _ResultCard extends StatelessWidget {
+  final FeatureHistoryItem item;
+  final Color fg;
+  const _ResultCard({required this.item, required this.fg});
+
+  static const _severityColors = {
+    'mild': Color(0xFF2E7D32),
+    'moderate': Color(0xFFED6C02),
+    'severe': Color(0xFFC62828),
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final m = item.metadata ?? const {};
+    final severity = (m['ahrq_severity'] as String?) ?? 'unknown';
+    final total = m['ahrq_total'];
+    final color = _severityColors[severity] ?? fg;
+    final d = item.createdAt;
+    final date =
+        '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(severity.toUpperCase(),
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700)),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (total != null)
+                  Text('Score: $total',
+                      style: TextStyle(
+                          fontSize: 14, fontWeight: FontWeight.w600, color: fg)),
+                Text(date,
+                    style: TextStyle(
+                        fontSize: 12, color: fg.withValues(alpha: 0.5))),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _UserBubble extends StatelessWidget {
   final String text;
-  const _UserBubble({required this.text});
+  final DisplaySettingsEntity settings;
+  const _UserBubble({required this.text, required this.settings});
 
   @override
   Widget build(BuildContext context) {
@@ -254,9 +379,10 @@ class _UserBubble extends StatelessWidget {
             bottomRight: Radius.zero,
           ),
         ),
+        // Font/size/spacing from display settings; white on the blue bubble.
         child: Text(
           text,
-          style: const TextStyle(color: Colors.white, fontSize: 15),
+          style: dyslexiaTextStyle(settings, Colors.white),
         ),
       ),
     );

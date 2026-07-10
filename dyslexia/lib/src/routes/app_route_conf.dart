@@ -127,25 +127,25 @@ class AppRouteConf {
         GoRoute(
           path: AppRoute.summarize.path,
           name: AppRoute.summarize.name,
-          builder: (_, __) => BlocProvider.value(
+          builder: (_, state) => BlocProvider.value(
             value: getIt<SummarizeBloc>(),
-            child: const SummarizePage(),
+            child: SummarizePage(initialText: _extraText(state)),
           ),
         ),
         GoRoute(
           path: AppRoute.define.path,
           name: AppRoute.define.name,
-          builder: (_, __) => BlocProvider.value(
+          builder: (_, state) => BlocProvider.value(
             value: getIt<DefineBloc>(),
-            child: const DefinePage(),
+            child: DefinePage(initialText: _extraText(state)),
           ),
         ),
         GoRoute(
           path: AppRoute.professionalize.path,
           name: AppRoute.professionalize.name,
-          builder: (_, __) => BlocProvider.value(
+          builder: (_, state) => BlocProvider.value(
             value: getIt<ProfessionalizeBloc>(),
-            child: const ProfessionalizePage(),
+            child: ProfessionalizePage(initialText: _extraText(state)),
           ),
         ),
         GoRoute(
@@ -159,6 +159,15 @@ class AppRouteConf {
       ],
     );
   }
+}
+
+/// Pull optional pre-fill text passed via `extra` — either a plain String or
+/// a `{'text': ...}` map (matches the textPad convention).
+String? _extraText(GoRouterState state) {
+  final extra = state.extra;
+  if (extra is String) return extra;
+  if (extra is Map<String, dynamic>) return extra['text'] as String?;
+  return null;
 }
 
 /// Bridges a [Stream] (the AuthBloc's state stream) to a [Listenable] so

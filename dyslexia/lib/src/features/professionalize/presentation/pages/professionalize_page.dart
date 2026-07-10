@@ -9,7 +9,8 @@ import '../bloc/professionalize_event.dart';
 import '../bloc/professionalize_state.dart';
 
 class ProfessionalizePage extends StatefulWidget {
-  const ProfessionalizePage({super.key});
+  final String? initialText;
+  const ProfessionalizePage({super.key, this.initialText});
   @override
   State<ProfessionalizePage> createState() => _ProfessionalizePageState();
 }
@@ -22,6 +23,15 @@ class _ProfessionalizePageState extends State<ProfessionalizePage> {
   bool _emailMode = false;
   String? _viewResultText;
   String? _viewResultTitle;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialText?.isNotEmpty ?? false) {
+      _controller.text = widget.initialText!;
+      context.read<ProfessionalizeBloc>().add(ClearProfessionalizeEvent());
+    }
+  }
 
   @override
   void dispose() {

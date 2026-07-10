@@ -7,6 +7,7 @@ class FeatureHistoryItem {
   final String outputText;
   final DateTime createdAt;
   final String feature;
+  final Map<String, dynamic>? metadata;
 
   const FeatureHistoryItem({
     required this.id,
@@ -14,6 +15,7 @@ class FeatureHistoryItem {
     required this.outputText,
     required this.createdAt,
     required this.feature,
+    this.metadata,
   });
 
   factory FeatureHistoryItem.fromJson(Map<String, dynamic> json) =>
@@ -23,6 +25,7 @@ class FeatureHistoryItem {
         outputText: json['output_text'] as String? ?? '',
         createdAt: DateTime.parse(json['created_at'] as String),
         feature: json['feature'] as String? ?? '',
+        metadata: json['metadata'] as Map<String, dynamic>?,
       );
 }
 

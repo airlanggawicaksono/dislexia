@@ -57,6 +57,46 @@ def build_system_prompt(idx: int) -> str:
     )
 
 
+def build_gate_prompt(current_q: str | None, next_q: str | None) -> str:
+    """System prompt for the per-reply 'answered gate'.
+
+    The model both (a) judges whether the user's latest message satisfies the
+    CURRENT topic and (b) writes the next assistant message. It must return
+    strict JSON: {"answered": bool, "message": str}. The server advances to the
+    next topic only when answered=true — so a vague reply keeps the same topic.
+    """
+    if current_q is None:
+        return (
+            f"{PERSONA}{STYLE_TEMPLATE}\n"
+            "All topics have been covered. Return STRICT JSON ONLY "
+            "(no prose, no code fences):\n"
+            '{"answered": true, "message": "<a brief, warm closing summary of '
+            'what the user shared>"}'
+        )
+
+    if next_q is not None:
+        followup = f'naturally ask the next topic in your own warm words: "{next_q}"'
+    else:
+        followup = (
+            "give a brief, warm closing summary of what they shared "
+            "(this was the final topic)"
+        )
+
+    return (
+        f"{PERSONA}{STYLE_TEMPLATE}\n"
+        f'You are currently on this topic:\n"{current_q}"\n\n'
+        "The user's latest message is their answer to THIS topic. Decide whether "
+        "it sufficiently answers the topic. A brief but clear answer counts as "
+        "answered; a vague, off-topic, or non-committal reply (e.g. 'not sure' "
+        "with no detail) does NOT.\n\n"
+        "Return STRICT JSON ONLY — no prose, no markdown code fences:\n"
+        '{"answered": true|false, "message": "..."}\n'
+        f"- If answered is true: message warmly acknowledges their answer, then {followup}.\n"
+        "- If answered is false: message gently notes what is unclear and re-asks "
+        "the CURRENT topic in different, simpler words. Do NOT move to a new topic."
+    )
+
+
 def build_extraction_prompt() -> str:
     """System prompt for the ARHQ post-process extraction call.
 

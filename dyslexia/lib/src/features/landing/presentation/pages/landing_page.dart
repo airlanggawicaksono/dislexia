@@ -84,7 +84,7 @@ class LandingPage extends StatelessWidget {
         icon: _isCupertino
             ? CupertinoIcons.checkmark_seal
             : Icons.fact_check_rounded,
-        label: 'Screening',
+        label: 'Pre-Screening',
         onTap: () => context.pushNamed(AppRoute.screening.name),
       ),
     ];

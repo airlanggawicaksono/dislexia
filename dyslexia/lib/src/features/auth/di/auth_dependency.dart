@@ -47,7 +47,12 @@ class AuthDependency {
     // are excluded from both behaviours so the very first call works
     // and a bad-credentials 401 is not interpreted as "session died".
     if (!getIt.isRegistered<ApiHelper>()) {
-      final dio = Dio()
+      final dio = Dio(BaseOptions(
+        // Bounded so a dead/slow API errors out instead of hanging the UI
+        // in a permanent loading state. Receive is generous for slow LLM calls.
+        connectTimeout: const Duration(seconds: 20),
+        receiveTimeout: const Duration(seconds: 120),
+      ))
         ..interceptors.add(
           AuthInterceptor(
             tokenProvider: () => TokenHolder.instance.token,

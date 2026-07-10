@@ -11,7 +11,8 @@ const _levels = SummaryLevel.values;
 const _levelPct = ['10%', '30%', '50%', '70%', '90%'];
 
 class SummarizePage extends StatefulWidget {
-  const SummarizePage({super.key});
+  final String? initialText;
+  const SummarizePage({super.key, this.initialText});
   @override
   State<SummarizePage> createState() => _SummarizePageState();
 }
@@ -22,6 +23,17 @@ class _SummarizePageState extends State<SummarizePage> {
   String? _viewResultText;
   String? _viewResultTitle;
   SummaryLevel _level = SummaryLevel.defaultLevel;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialText?.isNotEmpty ?? false) {
+      _controller.text = widget.initialText!;
+      // Clear any stale result on the singleton bloc so the seeded input is
+      // what's shown (not a previous run's result card).
+      context.read<SummarizeBloc>().add(ClearSummarizeEvent());
+    }
+  }
 
   @override
   void dispose() { _controller.dispose(); super.dispose(); }
