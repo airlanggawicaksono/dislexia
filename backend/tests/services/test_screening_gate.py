@@ -162,11 +162,19 @@ async def test_reply_loop_cap_forces_advance(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_reply_completes_and_runs_postprocess(monkeypatch):
-    session, save, pp = _patch(
+async def test_reply_completes_and_schedules_postprocess(monkeypatch):
+    session, save, _ = _patch(
         monkeypatch,
         gate_json='{"answered": true, "message": "That is everything, thanks."}',
         last_metadata={"answered_count": _N - 1, "reask_count": 0},
+    )
+    # Post-process now runs in the background; assert it's SCHEDULED, not awaited
+    # in-band, and the reply returns immediately with ahrq_result=None. (Stub the
+    # scheduler so no real DB-backed task is spawned in the test loop.)
+    scheduled: list[tuple] = []
+    monkeypatch.setattr(
+        svc, "_schedule_postprocess",
+        lambda sid, uid: scheduled.append((sid, uid)),
     )
     res = await svc.ScreeningService.reply("last answer", session.session_id,
                                            session.user_id, AsyncMock())
@@ -174,5 +182,5 @@ async def test_reply_completes_and_runs_postprocess(monkeypatch):
     assert res.answered is True
     assert res.answered_count == _N
     assert _saved_meta(save)["answered_count"] == _N
-    pp.assert_awaited_once()
-    assert res.ahrq_result == {"ahrq_severity": "mild"}
+    assert scheduled == [(session.session_id, session.user_id)]
+    assert res.ahrq_result is None

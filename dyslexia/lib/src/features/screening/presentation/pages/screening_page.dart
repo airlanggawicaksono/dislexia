@@ -22,6 +22,10 @@ class ScreeningPage extends StatefulWidget {
   State<ScreeningPage> createState() => _ScreeningPageState();
 }
 
+/// Live status of the ARHQ post-process (scoring) after a session completes.
+/// It runs server-side in the background, so the page polls for the outcome.
+enum _PpPhase { processing, success, failed }
+
 class _ScreeningPageState extends State<ScreeningPage> {
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
@@ -30,6 +34,12 @@ class _ScreeningPageState extends State<ScreeningPage> {
   bool _loadingResults = true;
   List<FeatureHistoryItem> _completed = const []; // rows carrying ahrq result
   List<_PreScreenSession> _incomplete = const []; // resumable sessions
+
+  // Post-process poll state (set once a session hits is_complete).
+  _PpPhase? _ppPhase;
+  String? _ppSeverity;
+  Object? _ppTotal;
+  String? _pollingSession; // guards against double-starting the poll loop
 
   @override
   void initState() {
@@ -75,9 +85,71 @@ class _ScreeningPageState extends State<ScreeningPage> {
 
   @override
   void dispose() {
+    _pollingSession = null; // stop any in-flight poll loop
     _controller.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  // Poll the server for the background ARHQ scoring outcome. Cheap DB-only
+  // endpoint; stops on success/failed, on reset (session mismatch), or dispose.
+  Future<void> _pollPostProcess(String sessionId) async {
+    if (_pollingSession == sessionId) return; // already polling this one
+    _pollingSession = sessionId;
+    if (mounted) {
+      setState(() {
+        _ppPhase = _PpPhase.processing;
+        _ppSeverity = null;
+        _ppTotal = null;
+      });
+    }
+    final api = getIt<ApiHelper>();
+    for (var i = 0; i < 20; i++) {
+      await Future.delayed(const Duration(seconds: 2));
+      if (!mounted || _pollingSession != sessionId) return; // cancelled
+      try {
+        final res = await api.execute(
+          method: Method.get,
+          url: '/me/screen/$sessionId/postprocess/status',
+        );
+        final status = res['status'] as String?;
+        if (status == 'success' || status == 'failed') {
+          if (!mounted || _pollingSession != sessionId) return;
+          final m =
+              (res['metadata'] as Map?)?.cast<String, dynamic>() ?? const {};
+          setState(() {
+            _ppPhase =
+                status == 'success' ? _PpPhase.success : _PpPhase.failed;
+            _ppSeverity = m['ahrq_severity'] as String?;
+            _ppTotal = m['ahrq_total'];
+          });
+          return;
+        }
+      } catch (_) {
+        // Transient network/server hiccup → keep polling.
+      }
+    }
+    // Timed out (~40s). Surface as failed so the user gets a retry; the score
+    // may still land in "Your results" once the background job finishes.
+    if (mounted && _pollingSession == sessionId) {
+      setState(() => _ppPhase = _PpPhase.failed);
+    }
+  }
+
+  // Re-trigger scoring (idempotent) then poll again — for a failed/slow run.
+  Future<void> _retryPostProcess(String sessionId) async {
+    _pollingSession = null; // allow _pollPostProcess to restart
+    if (mounted) setState(() => _ppPhase = _PpPhase.processing);
+    try {
+      await getIt<ApiHelper>().execute(
+        method: Method.post,
+        url: '/me/screen/$sessionId/postprocess',
+        queryParameters: {'force': true},
+      );
+    } catch (_) {
+      // Ignore — the poll loop below reflects whatever the server ends up with.
+    }
+    _pollPostProcess(sessionId);
   }
 
   void _send() {
@@ -113,6 +185,8 @@ class _ScreeningPageState extends State<ScreeningPage> {
   }
 
   void _reset() {
+    _pollingSession = null; // stop polling the finished session
+    _ppPhase = null;
     context.read<ScreeningBloc>().add(ResetScreeningEvent());
     _controller.clear();
     // Back to the intro; refresh the results list (a run may have completed).
@@ -156,6 +230,10 @@ class _ScreeningPageState extends State<ScreeningPage> {
         listener: (ctx, state) {
           if (state is ScreeningQuestionState || state is ScreeningLoading) {
             _scrollToBottom();
+          }
+          // Session just finished → start polling the background ARHQ scoring.
+          if (state is ScreeningQuestionState && state.isComplete) {
+            _pollPostProcess(state.sessionId);
           }
         },
         builder: (ctx, state) {
@@ -235,7 +313,14 @@ class _ScreeningPageState extends State<ScreeningPage> {
                         },
                       ),
               ),
-              if (isComplete)
+              if (isComplete) ...[
+                _PostProcessBanner(
+                  phase: _ppPhase ?? _PpPhase.processing,
+                  severity: _ppSeverity,
+                  total: _ppTotal,
+                  fg: theme.colorScheme.onSurface,
+                  onRetry: () => _retryPostProcess(state.sessionId),
+                ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                   child: FilledButton.icon(
@@ -244,6 +329,7 @@ class _ScreeningPageState extends State<ScreeningPage> {
                     label: const Text('Done'),
                   ),
                 ),
+              ],
               if (!isComplete)
                 _InputBar(
                   controller: _controller,
@@ -507,6 +593,103 @@ class _ResultCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Live status of the background ARHQ scoring, shown under the completed chat.
+class _PostProcessBanner extends StatelessWidget {
+  final _PpPhase phase;
+  final String? severity;
+  final Object? total;
+  final Color fg;
+  final VoidCallback onRetry;
+
+  const _PostProcessBanner({
+    required this.phase,
+    required this.severity,
+    required this.total,
+    required this.fg,
+    required this.onRetry,
+  });
+
+  static const _severityColors = {
+    'mild': Color(0xFF2E7D32),
+    'moderate': Color(0xFFED6C02),
+    'severe': Color(0xFFC62828),
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final (color, child) = switch (phase) {
+      _PpPhase.processing => (
+          const Color(0xFF3D5A99),
+          Row(children: [
+            const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2)),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text('Analyzing your responses…',
+                  style: TextStyle(
+                      fontSize: 13, fontWeight: FontWeight.w600, color: fg)),
+            ),
+          ]),
+        ),
+      _PpPhase.success => () {
+          final sev = severity ?? 'unknown';
+          final c = _severityColors[sev] ?? const Color(0xFF2E7D32);
+          return (
+            c,
+            Row(children: [
+              Icon(Icons.check_circle_rounded, color: c, size: 20),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Result ready — ${sev.toUpperCase()}',
+                        style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: fg)),
+                    if (total != null)
+                      Text('Score: $total',
+                          style: TextStyle(
+                              fontSize: 12,
+                              color: fg.withValues(alpha: 0.6))),
+                  ],
+                ),
+              ),
+            ]),
+          );
+        }(),
+      _PpPhase.failed => (
+          const Color(0xFFC62828),
+          Row(children: [
+            const Icon(Icons.error_outline_rounded,
+                color: Color(0xFFC62828), size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text("Couldn't score your responses.",
+                  style: TextStyle(
+                      fontSize: 13, fontWeight: FontWeight.w600, color: fg)),
+            ),
+            TextButton(onPressed: onRetry, child: const Text('Retry')),
+          ]),
+        ),
+    };
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: child,
     );
   }
 }

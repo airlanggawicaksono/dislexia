@@ -1,7 +1,9 @@
+import asyncio
 import json
 from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config.database import async_session_maker
 from app.services.chat_history_service import ChatHistoryService
 from app.services.feature_service import _to_llm_history
 from app.services.llm_service import LmIoNoStream
@@ -24,6 +26,34 @@ from app.dto.feature.screening.response import (
 # After this many clarification attempts on one topic, accept the answer and
 # move on — a confused user must never get stuck in an infinite re-ask loop.
 _MAX_REASK = 3
+
+# Strong refs to in-flight fire-and-forget post-process tasks so the event loop
+# doesn't garbage-collect them mid-run.
+_bg_tasks: set[asyncio.Task] = set()
+
+
+def _schedule_postprocess(session_id: UUID, user_id: UUID) -> None:
+    """Kick off ARHQ scoring in the background so /reply returns immediately.
+
+    The client polls GET /me/screen/{session_id}/postprocess/status until it
+    resolves to success/failed.
+    """
+    task = asyncio.create_task(_run_postprocess_bg(session_id, user_id))
+    _bg_tasks.add(task)
+    task.add_done_callback(_bg_tasks.discard)
+
+
+async def _run_postprocess_bg(session_id: UUID, user_id: UUID) -> None:
+    # ponytail: fire-and-forget with its own DB session (the request's session is
+    # closed once /reply returns). No auto-retry if the worker crashes — recovery
+    # is the idempotent POST /me/screen/{session_id}/postprocess, and the status
+    # endpoint reports not_started/failed so the client can re-trigger it.
+    async with async_session_maker() as bg_db:
+        try:
+            await PostProcessService.run(session_id, user_id, bg_db, force=True)
+            await bg_db.commit()
+        except Exception:
+            await bg_db.rollback()
 
 
 def _clean_json(raw: str) -> str:
@@ -140,10 +170,12 @@ class ScreeningService:
             metadata={"answered_count": new_count, "reask_count": new_reask},
         )
 
-        ahrq_result: dict | None = None
+        # On completion the ARHQ scoring (a second LLM call) runs in the
+        # background so this final reply returns without blocking on it. The
+        # client polls the post-process status endpoint for the outcome, so we
+        # return ahrq_result=None here rather than awaiting it.
         if is_complete:
-            outcome = await PostProcessService.run(session_id, user_id, db, force=True)
-            ahrq_result = outcome.metadata
+            _schedule_postprocess(session_id, user_id)
 
         return ScreeningResponseDTO(
             result=message,
@@ -153,7 +185,7 @@ class ScreeningService:
             answered=answered,
             answered_count=new_count,
             total_topics=len(QUESTIONS),
-            ahrq_result=ahrq_result,
+            ahrq_result=None,
         )
 
     @staticmethod
