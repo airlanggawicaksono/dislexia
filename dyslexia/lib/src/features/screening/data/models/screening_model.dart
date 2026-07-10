@@ -26,6 +26,9 @@ class ScreeningResponseModel {
     required this.isComplete,
   });
 
+  // Note: the API also returns internal gate keys (answered / answered_count /
+  // total_topics). The frontend deliberately ignores them — it only reacts to
+  // is_complete + the post-process result. Keep this boundary clean.
   factory ScreeningResponseModel.fromJson(Map<String, dynamic> json) =>
       ScreeningResponseModel(
         result: json['result'] as String,

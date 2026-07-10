@@ -133,7 +133,8 @@ class _ScreeningPageState extends State<ScreeningPage> {
         backgroundColor: theme.colorScheme.surface,
         elevation: 0,
         centerTitle: false,
-        title: Text('Pre-Screening', style: TextStyle(color: theme.colorScheme.onSurface)),
+        title: Text('Pre-Screening',
+            style: TextStyle(color: theme.colorScheme.onSurface)),
         actions: [
           _BarAction(
             icon: Icons.history_rounded,

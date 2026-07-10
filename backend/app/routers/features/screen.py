@@ -47,6 +47,12 @@ async def start(
     No body required. The server creates a session and the LLM responds with a
     warm greeting plus the first question. Use the returned `session_id` for all
     subsequent `/reply` calls.
+
+    ```
+    POST /start            (no body)
+    → { "result": "<greeting + first question>", "session_id": "<id>",
+        "is_complete": false }
+    ```
     """
     return await ScreeningService.start(user.user_id, db)
 
@@ -66,9 +72,53 @@ async def reply(
     """
     Submit the user's answer to the current screening question.
 
-    Server tracks which ARHQ question is next based on conversation history.
-    When all 23 topics have been covered, the response will set
-    `is_complete: true` and include a warm summary in `result`.
+    ### Usage by case
+
+    All calls use the SAME request — only `session_id` reuse changes the case.
+
+    Request (always):
+    ```
+    POST /reply
+    { "text": "<the user's message>", "session_id": "<id from /start>" }
+    ```
+
+    - **Answer a question** → `result` = next question, `is_complete: false`.
+    - **Vague reply** → `result` = a clarifying re-ask of the SAME question,
+      still `is_complete: false` (server holds the topic).
+    - **Continue an unfinished session later** → send the SAME saved
+      `session_id`; the server resumes on the correct topic. No special flag.
+    - **Final answer** → `is_complete: true`, `result` = warm summary, and
+      `ahrq_result` is populated (see below).
+
+    Minimal response shape:
+    ```
+    { "result": "...", "session_id": "...", "history_id": "...",
+      "is_complete": false, "ahrq_result": null }
+    ```
+    On completion `is_complete` is `true` and `ahrq_result` carries the scores.
+
+    ### Answer gate (advancement control)
+
+    Each reply runs a single LLM call that BOTH judges whether the answer
+    satisfies the current topic AND writes the next assistant message
+    (returned in `result`):
+
+    - **Answered** → advance to the next ARHQ topic; `result` acknowledges the
+      answer and asks the next question.
+    - **Not answered** (vague / off-topic / non-committal) → stay on the SAME
+      topic; `result` is a gentle clarifying re-ask. The topic index does not
+      move, so the number of turns can exceed the 23 topics.
+    - **Loop guard**: after 3 clarifications on one topic the server accepts the
+      answer and advances anyway, so a user can never get stuck.
+
+    Topic progress (`answered_count`, `reask_count`) is persisted on each
+    history row's `metadata`; the 23 ARHQ items remain the scoring backbone.
+    When all 23 topics are answered the response sets `is_complete: true` and
+    `result` is a warm summary.
+
+    To **resume** an unfinished session, just call `/reply` again with its
+    `session_id` — the server reads the last row's `answered_count` and
+    continues on the correct topic.
 
     ### Post-processing on completion
 

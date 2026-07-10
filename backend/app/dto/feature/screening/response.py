@@ -12,6 +12,22 @@ class ScreeningResponseDTO(BaseModel):
     session_id: UUID
     history_id: Optional[UUID] = None
     is_complete: bool = False
+    answered: Optional[bool] = Field(
+        None,
+        description=(
+            "Whether the user's reply satisfied the CURRENT topic. true → the "
+            "server advanced to the next topic; false → same topic re-asked "
+            "(result is a clarifying question). null on /start (no reply yet). "
+            "Note: after the re-ask loop cap the server force-advances, in which "
+            "case answered is reported true."
+        ),
+    )
+    answered_count: int = Field(
+        0, description="Number of ARHQ topics answered so far (progress numerator)."
+    )
+    total_topics: int = Field(
+        0, description="Total ARHQ topics (progress denominator)."
+    )
     ahrq_result: Optional[dict] = Field(
         None,
         description=(

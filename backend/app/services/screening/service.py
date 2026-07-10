@@ -80,6 +80,9 @@ class ScreeningService:
             session_id=session.session_id,
             history_id=item.id,
             is_complete=False,
+            answered=None,
+            answered_count=0,
+            total_topics=len(QUESTIONS),
         )
 
     @staticmethod
@@ -147,6 +150,9 @@ class ScreeningService:
             session_id=session_id,
             history_id=item.id,
             is_complete=is_complete,
+            answered=answered,
+            answered_count=new_count,
+            total_topics=len(QUESTIONS),
             ahrq_result=ahrq_result,
         )
 
