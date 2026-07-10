@@ -260,17 +260,82 @@ class _ScreeningPageState extends State<ScreeningPage> {
   }
 }
 
-/// Idle view: short intro + Start button + archive of past results.
+const _totalTopics = 23; // ARHQ item count — see backend QUESTIONS.
+
+/// A pre-screening session reconstructed from its history rows.
+class _PreScreenSession {
+  final String sessionId;
+  final List<ChatMessage> messages;
+  final int answered;
+  final DateTime date;
+  final bool complete;
+  const _PreScreenSession({
+    required this.sessionId,
+    required this.messages,
+    required this.answered,
+    required this.date,
+    required this.complete,
+  });
+}
+
+/// Group flat history rows into sessions (chronological), rebuilding the chat
+/// bubbles so an incomplete one can be replayed + resumed.
+List<_PreScreenSession> _groupSessions(List<FeatureHistoryItem> items) {
+  final sorted = [...items]..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+  final map = <String, List<FeatureHistoryItem>>{};
+  for (final it in sorted) {
+    (map[it.sessionId] ??= <FeatureHistoryItem>[]).add(it);
+  }
+  final sessions = <_PreScreenSession>[];
+  map.forEach((sid, rows) {
+    final messages = <ChatMessage>[];
+    for (final r in rows) {
+      final input = r.inputText.trim();
+      // The start row's input is a placeholder, not a user answer.
+      if (input.isNotEmpty && input != '[screening started]') {
+        messages.add(ChatMessage(text: input, isUser: true));
+      }
+      if (r.outputText.trim().isNotEmpty) {
+        messages.add(ChatMessage(text: r.outputText));
+      }
+    }
+    final last = rows.last;
+    sessions.add(_PreScreenSession(
+      sessionId: sid,
+      messages: messages,
+      answered: (last.metadata?['answered_count'] as num?)?.toInt() ?? 0,
+      date: last.createdAt,
+      complete: rows.any((r) => r.metadata?['ahrq_severity'] != null),
+    ));
+  });
+  sessions.sort((a, b) => b.date.compareTo(a.date)); // newest first
+  return sessions;
+}
+
+/// Idle view: short intro + Start + resumable sessions + past results.
 class _IntroView extends StatelessWidget {
   final Color fg;
-  final List<FeatureHistoryItem>? results;
+  final bool loading;
+  final List<FeatureHistoryItem> completed;
+  final List<_PreScreenSession> incomplete;
   final VoidCallback onStart;
+  final ValueChanged<_PreScreenSession> onContinue;
 
   const _IntroView({
     required this.fg,
-    required this.results,
+    required this.loading,
+    required this.completed,
+    required this.incomplete,
     required this.onStart,
+    required this.onContinue,
   });
+
+  Widget _heading(String t) => Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Text(t,
+            style: TextStyle(
+                fontSize: 15, fontWeight: FontWeight.w600, color: fg)),
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -296,23 +361,87 @@ class _IntroView extends StatelessWidget {
           icon: const Icon(Icons.play_arrow_rounded),
           label: const Text('Start pre-screening'),
         ),
-        const SizedBox(height: 28),
-        Text('Your results',
-            style: TextStyle(
-                fontSize: 15, fontWeight: FontWeight.w600, color: fg)),
-        const SizedBox(height: 12),
-        if (results == null)
+        if (loading) ...[
+          const SizedBox(height: 28),
           const Center(child: Padding(
             padding: EdgeInsets.all(16),
             child: SizedBox(
                 width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2)),
-          ))
-        else if (results!.isEmpty)
-          Text('No results yet — complete a pre-screening to see it here.',
-              style: TextStyle(fontSize: 13, color: fg.withValues(alpha: 0.5)))
-        else
-          ...results!.map((r) => _ResultCard(item: r, fg: fg)),
+          )),
+        ] else ...[
+          if (incomplete.isNotEmpty) ...[
+            const SizedBox(height: 28),
+            _heading('Continue where you left off'),
+            ...incomplete.map((s) =>
+                _ContinueCard(session: s, fg: fg, onTap: () => onContinue(s))),
+          ],
+          const SizedBox(height: 28),
+          _heading('Your results'),
+          if (completed.isEmpty)
+            Text('No results yet — complete a pre-screening to see it here.',
+                style: TextStyle(fontSize: 13, color: fg.withValues(alpha: 0.5)))
+          else
+            ...completed.map((r) => _ResultCard(item: r, fg: fg)),
+        ],
       ],
+    );
+  }
+}
+
+/// Tappable card for an unfinished session — resumes it.
+class _ContinueCard extends StatelessWidget {
+  final _PreScreenSession session;
+  final Color fg;
+  final VoidCallback onTap;
+  const _ContinueCard(
+      {required this.session, required this.fg, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    const accent = Color(0xFF3D5A99);
+    final d = session.date;
+    final date =
+        '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: accent.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: accent.withValues(alpha: 0.3)),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              children: [
+                const Icon(Icons.play_circle_fill_rounded, color: accent),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('In progress — ${session.answered}/$_totalTopics answered',
+                          style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: fg)),
+                      Text('Started $date · tap to continue',
+                          style: TextStyle(
+                              fontSize: 12, color: fg.withValues(alpha: 0.5))),
+                    ],
+                  ),
+                ),
+                Icon(Icons.chevron_right_rounded,
+                    color: fg.withValues(alpha: 0.4)),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
