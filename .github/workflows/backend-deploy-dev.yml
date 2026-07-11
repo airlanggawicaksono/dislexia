@@ -2,8 +2,6 @@ name: Deploy BE Dev
 
 on:
   push:
-    paths:
-      - 'backend/**'
     branches:
       - main
   workflow_dispatch:
@@ -104,7 +102,7 @@ jobs:
       - name: Backup DB before deploy
         run: |
           ssh -o StrictHostKeyChecking=no -i /tmp/vps_key ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "
-            docker exec dev-postgres pg_dump -U dev dev > /opt/dislexia/backups/predeploy-dev.sql 2>/dev/null && echo 'DB backed up' || echo 'DB backup skipped'
+            docker exec dev-postgres pg_dump -U '${{ secrets.DB_USER }}' '${{ secrets.DB_NAME }}' > /opt/dislexia/backups/predeploy-dev.sql 2>/dev/null && echo 'DB backed up' || echo 'DB backup skipped'
           "
 
       - name: Deploy on VPS
@@ -125,11 +123,15 @@ jobs:
             docker compose -f docker-compose.dev.yml up -d --no-build
           "
 
-      - name: Run DB migrations
+      - name: Verify DB migrations
+        # Migrations run inside the container before uvicorn starts (compose
+        # command). This step only verifies the DB is at head — no `stamp head`
+        # fallback: a failed migration must fail the deploy, not be papered over.
         run: |
           ssh -o StrictHostKeyChecking=no -i /tmp/vps_key ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "
-            echo 'Running migrations...'
-            docker exec -w /app dev-backend alembic upgrade head 2>&1 && echo 'Migration OK' || { docker exec -w /app dev-backend alembic stamp head 2>&1 && echo 'Migration stamped (table already exists)'; }
+            docker exec -w /app dev-backend alembic current 2>&1
+            docker exec -w /app dev-backend alembic check 2>&1 || true
+            docker exec -w /app dev-backend alembic upgrade head 2>&1 && echo 'Migration OK'
           "
 
       - name: Health check
@@ -139,7 +141,7 @@ jobs:
           ssh -o StrictHostKeyChecking=no -i /tmp/vps_key ${VPS} '
             docker ps
             docker compose -f /opt/dislexia/dev/docker-compose.dev.yml logs --tail=30
-            curl -f http://127.0.0.1:8000/health || echo "Health check failed"
+            curl -f http://127.0.0.1:8000/health
           '
 
       - name: Notify failure

@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.docs import get_redoc_html, get_swagger_ui_html
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 
-from app.config.database import async_session_maker, close_db, init_db
+from app.config.database import async_session_maker, close_db
 from app.config.settings import settings
 from app.scripts.seed_admin import ensure_seed_admin
 from app.middleware.flutter_wasm_cors import FlutterWasmCorsMiddleware
@@ -73,7 +73,9 @@ obtained via `POST /api/v1/auth/login`.
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await init_db()
+    # Schema is owned by alembic (`alembic upgrade head` runs before uvicorn in
+    # the compose command). No create_all here — it silently rebuilt the schema
+    # on empty databases and masked both migration failures and data loss.
     async with async_session_maker() as db:
         await ensure_seed_admin(db)
     yield

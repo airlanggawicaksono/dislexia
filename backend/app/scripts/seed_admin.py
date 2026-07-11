@@ -16,7 +16,7 @@ import typer
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.config.database import async_session_maker, init_db
+from app.config.database import async_session_maker
 from app.config.settings import settings
 from app.models.admin import Admin
 from app.utils.password_utils import hash_password
@@ -45,7 +45,7 @@ async def ensure_seed_admin(
 
 
 async def _run_cli(username: str, password: str) -> str:
-    await init_db()
+    # Schema must already exist — run `alembic upgrade head` first.
     async with async_session_maker() as db:
         created = await ensure_seed_admin(db, username, password)
     if not created:

@@ -28,8 +28,10 @@ services:
       args:
         APP_PORT: ${APP_PORT:-8000}
     container_name: ${COMPOSE_PROJECT_NAME:-dislexia}-app
+    # Migrations run before the server starts — alembic is the only schema owner.
     command: >
-      sh -c "uvicorn app.main:app
+      sh -c "alembic upgrade head &&
+      uvicorn app.main:app
       --host ${APP_HOST:-0.0.0.0}
       --port ${APP_PORT:-8000}
       $$([ '${APP_RELOAD}' = 'true' ] && echo '--reload' || echo '')"

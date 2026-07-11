@@ -47,8 +47,12 @@ services:
     depends_on:
       postgres-db:
         condition: service_healthy
+    # Migrations run before the server starts — alembic is the only schema
+    # owner. If a migration fails the container crash-loops and the deploy's
+    # health check goes red instead of silently starting on a broken schema.
     command: >
-      sh -c "uvicorn app.main:app
+      sh -c "alembic upgrade head &&
+      uvicorn app.main:app
       --host ${APP_HOST}
       --port ${APP_PORT}
       --reload"
