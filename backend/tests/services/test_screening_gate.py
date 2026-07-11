@@ -46,8 +46,27 @@ def test_parse_gate_garbage_falls_back_to_advance():
 
 
 def test_parse_gate_empty_message_falls_back():
-    answered, _ = _parse_gate('{"answered": false, "message": ""}')
+    answered, msg = _parse_gate('{"answered": false, "message": ""}')
     assert answered is True  # empty message → fallback → advance
+    assert '"answered"' not in msg  # JSON envelope must not reach the chat
+
+
+def test_parse_gate_salvages_truncated_json():
+    # Truncated payload (no closing brace) — regex salvage keeps both fields.
+    raw = '{"answered": false, "message": "Could you say more about that?"'
+    assert _parse_gate(raw) == (False, "Could you say more about that?")
+
+
+def test_parse_gate_salvages_json_with_prose_around_it():
+    raw = 'Sure! Here is the JSON:\n{"answered": true, "message": "Great, next topic..."} hope that helps'
+    assert _parse_gate(raw) == (True, "Great, next topic...")
+
+
+def test_parse_gate_unsalvageable_json_blob_never_leaks():
+    answered, msg = _parse_gate('{"answered": true, "mess')
+    assert answered is True
+    assert '"answered"' not in msg
+    assert not msg.startswith("{")
 
 
 def test_clean_json_removes_fences():

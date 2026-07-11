@@ -4,14 +4,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../configs/injector/injector_conf.dart';
 import '../../../../core/api/api_helper.dart';
-import '../../../../core/api/feature_history_datasource.dart';
 import '../../../../core/utils/font_utils.dart';
 import '../../../../core/widgets/adaptive/adaptive.dart';
-import '../../../../core/widgets/history_panel.dart';
 import '../../../../core/widgets/reader_text_display.dart';
 import '../../../display_settings/domain/entities/display_settings_entity.dart';
 import '../../../display_settings/presentation/bloc/display_settings/display_settings_bloc.dart';
 import '../../../display_settings/presentation/theme/display_colors.dart';
+import '../../data/datasources/screening_remote_datasource.dart';
+import '../../data/models/screening_model.dart';
 import '../bloc/screening_bloc.dart';
 import '../bloc/screening_event.dart';
 import '../bloc/screening_state.dart';
@@ -30,10 +30,10 @@ class _ScreeningPageState extends State<ScreeningPage> {
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
 
-  // Idle-screen data, grouped by session from history.
+  // Idle-screen data: whole conversation sets from GET /me/screen/sessions.
   bool _loadingResults = true;
-  List<FeatureHistoryItem> _completed = const []; // rows carrying ahrq result
-  List<_PreScreenSession> _incomplete = const []; // resumable sessions
+  List<ScreeningSessionModel> _completed = const [];
+  List<ScreeningSessionModel> _incomplete = const []; // resumable
 
   // Post-process poll state (set once a session hits is_complete).
   _PpPhase? _ppPhase;
@@ -44,22 +44,28 @@ class _ScreeningPageState extends State<ScreeningPage> {
   @override
   void initState() {
     super.initState();
-    // Do NOT auto-start — show the intro + past results first, start on tap.
-    // (Preserves any in-progress session across navigate-away-and-back.)
+    // Entering the page always lands on the intro: any in-progress chat is
+    // parked server-side and resumed from its "continue" card, so leaving the
+    // page (back/quit) never strands the user inside a stale conversation.
+    final bloc = context.read<ScreeningBloc>();
+    if (bloc.state is! ScreeningInitial) {
+      bloc.add(ResetScreeningEvent());
+    }
     _loadResults();
   }
 
   Future<void> _loadResults() async {
     if (mounted) setState(() => _loadingResults = true);
     try {
-      final items = await FeatureHistoryDatasource(getIt<ApiHelper>())
-          .getHistory(feature: 'screen');
-      final grouped = _groupSessions(items);
+      final sets = await getIt<ScreeningRemoteDatasource>().sessions();
       if (mounted) {
         setState(() {
-          _completed =
-              items.where((i) => i.metadata?['ahrq_severity'] != null).toList();
-          _incomplete = grouped.where((s) => !s.complete).toList();
+          _completed = sets
+              .where((s) => s.isComplete && s.messages.isNotEmpty)
+              .toList();
+          _incomplete = sets
+              .where((s) => !s.isComplete && s.messages.isNotEmpty)
+              .toList();
           _loadingResults = false;
         });
       }
@@ -76,11 +82,15 @@ class _ScreeningPageState extends State<ScreeningPage> {
 
   void _start() => context.read<ScreeningBloc>().add(StartScreeningEvent());
 
+  List<ChatMessage> _toChat(ScreeningSessionModel s) => s.messages
+      .map((m) => ChatMessage(text: m.content, isUser: m.role == 'user'))
+      .toList();
+
   // Rehydrate an incomplete session and continue it.
-  void _continue(_PreScreenSession s) {
+  void _continue(ScreeningSessionModel s) {
     context
         .read<ScreeningBloc>()
-        .add(ResumeScreeningEvent(s.sessionId, s.messages));
+        .add(ResumeScreeningEvent(s.sessionId, _toChat(s)));
   }
 
   @override
@@ -171,15 +181,38 @@ class _ScreeningPageState extends State<ScreeningPage> {
     });
   }
 
-  void _showHistory() {
+  // Read-only viewer for a past conversation set.
+  void _viewSession(ScreeningSessionModel s) {
+    final ds = context.read<DisplaySettingsBloc>().state.settings;
+    final theme = Theme.of(context);
+    final bg = bgColor(ds.colorTheme);
+    final fg = fgColor(ds.colorTheme);
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (ctx) => HistoryPanel(
-        // Backend FeatureType enum value is 'screen', not 'screening'.
-        feature: 'screen',
-        onSelectInput: (text) => Navigator.pop(ctx),
-        onSelectResult: (item) => Navigator.pop(ctx),
+      backgroundColor: theme.colorScheme.surface,
+      builder: (ctx) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.7,
+        maxChildSize: 0.95,
+        builder: (ctx, scroll) => ListView.builder(
+          controller: scroll,
+          padding: const EdgeInsets.all(16),
+          itemCount: s.messages.length,
+          itemBuilder: (ctx, i) {
+            final m = s.messages[i];
+            if (m.role == 'user') {
+              return _UserBubble(text: m.content, settings: ds);
+            }
+            return _AssistantCard(
+              text: m.content,
+              isSummary: false,
+              bg: bg,
+              fg: fg,
+              settings: ds,
+            );
+          },
+        ),
       ),
     );
   }
@@ -211,13 +244,6 @@ class _ScreeningPageState extends State<ScreeningPage> {
             style: TextStyle(color: theme.colorScheme.onSurface)),
         actions: [
           _BarAction(
-            icon: Icons.history_rounded,
-            label: 'History',
-            color: theme.colorScheme.onSurface,
-            onTap: _showHistory,
-          ),
-          const SizedBox(width: 4),
-          _BarAction(
             icon: Icons.refresh_rounded,
             label: 'Restart',
             color: theme.colorScheme.onSurface,
@@ -245,6 +271,7 @@ class _ScreeningPageState extends State<ScreeningPage> {
               incomplete: _incomplete,
               onStart: _start,
               onContinue: _continue,
+              onView: _viewSession,
             );
           }
           if (state is ScreeningErrorState && state.messages.isEmpty) {
@@ -347,71 +374,15 @@ class _ScreeningPageState extends State<ScreeningPage> {
   }
 }
 
-const _totalTopics = 23; // ARHQ item count — see backend QUESTIONS.
-
-/// A pre-screening session reconstructed from its history rows.
-class _PreScreenSession {
-  final String sessionId;
-  final List<ChatMessage> messages;
-  final int answered;
-  final DateTime date;
-  final bool complete;
-  const _PreScreenSession({
-    required this.sessionId,
-    required this.messages,
-    required this.answered,
-    required this.date,
-    required this.complete,
-  });
-}
-
-/// Group flat history rows into sessions (chronological), rebuilding the chat
-/// bubbles so an incomplete one can be replayed + resumed.
-List<_PreScreenSession> _groupSessions(List<FeatureHistoryItem> items) {
-  final sorted = [...items]..sort((a, b) => a.createdAt.compareTo(b.createdAt));
-  final map = <String, List<FeatureHistoryItem>>{};
-  for (final it in sorted) {
-    (map[it.sessionId] ??= <FeatureHistoryItem>[]).add(it);
-  }
-  final sessions = <_PreScreenSession>[];
-  map.forEach((sid, rows) {
-    final messages = <ChatMessage>[];
-    for (final r in rows) {
-      final input = r.inputText.trim();
-      // The start row's input is a placeholder, not a user answer.
-      if (input.isNotEmpty && input != '[screening started]') {
-        messages.add(ChatMessage(text: input, isUser: true));
-      }
-      if (r.outputText.trim().isNotEmpty) {
-        messages.add(ChatMessage(text: r.outputText));
-      }
-    }
-    final last = rows.last;
-    final answered = (last.metadata?['answered_count'] as num?)?.toInt() ?? 0;
-    sessions.add(_PreScreenSession(
-      sessionId: sid,
-      messages: messages,
-      answered: answered,
-      date: last.createdAt,
-      // Complete once all topics are answered OR scoring metadata landed —
-      // scoring runs in the background, so a just-finished (or failed-scoring)
-      // session must not resurface as "continue where you left off".
-      complete: answered >= _totalTopics ||
-          rows.any((r) => r.metadata?['ahrq_status'] != null),
-    ));
-  });
-  sessions.sort((a, b) => b.date.compareTo(a.date)); // newest first
-  return sessions;
-}
-
 /// Idle view: short intro + Start + resumable sessions + past results.
 class _IntroView extends StatelessWidget {
   final Color fg;
   final bool loading;
-  final List<FeatureHistoryItem> completed;
-  final List<_PreScreenSession> incomplete;
+  final List<ScreeningSessionModel> completed;
+  final List<ScreeningSessionModel> incomplete;
   final VoidCallback onStart;
-  final ValueChanged<_PreScreenSession> onContinue;
+  final ValueChanged<ScreeningSessionModel> onContinue;
+  final ValueChanged<ScreeningSessionModel> onView;
 
   const _IntroView({
     required this.fg,
@@ -420,6 +391,7 @@ class _IntroView extends StatelessWidget {
     required this.incomplete,
     required this.onStart,
     required this.onContinue,
+    required this.onView,
   });
 
   Widget _heading(String t) => Padding(
@@ -473,7 +445,8 @@ class _IntroView extends StatelessWidget {
             Text('No results yet — complete a pre-screening to see it here.',
                 style: TextStyle(fontSize: 13, color: fg.withValues(alpha: 0.5)))
           else
-            ...completed.map((r) => _ResultCard(item: r, fg: fg)),
+            ...completed
+                .map((s) => _ResultCard(session: s, fg: fg, onTap: () => onView(s))),
         ],
       ],
     );
@@ -482,7 +455,7 @@ class _IntroView extends StatelessWidget {
 
 /// Tappable card for an unfinished session — resumes it.
 class _ContinueCard extends StatelessWidget {
-  final _PreScreenSession session;
+  final ScreeningSessionModel session;
   final Color fg;
   final VoidCallback onTap;
   const _ContinueCard(
@@ -491,7 +464,7 @@ class _ContinueCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const accent = Color(0xFF3D5A99);
-    final d = session.date;
+    final d = session.updatedAt;
     final date =
         '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
     return Container(
@@ -516,12 +489,13 @@ class _ContinueCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('In progress — ${session.answered}/$_totalTopics answered',
+                      Text(
+                          'In progress — ${session.answeredCount}/${session.totalTopics} answered',
                           style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
                               color: fg)),
-                      Text('Started $date · tap to continue',
+                      Text('Last activity $date · tap to continue',
                           style: TextStyle(
                               fontSize: 12, color: fg.withValues(alpha: 0.5))),
                     ],
@@ -539,9 +513,11 @@ class _ContinueCard extends StatelessWidget {
 }
 
 class _ResultCard extends StatelessWidget {
-  final FeatureHistoryItem item;
+  final ScreeningSessionModel session;
   final Color fg;
-  const _ResultCard({required this.item, required this.fg});
+  final VoidCallback onTap;
+  const _ResultCard(
+      {required this.session, required this.fg, required this.onTap});
 
   static const _severityColors = {
     'mild': Color(0xFF2E7D32),
@@ -551,52 +527,67 @@ class _ResultCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final m = item.metadata ?? const {};
-    final severity = (m['ahrq_severity'] as String?) ?? 'unknown';
+    final m = session.result ?? const {};
+    final scored = session.status == 'success';
+    final severity = (m['ahrq_severity'] as String?) ?? 'pending';
     final total = m['ahrq_total'];
-    final color = _severityColors[severity] ?? fg;
-    final d = item.createdAt;
+    final color = scored ? (_severityColors[severity] ?? fg) : fg;
+    final d = session.updatedAt;
     final date =
         '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(severity.toUpperCase(),
-                style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700)),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
               children: [
-                if (total != null)
-                  Text('Score: $total',
-                      style: TextStyle(
-                          fontSize: 14, fontWeight: FontWeight.w600, color: fg)),
-                Text(date,
-                    style: TextStyle(
-                        fontSize: 12, color: fg.withValues(alpha: 0.5))),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: color,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(severity.toUpperCase(),
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700)),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (total != null)
+                        Text('Score: $total',
+                            style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: fg)),
+                      Text('$date · tap to view conversation',
+                          style: TextStyle(
+                              fontSize: 12, color: fg.withValues(alpha: 0.5))),
+                    ],
+                  ),
+                ),
+                Icon(Icons.chevron_right_rounded,
+                    color: fg.withValues(alpha: 0.4)),
               ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }

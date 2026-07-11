@@ -70,7 +70,10 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
     volumes:
-      - postgres-dev-data:/var/lib/postgresql
+      # postgres <=17 keeps PGDATA in /var/lib/postgresql/data and declares an
+      # image VOLUME there. Mounting the parent dir leaves the actual data in a
+      # fresh anonymous volume each `up` → total data loss on every deploy.
+      - postgres-dev-data:/var/lib/postgresql/data
     ports:
       - "${POSTGRES_EXTERNAL_PORT}:${DB_PORT}"
     healthcheck:

@@ -7,7 +7,10 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
     volumes:
-      - postgres_data:/var/lib/postgresql
+      # postgres <=17 keeps PGDATA in /var/lib/postgresql/data — mounting the
+      # parent dir silently stores data in an anonymous volume instead (lost on
+      # container re-create).
+      - postgres_data:/var/lib/postgresql/data
     ports:
       - "${POSTGRES_EXTERNAL_PORT:-5432}:5432"
     healthcheck:

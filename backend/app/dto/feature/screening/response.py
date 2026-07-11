@@ -1,7 +1,9 @@
+from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional
 from uuid import UUID
 
+from app.dto.feature.chat.base import ChatMessageDTO
 from app.dto.feature.screening.enums import PostProcessStatus
 
 
@@ -39,6 +41,39 @@ class ScreeningResponseDTO(BaseModel):
             "ahrq_severity (str|null, 'mild'|'moderate'|'severe')."
         ),
     )
+
+
+class ScreeningSessionDTO(BaseModel):
+    """One pre-screening conversation as a SET: its messages, progress and
+    outcome. This — not the flat per-turn feature-history rows — is the unit
+    clients should treat as 'a history entry'."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    session_id: UUID
+    created_at: datetime
+    updated_at: datetime
+    is_complete: bool = Field(
+        ..., description="All topics answered (scoring may still be running)."
+    )
+    answered_count: int = Field(0, description="Topics answered so far.")
+    total_topics: int
+    status: PostProcessStatus = Field(
+        ..., description="ARHQ scoring status: not_started | success | failed."
+    )
+    result: Optional[dict] = Field(
+        None, description="ARHQ metadata (ahrq_severity, ahrq_total, …) once scored."
+    )
+    messages: list[ChatMessageDTO] = Field(
+        default_factory=list, description="Full conversation, chronological."
+    )
+
+
+class ScreeningSessionListDTO(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    items: list[ScreeningSessionDTO]
+    total: int
 
 
 class PostProcessRunDTO(BaseModel):

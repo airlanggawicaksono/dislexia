@@ -67,6 +67,19 @@ class ChatHistoryService:
         return [to_metadata_dto(s) for s in result.scalars().all()]
 
     @staticmethod
+    async def get_user_sessions_full(
+        user_id: UUID, feature: FeatureType, db: AsyncSession
+    ) -> list[ChatSessionDTO]:
+        """Like get_user_sessions but WITH each session's message history —
+        for endpoints that present conversations as whole sets."""
+        result = await db.execute(
+            select(ChatSession)
+            .where(ChatSession.user_id == user_id, ChatSession.feature == feature.value)
+            .order_by(ChatSession.updated_at.desc())
+        )
+        return [to_session_dto(s) for s in result.scalars().all()]
+
+    @staticmethod
     async def save_feature_history(
         session_id: UUID, user_id: UUID, feature: FeatureType,
         input_text: str, output_text: str, db: AsyncSession,

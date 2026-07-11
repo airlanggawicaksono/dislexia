@@ -1,5 +1,6 @@
 import asyncio
 import json
+import re
 from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -19,9 +20,12 @@ from app.dto.feature.chat.enums import FeatureType, ChatRoleType
 from app.dto.feature.llm import LLMRequestDTO
 from app.dto.feature.screening.response import (
     ScreeningResponseDTO,
+    ScreeningSessionDTO,
+    ScreeningSessionListDTO,
     PostProcessRunDTO,
     PostProcessStatusDTO,
 )
+from app.services.screening.postprocess.result import resolve_status
 
 # After this many clarification attempts on one topic, accept the answer and
 # move on — a confused user must never get stuck in an infinite re-ask loop.
@@ -65,21 +69,46 @@ def _clean_json(raw: str) -> str:
     return s.strip()
 
 
+# Field extractors for salvaging a malformed gate payload (truncated JSON,
+# trailing prose, etc.) without ever leaking the JSON envelope into the chat.
+_MESSAGE_RE = re.compile(r'"message"\s*:\s*"((?:[^"\\]|\\.)*)"')
+_ANSWERED_RE = re.compile(r'"answered"\s*:\s*(true|false)')
+
+
 def _parse_gate(raw: str) -> tuple[bool, str]:
     """Parse the gate's {"answered", "message"} JSON.
 
-    On any parse failure we default to answered=true with the raw text as the
-    message, so a malformed model response advances the flow instead of
-    wedging the user on one topic forever.
+    On parse failure, salvage the fields by regex if possible; a JSON-looking
+    blob that can't be salvaged becomes a generic continue message — the raw
+    envelope (with its internal `answered` key) must never reach the user.
+    Plain non-JSON text passes through as the message, and any failure defaults
+    to answered=true so a malformed response advances instead of wedging the
+    user on one topic forever.
     """
+    cleaned = _clean_json(raw)
     try:
-        data = json.loads(_clean_json(raw), strict=False)
+        data = json.loads(cleaned, strict=False)
         message = str(data.get("message", "")).strip()
         if not message:
             raise ValueError("empty message")
         return bool(data.get("answered", True)), message
     except Exception:
-        return True, _clean_json(raw)
+        msg_match = _MESSAGE_RE.search(cleaned)
+        if msg_match:
+            try:
+                message = json.loads(f'"{msg_match.group(1)}"')  # unescape
+            except Exception:
+                message = msg_match.group(1)
+            if message.strip():
+                ans_match = _ANSWERED_RE.search(cleaned)
+                answered = ans_match.group(1) == "true" if ans_match else True
+                return answered, message.strip()
+        if cleaned.lstrip().startswith("{"):
+            return True, (
+                "Thank you for sharing. Let's keep going — "
+                "please tell me a bit more when the next question comes."
+            )
+        return True, cleaned
 
 
 class ScreeningService:
@@ -187,6 +216,41 @@ class ScreeningService:
             total_topics=len(QUESTIONS),
             ahrq_result=None,
         )
+
+    @staticmethod
+    async def list_sessions(user_id: UUID, db: AsyncSession) -> ScreeningSessionListDTO:
+        """Return the user's pre-screening history as conversation SETS.
+
+        One item per session: full message list, topic progress, and the ARHQ
+        outcome — instead of the flat per-turn feature-history rows.
+        """
+        sessions = await ChatHistoryService.get_user_sessions_full(
+            user_id, FeatureType.SCREEN, db
+        )
+        # Latest history row per session carries the progress + ARHQ metadata.
+        # get_feature_history returns rows newest-first → first seen wins.
+        rows = await ChatHistoryService.get_feature_history(user_id, FeatureType.SCREEN, db)
+        latest_meta: dict = {}
+        for row in rows.items:
+            latest_meta.setdefault(row.session_id, row.metadata or {})
+
+        items = []
+        for s in sessions:
+            meta = latest_meta.get(s.session_id, {})
+            answered_count = int(meta.get("answered_count", 0))
+            scored = meta.get("ahrq_status") is not None
+            items.append(ScreeningSessionDTO(
+                session_id=s.session_id,
+                created_at=s.created_at,
+                updated_at=s.updated_at,
+                is_complete=answered_count >= len(QUESTIONS) or scored,
+                answered_count=answered_count,
+                total_topics=len(QUESTIONS),
+                status=resolve_status(meta),
+                result=meta if scored else None,
+                messages=s.history,
+            ))
+        return ScreeningSessionListDTO(items=items, total=len(items))
 
     @staticmethod
     async def postprocess(

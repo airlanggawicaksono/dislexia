@@ -4,6 +4,9 @@ import '../models/screening_model.dart';
 abstract class ScreeningRemoteDatasource {
   Future<ScreeningResponseModel> start();
   Future<ScreeningResponseModel> reply(ScreeningReplyRequestModel request);
+
+  /// Pre-screening history as conversation sets, newest first.
+  Future<List<ScreeningSessionModel>> sessions();
 }
 
 class ScreeningRemoteDatasourceImpl implements ScreeningRemoteDatasource {
@@ -24,6 +27,14 @@ class ScreeningRemoteDatasourceImpl implements ScreeningRemoteDatasource {
       '/me/screen/reply',
       body: request.toJson(),
       parse: ScreeningResponseModel.fromJson,
+    );
+  }
+
+  @override
+  Future<List<ScreeningSessionModel>> sessions() {
+    return _api.getList(
+      '/me/screen/sessions',
+      parse: ScreeningSessionModel.fromJson,
     );
   }
 }

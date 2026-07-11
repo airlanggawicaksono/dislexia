@@ -11,6 +11,7 @@ from app.dto.feature.chat.enums import FeatureType
 from app.dto.feature.screening import (
     ScreeningReplyRequestDTO,
     ScreeningResponseDTO,
+    ScreeningSessionListDTO,
     PostProcessRunDTO,
     PostProcessStatusDTO,
 )
@@ -142,6 +143,40 @@ async def reply(
     `ahrq_status="failed"` in metadata, but the endpoint still returns 200.
     """
     return await ScreeningService.reply(request.text, request.session_id, user.user_id, db)
+
+
+@router.get(
+    "/sessions",
+    response_model=ScreeningSessionListDTO,
+    status_code=status.HTTP_200_OK,
+    summary="List pre-screening conversations (as sets)",
+    responses=LLM_RESPONSES,
+)
+async def sessions(
+    db: AsyncSession = Depends(get_db),
+    user: UserResponseDTO = Depends(get_current_user),
+):
+    """
+    The user's pre-screening history as **conversation sets** — one item per
+    session, newest first. Prefer this over `/history` (flat per-turn rows).
+
+    Each item:
+    ```
+    { "session_id": "...", "is_complete": false,
+      "answered_count": 7, "total_topics": 23,
+      "status": "not_started" | "success" | "failed",
+      "result": null | { "ahrq_severity": "...", "ahrq_total": ..., ... },
+      "messages": [ {"role": "user"|"assistant", "content": "...", ...}, ... ] }
+    ```
+
+    Client usage:
+    - `is_complete=false` → offer "continue where you left off": replay
+      `messages`, then keep calling `/reply` with this `session_id`.
+    - `is_complete=true, status=success` → show `result` as a past outcome.
+    - `is_complete=true, status=failed|not_started` → scoring didn't land;
+      re-trigger via `POST /{session_id}/postprocess?force=true`.
+    """
+    return await ScreeningService.list_sessions(user.user_id, db)
 
 
 @router.get(
