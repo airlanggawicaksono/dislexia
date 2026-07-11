@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../configs/injector/injector_conf.dart';
 import '../../features/display_settings/domain/entities/display_settings_entity.dart';
 import '../../features/display_settings/presentation/bloc/display_settings/display_settings_bloc.dart';
 import '../../features/upload/data/datasources/pdf_extractor_service.dart';
@@ -82,7 +83,9 @@ class FeaturePage extends StatelessWidget {
         return;
       }
       if (!context.mounted) return;
-      final text = await context.read<PdfExtractorService>().extractText(bytes);
+      // getIt, not context.read: mobile routes don't wrap pages in a
+      // Provider<PdfExtractorService> — only the desktop shell did.
+      final text = await getIt<PdfExtractorService>().extractText(bytes);
       if (!context.mounted) return;
       if (text.trim().isEmpty) {
         showAdaptiveFeedback(

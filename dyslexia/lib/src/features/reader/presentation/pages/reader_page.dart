@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../configs/injector/injector_conf.dart';
 import '../../../../core/widgets/reader_text_display.dart';
 import '../../../display_settings/presentation/bloc/display_settings/display_settings_bloc.dart';
 import '../../../display_settings/presentation/theme/display_colors.dart';
@@ -100,7 +101,7 @@ class _ReaderPageState extends State<ReaderPage> {
       context
           .read<ReaderShellBloc>()
           .add(const SetPdfProgressEvent(current: 0, total: 1));
-      final text = await context.read<PdfExtractorService>().extractText(
+      final text = await getIt<PdfExtractorService>().extractText(
         bytes,
         onProgress: (current, total) {
           if (!context.mounted) return;

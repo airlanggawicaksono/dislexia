@@ -8,7 +8,6 @@ import '../blocs/theme/theme_bloc.dart';
 import '../themes/app_theme.dart';
 import '../../core/api/api_helper.dart';
 import '../../features/display_settings/presentation/bloc/display_settings/display_settings_bloc.dart';
-import '../../features/upload/data/datasources/pdf_extractor_service.dart';
 import '../../features/reader/presentation/bloc/reader/reader_bloc.dart';
 import '../../features/reader/presentation/bloc/reader_shell/reader_shell_bloc.dart';
 import '../../features/reader/presentation/bloc/reader_shell/reader_shell_event.dart';
@@ -89,7 +88,6 @@ class _DesktopShellState extends State<DesktopShell> {
             BlocProvider.value(value: getIt<ReaderBloc>()),
             BlocProvider(create: (_) => SidebarBloc()),
             BlocProvider(create: (_) => ReaderShellBloc()),
-            Provider.value(value: getIt<PdfExtractorService>()),
             Provider.value(value: getIt<ApiHelper>()),
           ],
           child: BlocBuilder<DisplaySettingsBloc, DisplaySettingsState>(

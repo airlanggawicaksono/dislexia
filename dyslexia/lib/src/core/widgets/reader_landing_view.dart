@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../configs/injector/injector_conf.dart';
 import '../constants/sample_text.dart';
 import '../../features/reader/presentation/bloc/reader_shell/reader_shell_bloc.dart';
 import '../../features/reader/presentation/bloc/reader_shell/reader_shell_event.dart';
@@ -55,7 +56,7 @@ class _ReaderLandingViewState extends State<ReaderLandingView> {
         .read<ReaderShellBloc>()
         .add(const SetPdfProgressEvent(current: 0, total: 1));
     try {
-      final text = await context.read<PdfExtractorService>().extractText(
+      final text = await getIt<PdfExtractorService>().extractText(
         bytes,
         onProgress: (current, total) {
           if (!mounted) return;
