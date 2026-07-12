@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 interface User {
   user_id: string;
   display_name: string;
-  account_number?: string; // ✅ Made optional (API may not return this)
+  account_number: string;
   account_md5: string;
   is_active: boolean;
   created_at: string;
@@ -34,6 +34,21 @@ export default function UserManagementPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  // ✅ Cek apakah ada modal yang terbuka
+  const isAnyModalOpen = showAddModal || showCredentialsModal || showDetailModal;
+
+  // ✅ Lock scroll body saat modal terbuka
+  useEffect(() => {
+    if (isAnyModalOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isAnyModalOpen]);
 
   useEffect(() => {
     document.title = "User Management - QUB Admin";
@@ -236,7 +251,6 @@ export default function UserManagementPage() {
     });
   };
 
-  // ✅ FIXED: Safe filter with optional chaining
   const filteredUsers = users.filter((user) => {
     const query = searchQuery.toLowerCase();
     const displayName = user.display_name?.toLowerCase() || "";
@@ -328,7 +342,7 @@ export default function UserManagementPage() {
                     Display Name
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Access Code
+                    Access Code (6-digit)
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Created At
@@ -358,12 +372,12 @@ export default function UserManagementPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-2">
-                          <code className="text-sm bg-blue-50 text-blue-700 px-3 py-1.5 rounded font-mono font-semibold border border-blue-200">
-                            {user.account_number || '••••••'}
+                          <code className="text-sm bg-green-50 text-green-700 px-3 py-1.5 rounded font-mono font-bold border border-green-200 tracking-widest">
+                            {user.account_number || 'N/A'}
                           </code>
                           {user.account_number && (
                             <button
-                              onClick={() => copyToClipboard(user.account_number!, user.user_id)}
+                              onClick={() => copyToClipboard(user.account_number, user.user_id)}
                               className={`p-1.5 rounded transition-colors ${
                                 copiedId === user.user_id
                                   ? 'text-green-600 bg-green-50'
@@ -427,10 +441,16 @@ export default function UserManagementPage() {
         </div>
       </div>
 
-      {/* Add User Modal */}
+      {/* ========== ADD USER MODAL (with backdrop blur) ========== */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+        <div className="fixed inset-0 flex items-center justify-center z-[10000]">
+          {/* Backdrop with blur */}
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-all"
+            onClick={() => setShowAddModal(false)}
+          />
+          {/* Modal Content */}
+          <div className="relative bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-2xl animate-in fade-in zoom-in duration-200">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
               Add New User(s)
             </h3>
@@ -476,10 +496,19 @@ export default function UserManagementPage() {
         </div>
       )}
 
-      {/* Credentials Display Modal */}
+      {/* ========== CREDENTIALS DISPLAY MODAL (with backdrop blur) ========== */}
       {showCredentialsModal && createdCredentials.length > 0 && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 flex items-center justify-center z-[10000]">
+          {/* Backdrop with blur */}
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-all"
+            onClick={() => {
+              setShowCredentialsModal(false);
+              setCreatedCredentials([]);
+            }}
+          />
+          {/* Modal Content */}
+          <div className="relative bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto shadow-2xl animate-in fade-in zoom-in duration-200">
             <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4 mb-4">
               <h3 className="text-lg font-bold text-red-800 mb-2">
                 🚨 IMPORTANT! SAVE THESE CREDENTIALS!
@@ -536,10 +565,16 @@ export default function UserManagementPage() {
         </div>
       )}
 
-      {/* Detail Modal */}
+      {/* ========== DETAIL MODAL (with backdrop blur) ========== */}
       {showDetailModal && selectedUser && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-lg w-full mx-4">
+        <div className="fixed inset-0 flex items-center justify-center z-[10000]">
+          {/* Backdrop with blur */}
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-all"
+            onClick={() => setShowDetailModal(false)}
+          />
+          {/* Modal Content */}
+          <div className="relative bg-white rounded-lg p-6 max-w-lg w-full mx-4 shadow-2xl animate-in fade-in zoom-in duration-200">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
               User Details
             </h3>
@@ -555,15 +590,15 @@ export default function UserManagementPage() {
                 <p className="text-sm text-gray-900">{selectedUser.display_name}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-500">Access Code</label>
+                <label className="text-sm font-medium text-gray-500">Access Code (6-digit)</label>
                 <div className="flex items-center gap-2">
-                  <p className="text-sm text-gray-900 font-mono bg-blue-50 p-2 rounded flex-1 border border-blue-200 font-semibold text-blue-700">
-                    {selectedUser.account_number || '••••••'}
+                  <p className="text-xl font-mono bg-green-50 p-3 rounded flex-1 border border-green-200 font-bold text-green-700 tracking-widest">
+                    {selectedUser.account_number || 'N/A'}
                   </p>
                   {selectedUser.account_number && (
                     <button
-                      onClick={() => copyToClipboard(selectedUser.account_number!)}
-                      className="p-2 text-blue-600 hover:bg-blue-50 rounded"
+                      onClick={() => copyToClipboard(selectedUser.account_number)}
+                      className="p-2 text-green-600 hover:bg-green-50 rounded"
                       title="Copy access code"
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

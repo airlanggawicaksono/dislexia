@@ -49,6 +49,18 @@ export default function DataScreeningPage() {
     screenings: 0,
   });
 
+  // ✅ Lock scroll body saat modal terbuka
+  useEffect(() => {
+    if (showDetailModal) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [showDetailModal]);
+
   useEffect(() => {
     document.title = "User Activity - QUB Admin";
   }, []);
@@ -473,10 +485,16 @@ export default function DataScreeningPage() {
         </div>
       </div>
 
-      {/* ✅ Detail Modal with Tabs */}
+      {/* ========== DETAIL MODAL (with backdrop blur) ========== */}
       {showDetailModal && selectedUser && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
+        <div className="fixed inset-0 flex items-center justify-center z-[10000] p-4">
+          {/* Backdrop with blur */}
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-all"
+            onClick={() => setShowDetailModal(false)}
+          />
+          {/* Modal Content */}
+          <div className="relative bg-white rounded-lg w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl animate-in fade-in zoom-in duration-200">
             {/* Modal Header */}
             <div className="px-6 py-4 border-b flex items-center justify-between bg-gray-50">
               <div>
