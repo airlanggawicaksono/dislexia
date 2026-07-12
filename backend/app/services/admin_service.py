@@ -172,6 +172,7 @@ class AdminService:
             UserAdminItemDTO(
                 user_id=u.user_id,
                 display_name=u.display_name,
+                account_number=u.account_number,
                 account_md5=hashlib.md5(u.account_number.encode()).hexdigest(),
                 is_active=u.is_active,
                 created_at=u.created_at,
