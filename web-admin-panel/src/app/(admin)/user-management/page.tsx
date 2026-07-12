@@ -528,7 +528,7 @@ export default function UserManagementPage() {
                             className="px-3 py-1.5 text-xs font-medium text-white bg-amber-500 rounded-lg hover:bg-amber-600 transition-colors"
                             title="Regenerate access code"
                           >
-                            🔄 Reset
+                            Reset
                           </button>
                           <button
                             onClick={() =>
@@ -861,12 +861,7 @@ export default function UserManagementPage() {
               </div>
             </div>
             <div className="mt-6 flex gap-2">
-              <button
-                onClick={() => handleRegenerateClick(selectedUser)}
-                className="flex-1 px-4 py-2 text-sm font-medium text-white bg-amber-500 rounded-lg hover:bg-amber-600 transition-colors flex items-center justify-center gap-2"
-              >
-                🔄 Regenerate Code
-              </button>
+            
               <button
                 onClick={() => setShowDetailModal(false)}
                 className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
