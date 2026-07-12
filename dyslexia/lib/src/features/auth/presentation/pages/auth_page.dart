@@ -54,7 +54,13 @@ class _AuthPageState extends State<AuthPage> {
               // login/restore call is in flight (AuthLoading), show the branded
               // splash instead of the form. Continues seamlessly from the
               // native launch splash — no flash of the empty form or main app.
-              if (state is AuthInitial || state is AuthLoading) {
+              // Authenticated is also splash: it only renders here for the few
+              // frames between the bloc emitting and the router redirect
+              // landing on the app — showing the form then is the "login page
+              // flashes before the dashboard" bug.
+              if (state is AuthInitial ||
+                  state is AuthLoading ||
+                  state is Authenticated) {
                 return const AppSplash();
               }
 

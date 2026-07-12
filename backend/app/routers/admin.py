@@ -76,6 +76,30 @@ async def create_user(
     return await AdminService(db).create_user()
 
 
+@router.post(
+    "/users/{user_id}/regenerate-code",
+    response_model=AdminCreateUserResponseDTO,
+    status_code=status.HTTP_200_OK,
+    summary="Regenerate a user's account number",
+    responses={**AUTH_RESPONSES, **NOT_FOUND_RESPONSE},
+)
+async def regenerate_user_code(
+    user_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    _admin: AdminResponseDTO = Depends(get_current_admin),
+):
+    """
+    Issue a NEW 6-digit `account_number` for an existing user — the forgot-credentials
+    flow. The old code stops working immediately; the user's display_name and all
+    history are preserved (they key on `user_id`, not the code). The new code is
+    returned ONCE — share it with the user out-of-band, it cannot be retrieved again.
+
+    Note: sessions already logged in stay signed in (tokens reference `user_id`);
+    deactivate the account instead if the old code was compromised.
+    """
+    return await AdminService(db).regenerate_user_code(user_id)
+
+
 @router.delete(
     "/users/{user_id}",
     status_code=status.HTTP_204_NO_CONTENT,

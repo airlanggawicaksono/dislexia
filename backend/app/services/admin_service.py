@@ -9,6 +9,7 @@ from app.exceptions import UnauthorizedError, ForbiddenError, NotFoundError
 from app.models.admin import Admin
 from app.models.user import User
 from app.models.chat_session import ChatSession, FeatureHistory
+from app.utils.account_number_generator import AccountNumberGenerator
 from app.utils.jwt_utils import JWTManager
 from app.utils.password_utils import hash_password, verify_password, generate_temp_password
 from app.dto.auth.admin import (
@@ -110,6 +111,34 @@ class AdminService:
     async def create_user(self) -> AdminCreateUserResponseDTO:
         user = User()
         self.db.add(user)
+        await self.db.commit()
+        await self.db.refresh(user)
+        return AdminCreateUserResponseDTO(
+            user_id=user.user_id,
+            account_number=user.account_number,
+            display_name=user.display_name,
+        )
+
+    async def regenerate_user_code(self, user_id: UUID) -> AdminCreateUserResponseDTO:
+        result = await self.db.execute(select(User).where(User.user_id == user_id))
+        user = result.scalar_one_or_none()
+        if user is None:
+            raise NotFoundError("User not found")
+
+        # Overwrite the credential in place: display_name and all history are
+        # keyed by user_id, so only the login code changes. The old code stops
+        # working immediately (login resolves by account_number).
+        for _ in range(8):
+            candidate = AccountNumberGenerator.generate()
+            taken = await self.db.execute(
+                select(User).where(User.account_number == candidate)
+            )
+            if taken.scalar_one_or_none() is None:
+                user.account_number = candidate
+                break
+        else:
+            raise RuntimeError("Could not generate unique account number after 8 attempts")
+
         await self.db.commit()
         await self.db.refresh(user)
         return AdminCreateUserResponseDTO(
