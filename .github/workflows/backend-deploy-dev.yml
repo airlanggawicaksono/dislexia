@@ -120,6 +120,16 @@ jobs:
             docker load -i /tmp/dyslexia-dev.tar
             docker tag dyslexia-dev:latest dev-fastapi-app:latest
             docker compose -f docker-compose.dev.yml down 2>/dev/null || true
+
+            # Heal the data volume if it holds no valid cluster. The old compose
+            # mounted it at /var/lib/postgresql (parent), leaving a stale data/
+            # stub that blocks initdb at the fixed mount path. No PG_VERSION at
+            # the volume root == no database in it == safe to clear. A healthy
+            # volume (or a fresh empty one) is left untouched.
+            docker volume create dev_postgres-dev-data >/dev/null
+            docker run --rm -v dev_postgres-dev-data:/v alpine \
+              sh -c '[ -f /v/PG_VERSION ] || rm -rf /v/* /v/.[!.]*' 2>/dev/null || true
+
             docker compose -f docker-compose.dev.yml up -d --no-build
           "
 
