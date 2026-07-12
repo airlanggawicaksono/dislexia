@@ -22,9 +22,17 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.add_column("users", sa.Column("display_name", sa.String(64), nullable=True))
-
     conn = op.get_bind()
+
+    # b2c3d4e5f6a7 (two revisions back) already adds display_name + its index —
+    # this revision duplicates it. On a fresh DB running the chain end-to-end
+    # that's a DuplicateColumn crash (never seen before because deploys used
+    # create_all + `alembic stamp head`, so the chain never actually ran).
+    cols = {c["name"] for c in sa.inspect(conn).get_columns("users")}
+    if "display_name" in cols:
+        return
+
+    op.add_column("users", sa.Column("display_name", sa.String(64), nullable=True))
     rows = conn.execute(sa.text("SELECT user_id FROM users WHERE display_name IS NULL")).fetchall()
     for row in rows:
         conn.execute(
