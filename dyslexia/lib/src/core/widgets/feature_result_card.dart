@@ -37,14 +37,20 @@ class FeatureResultCard extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min, // PENTING: Agar tinggi menyesuaikan konten
           children: [
             Row(
               children: [
                 Icon(Icons.auto_awesome, size: 18, color: fg),
                 const SizedBox(width: 8),
-                Text(title,
-                    style: TextStyle(
-                        fontWeight: FontWeight.w600, fontSize: 15, color: fg)),
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
+                    color: fg,
+                  ),
+                ),
                 const Spacer(),
                 IconButton(
                   tooltip: inputExpanded ? 'Hide input' : 'Show input',
@@ -68,13 +74,13 @@ class FeatureResultCard extends StatelessWidget {
               ],
             ),
             const Divider(),
-            Expanded(
-              child: ReaderTextDisplay(
-                text: text,
-                settings: s,
-                fgColor: fg,
-                bgColor: bg,
-              ),
+            // PERBAIKAN: Hapus Expanded di sini. Biarkan ReaderTextDisplay 
+            // mengambil tinggi alaminya agar bisa di-scroll oleh parent SingleChildScrollView
+            ReaderTextDisplay(
+              text: text,
+              settings: s,
+              fgColor: fg,
+              bgColor: bg,
             ),
           ],
         ),

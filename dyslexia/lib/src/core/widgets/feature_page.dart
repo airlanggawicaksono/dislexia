@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-
 import '../../features/sidebar/presentation/bloc/sidebar/sidebar_bloc.dart';
 import '../../features/sidebar/presentation/bloc/sidebar/sidebar_event.dart';
 import '../../features/sidebar/domain/entities/sidebar_section.dart';
@@ -65,6 +64,7 @@ class FeaturePage extends StatelessWidget {
     this.onLevelChanged,
   });
 
+  // ... (Fungsi _onPaste, _pickPdf, _handleBack, _showHistory tetap sama) ...
   void _onPaste(BuildContext context) async {
     final data = await Clipboard.getData(Clipboard.kTextPlain);
     if (!context.mounted) return;
@@ -146,11 +146,8 @@ class FeaturePage extends StatelessWidget {
       backgroundColor: Colors.white, 
       body: Stack(
         children: [
-          // === BACKGROUND 2 LAPIS UNGU ===
           Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
+            top: 0, left: 0, right: 0,
             child: Container(
               height: screenHeight * 0.55,
               decoration: const BoxDecoration(
@@ -163,9 +160,7 @@ class FeaturePage extends StatelessWidget {
             ),
           ),
           Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
+            top: 0, left: 0, right: 0,
             child: Container(
               height: screenHeight * 0.50,
               decoration: const BoxDecoration(
@@ -192,6 +187,44 @@ class FeaturePage extends StatelessWidget {
               ),
             ],
           ),
+
+          if (isLoading)
+            Container(
+              color: Colors.black.withOpacity(0.3),
+              child: const Center(
+                child: Card(
+                  color: Colors.white,
+                  elevation: 8,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(16)),
+                  ),
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          width: 40, height: 40,
+                          child: CircularProgressIndicator(
+                            color: Color(0xFFB596E5),
+                            strokeWidth: 3,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Processing...',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -266,45 +299,45 @@ class FeaturePage extends StatelessWidget {
   }
 
   Widget _buildInputView(BuildContext context, ThemeData theme, DisplaySettingsEntity settings, bool isMobile) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (controls != null && (controlsInline || !isMobile)) ...[
-            controls!,
-            const SizedBox(height: 16),
-          ],
-          Expanded(
-            child: _buildTextInputCard(context, theme, settings),
-          ),
-          const SizedBox(height: 24),
-          _buildActionButtons(context, theme),
-          const SizedBox(height: 16),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildResultView(BuildContext context, ThemeData theme, DisplaySettingsEntity settings, bool isMobile) {
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
+          if (controls != null && (controlsInline || !isMobile)) ...[
+            controls!,
+            const SizedBox(height: 16),
+          ],
+          _buildTextInputCard(context, theme, settings),
+          const SizedBox(height: 24),
+          _buildActionButtons(context, theme),
+          SizedBox(height: MediaQuery.of(context).viewInsets.bottom + 24),
+        ],
+      ),
+    );
+  }
+
+  // === PERBAIKAN UTAMA DI SINI ===
+  Widget _buildResultView(BuildContext context, ThemeData theme, DisplaySettingsEntity settings, bool isMobile) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min, // PENTING: Agar Column tidak memaksa tinggi
+        children: [
           if (inputExpanded) ...[
             _buildTextInputCard(context, theme, settings),
             const SizedBox(height: 16),
           ],
-          isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : FeatureResultCard(
-                  text: viewResultText ?? resultText,
-                  title: viewResultTitle ?? resultTitle,
-                  inputExpanded: inputExpanded,
-                  onToggleInput: () => onToggleInput(!inputExpanded),
-                ),
+          // HAPUS Flexible. Biarkan FeatureResultCard mengambil tinggi alaminya
+          // sehingga SingleChildScrollView bisa men-scroll seluruh konten ke bawah.
+          FeatureResultCard(
+            text: viewResultText ?? resultText,
+            title: viewResultTitle ?? resultTitle,
+            inputExpanded: inputExpanded,
+            onToggleInput: () => onToggleInput(!inputExpanded),
+          ),
           const SizedBox(height: 24),
           _buildActionButtons(context, theme),
           const SizedBox(height: 24),
@@ -328,11 +361,16 @@ class FeaturePage extends StatelessWidget {
         ],
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Expanded(
+          ConstrainedBox(
+            constraints: const BoxConstraints(
+              minHeight: 150,
+              maxHeight: 400,
+            ),
             child: TextField(
               controller: controller,
-              minLines: 12,
+              minLines: 6,
               maxLines: null,
               textAlignVertical: TextAlignVertical.top,
               style: dyslexiaTextStyle(settings, Colors.black87),
@@ -380,57 +418,66 @@ class FeaturePage extends StatelessWidget {
   }
 
   Widget _buildActionButtons(BuildContext context, ThemeData theme) {
+    final isSubmitDisabled = isLoading || controller.text.trim().isEmpty;
+
     return Row(
       children: [
         Expanded(
-          child: Container(
-            height: 56,
-            decoration: BoxDecoration(
-              color: isLoading ? Colors.grey : const Color(0xFFB596E5),
-              borderRadius: BorderRadius.circular(28),
-            ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: isLoading || controller.text.isEmpty ? null : onSubmit,
+          child: FilledButton(
+            onPressed: isSubmitDisabled ? null : onSubmit,
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFFB596E5),
+              foregroundColor: Colors.white,
+              disabledBackgroundColor: Colors.grey.shade300,
+              disabledForegroundColor: Colors.white70,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(28),
-                child: Center(
-                  child: isLoading
-                      ? const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : const Text(
-                          'Submit',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
-                ),
+              ),
+            ),
+            child: const Text(
+              'Submit',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),
         ),
         const SizedBox(width: 12),
-        _circularButton(icon: Icons.content_copy_outlined, onTap: () {}),
+        _circularButton(
+          icon: Icons.content_copy_outlined,
+          onTap: isLoading
+              ? null
+              : () {
+                  if (controller.text.trim().isNotEmpty) {
+                    Clipboard.setData(ClipboardData(text: controller.text));
+                    showAdaptiveFeedback(context, 'Text copied to clipboard');
+                  }
+                },
+        ),
         const SizedBox(width: 12),
-        _circularButton(icon: Icons.share_outlined, onTap: () {}),
+        _circularButton(
+          icon: Icons.share_outlined,
+          onTap: isLoading
+              ? null
+              : () {
+                  if (controller.text.trim().isNotEmpty) {
+                    showAdaptiveFeedback(context, 'Share feature coming soon');
+                  }
+                },
+        ),
       ],
     );
   }
 
-  Widget _circularButton({required IconData icon, required VoidCallback onTap}) {
+  Widget _circularButton({required IconData icon, required VoidCallback? onTap}) {
+    final isEnabled = onTap != null;
     return Container(
       width: 56,
       height: 56,
-      decoration: const BoxDecoration(
-        color: Color(0xFFB596E5),
+      decoration: BoxDecoration(
+        color: isEnabled ? const Color(0xFFB596E5) : Colors.grey.shade300,
         shape: BoxShape.circle,
       ),
       child: Material(
@@ -438,7 +485,11 @@ class FeaturePage extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           customBorder: const CircleBorder(),
-          child: Icon(icon, color: Colors.white, size: 24),
+          child: Icon(
+            icon,
+            color: isEnabled ? Colors.white : Colors.white54,
+            size: 24,
+          ),
         ),
       ),
     );

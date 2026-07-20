@@ -37,14 +37,11 @@ class TextPadPage extends StatelessWidget {
           actions: [
             AdaptiveIconButton(
               icon: Icon(
-                _isCupertino
-                    ? CupertinoIcons.settings
-                    : Icons.settings_rounded,
+                _isCupertino ? CupertinoIcons.settings : Icons.settings_rounded,
                 color: fg,
               ),
               tooltip: 'Display settings',
-              onPressed: () =>
-                  context.pushNamed(AppRoute.displaySettings.name),
+              onPressed: () => context.pushNamed(AppRoute.displaySettings.name),
             ),
             AdaptiveIconButton(
               icon: Icon(
@@ -58,9 +55,6 @@ class TextPadPage extends StatelessWidget {
               },
             ),
           ],
-          // Reuse the shared reader so every display setting applies here too
-          // (ruler, syllable dots, fonts, spacing, colour) — consistent with
-          // the reader and feature outputs.
           body: Column(
             children: [
               Expanded(
@@ -82,8 +76,7 @@ class TextPadPage extends StatelessWidget {
 }
 
 /// Bottom action bar: send the current text into Summarize / Define /
-/// Professionalize with it pre-filled. Shared by every source that lands on
-/// TextPad (lens, scanner, paste, upload).
+/// Professionalize with it pre-filled.
 class _SendToBar extends StatelessWidget {
   final String text;
   final Color bg;
@@ -103,7 +96,7 @@ class _SendToBar extends StatelessWidget {
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+          padding: const EdgeInsets.fromLTRB(12, 10, 12, 16),
           child: Row(
             children: [
               Expanded(
@@ -138,31 +131,34 @@ class _SendButton extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
-  const _SendButton(
-      {required this.icon, required this.label, required this.onTap});
+  const _SendButton({required this.icon, required this.label, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: const Color(0xFF3D5A99),
+      // DIUBAH: Menggunakan warna ungu tema aplikasi
+      color: const Color(0xFFB596E5),
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 10),
+          padding: const EdgeInsets.symmetric(vertical: 12),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 20, color: Colors.white),
-              const SizedBox(height: 4),
-              Text(label,
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis),
+              Icon(icon, size: 22, color: Colors.white),
+              const SizedBox(height: 6),
+              Text(
+                label,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ],
           ),
         ),
