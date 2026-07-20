@@ -12,10 +12,11 @@ class LandingPage extends StatelessWidget {
 
   static const _headerColorStart = Color(0xFFC9B8F0); 
   static const _headerColorEnd = Color(0xFFB596E5); 
-  static const _headerBottomLayer = Color(0xFFD7C8FC); // Lapisan bawah yang lebih tipis
+  static const _headerBottomLayer = Color(0xFFD7C8FC);
   static const _textColor = Colors.white;
-  static const _iconBgColor = Color(0xFFE0D5F7);
-  static const _iconColor = Color(0xFF8B6FB8);
+  
+  // === PERUBAHAN: Warna ikon diubah menjadi #A29BFE ===
+  static const _iconColor = Color(0xFFA29BFE); 
 
   Future<void> _pasteFromClipboard(BuildContext context) async {
     final data = await Clipboard.getData(Clipboard.kTextPlain);
@@ -31,26 +32,50 @@ class LandingPage extends StatelessWidget {
     );
   }
 
-  IconData _getIconForAction(String label) {
+  Widget _getIconForAction(String label) {
+    const double iconSize = 35; 
+
     switch (label) {
-      case 'Paste from Clipboard':
-        return _isCupertino ? CupertinoIcons.doc_on_clipboard : Icons.content_paste_rounded;
-      case 'Upload File':
-        return _isCupertino ? CupertinoIcons.cloud_upload : Icons.upload_file_rounded;
-      case 'Scan with Camera':
-        return _isCupertino ? CupertinoIcons.camera : Icons.camera_alt_rounded;
-      case 'Lens':
-        return _isCupertino ? CupertinoIcons.viewfinder : Icons.center_focus_strong_rounded;
+      // ==========================================
+      // 1. IKON KUSTOM (.png) - Tampil polosan (warna asli gambar)
+      // ==========================================
       case 'Summarize':
-        return _isCupertino ? CupertinoIcons.text_badge_checkmark : Icons.summarize_rounded;
+        return Image.asset('assets/images/summarize.png', width: iconSize, height: iconSize);
       case 'Define':
-        return _isCupertino ? CupertinoIcons.book : Icons.menu_book_rounded;
+        return Image.asset('assets/images/define.png', width: iconSize, height: iconSize);
       case 'Professionalize':
-        return _isCupertino ? CupertinoIcons.briefcase : Icons.business_center_rounded;
+        return Image.asset('assets/images/profesionalize.png', width: iconSize, height: iconSize);
+      case 'Lens':
+        return Image.asset('assets/images/lens.png', width: iconSize, height: iconSize);
+      case 'Scan with Camera': 
+        return Image.asset('assets/images/scanner.png', width: iconSize, height: iconSize);
+      case 'Reader': 
+        return Image.asset('assets/images/reader.png', width: iconSize, height: iconSize);
+        
+      // ==========================================
+      // 2. IKON DEFAULT (Sekarang menggunakan warna #A29BFE)
+      // ==========================================
+      case 'Paste from Clipboard':
+        return Icon(
+          _isCupertino ? CupertinoIcons.doc_on_clipboard : Icons.content_paste_rounded,
+          size: iconSize,
+          color: _iconColor,
+        );
+      case 'Upload File':
+        return Icon(
+          _isCupertino ? CupertinoIcons.cloud_upload : Icons.upload_file_rounded,
+          size: iconSize,
+          color: _iconColor,
+        );
       case 'Pre-Screening':
-        return _isCupertino ? CupertinoIcons.checkmark_seal : Icons.fact_check_rounded;
+        return Icon(
+          _isCupertino ? CupertinoIcons.checkmark_seal : Icons.fact_check_rounded,
+          size: iconSize,
+          color: _iconColor,
+        );
+        
       default:
-        return Icons.help_outline;
+        return const Icon(Icons.help_outline, size: iconSize, color: _iconColor);
     }
   }
 
@@ -79,17 +104,11 @@ class LandingPage extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: const BoxDecoration(
-                    color: _iconBgColor,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    _getIconForAction(label),
-                    color: _iconColor,
-                    size: 28,
+                SizedBox(
+                  width: 43, 
+                  height: 43,
+                  child: Center(
+                    child: _getIconForAction(label),
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -106,6 +125,7 @@ class LandingPage extends StatelessWidget {
                 Icon(
                   _isCupertino ? CupertinoIcons.chevron_right : Icons.chevron_right,
                   color: Colors.grey.shade400,
+                  size: 20,
                 ),
               ],
             ),
@@ -126,8 +146,6 @@ class LandingPage extends StatelessWidget {
       {'label': 'Paste from Clipboard', 'onTap': () => _pasteFromClipboard(context)},
       {'label': 'Upload File', 'onTap': () => context.pushNamed(AppRoute.upload.name)},
       {'label': 'Scan with Camera', 'onTap': () => context.pushNamed(AppRoute.scanPaste.name)},
-
-
     ];
 
     return Scaffold(
@@ -135,13 +153,10 @@ class LandingPage extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-            // Header dengan efek 2 lapis (hanya melengkung di bawah)
             Container(
               width: double.infinity,
               child: Stack(
                 children: [
-                  // Lapisan bawah (ungu tipis)
-                  // Height dibuat sedikit lebih besar & radius lebih besar (32) agar "mengintip" di sudut bawah
                   Container(
                     width: double.infinity,
                     height: 110, 
@@ -153,8 +168,6 @@ class LandingPage extends StatelessWidget {
                       ),
                     ),
                   ),
-                  // Lapisan atas (ungu tebal dengan gradient)
-                  // Radius bawah lebih kecil (24) agar lapisan bawah terlihat di belakangnya
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
@@ -162,10 +175,7 @@ class LandingPage extends StatelessWidget {
                       gradient: LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
-                        colors: [
-                          _headerColorStart,
-                          _headerColorEnd,
-                        ],
+                        colors: [_headerColorStart, _headerColorEnd],
                       ),
                       borderRadius: BorderRadius.only(
                         bottomLeft: Radius.circular(24),
@@ -174,7 +184,6 @@ class LandingPage extends StatelessWidget {
                     ),
                     child: Row(
                       children: [
-                        // Settings icon di kiri
                         GestureDetector(
                           onTap: () => context.pushNamed(AppRoute.displaySettings.name),
                           child: Container(
@@ -198,7 +207,6 @@ class LandingPage extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 12),
-                        // Title di tengah - Bold
                         const Expanded(
                           child: Text(
                             'Reazy',
@@ -211,7 +219,7 @@ class LandingPage extends StatelessWidget {
                             textAlign: TextAlign.center,
                           ),
                         ),
-                        const SizedBox(width: 56), // Spacer untuk menyeimbangkan layout
+                        const SizedBox(width: 56),
                       ],
                     ),
                   ),
@@ -219,7 +227,6 @@ class LandingPage extends StatelessWidget {
               ),
             ),
           
-            // Area Putih untuk List (Scrollable content)
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(24),
