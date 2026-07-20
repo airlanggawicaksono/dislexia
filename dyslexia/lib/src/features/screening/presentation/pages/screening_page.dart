@@ -18,35 +18,32 @@ import '../bloc/screening_state.dart';
 
 class ScreeningPage extends StatefulWidget {
   const ScreeningPage({super.key});
+
   @override
   State<ScreeningPage> createState() => _ScreeningPageState();
 }
 
-/// Live status of the ARHQ post-process (scoring) after a session completes.
-/// It runs server-side in the background, so the page polls for the outcome.
 enum _PpPhase { processing, success, failed }
+
+const Color _purplePrimary = Color(0xFFB596E5);
+const Color _purpleLight = Color(0xFFE0D5F7);
 
 class _ScreeningPageState extends State<ScreeningPage> {
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
 
-  // Idle-screen data: whole conversation sets from GET /me/screen/sessions.
   bool _loadingResults = true;
   List<ScreeningSessionModel> _completed = const [];
-  List<ScreeningSessionModel> _incomplete = const []; // resumable
+  List<ScreeningSessionModel> _incomplete = const [];
 
-  // Post-process poll state (set once a session hits is_complete).
   _PpPhase? _ppPhase;
   String? _ppSeverity;
   Object? _ppTotal;
-  String? _pollingSession; // guards against double-starting the poll loop
+  String? _pollingSession;
 
   @override
   void initState() {
     super.initState();
-    // Entering the page always lands on the intro: any in-progress chat is
-    // parked server-side and resumed from its "continue" card, so leaving the
-    // page (back/quit) never strands the user inside a stale conversation.
     final bloc = context.read<ScreeningBloc>();
     if (bloc.state is! ScreeningInitial) {
       bloc.add(ResetScreeningEvent());
@@ -60,12 +57,8 @@ class _ScreeningPageState extends State<ScreeningPage> {
       final sets = await getIt<ScreeningRemoteDatasource>().sessions();
       if (mounted) {
         setState(() {
-          _completed = sets
-              .where((s) => s.isComplete && s.messages.isNotEmpty)
-              .toList();
-          _incomplete = sets
-              .where((s) => !s.isComplete && s.messages.isNotEmpty)
-              .toList();
+          _completed = sets.where((s) => s.isComplete && s.messages.isNotEmpty).toList();
+          _incomplete = sets.where((s) => !s.isComplete && s.messages.isNotEmpty).toList();
           _loadingResults = false;
         });
       }
@@ -82,29 +75,23 @@ class _ScreeningPageState extends State<ScreeningPage> {
 
   void _start() => context.read<ScreeningBloc>().add(StartScreeningEvent());
 
-  List<ChatMessage> _toChat(ScreeningSessionModel s) => s.messages
-      .map((m) => ChatMessage(text: m.content, isUser: m.role == 'user'))
-      .toList();
+  List<ChatMessage> _toChat(ScreeningSessionModel s) =>
+      s.messages.map((m) => ChatMessage(text: m.content, isUser: m.role == 'user')).toList();
 
-  // Rehydrate an incomplete session and continue it.
   void _continue(ScreeningSessionModel s) {
-    context
-        .read<ScreeningBloc>()
-        .add(ResumeScreeningEvent(s.sessionId, _toChat(s)));
+    context.read<ScreeningBloc>().add(ResumeScreeningEvent(s.sessionId, _toChat(s)));
   }
 
   @override
   void dispose() {
-    _pollingSession = null; // stop any in-flight poll loop
+    _pollingSession = null;
     _controller.dispose();
     _scrollController.dispose();
     super.dispose();
   }
 
-  // Poll the server for the background ARHQ scoring outcome. Cheap DB-only
-  // endpoint; stops on success/failed, on reset (session mismatch), or dispose.
   Future<void> _pollPostProcess(String sessionId) async {
-    if (_pollingSession == sessionId) return; // already polling this one
+    if (_pollingSession == sessionId) return;
     _pollingSession = sessionId;
     if (mounted) {
       setState(() {
@@ -116,7 +103,7 @@ class _ScreeningPageState extends State<ScreeningPage> {
     final api = getIt<ApiHelper>();
     for (var i = 0; i < 20; i++) {
       await Future.delayed(const Duration(seconds: 2));
-      if (!mounted || _pollingSession != sessionId) return; // cancelled
+      if (!mounted || _pollingSession != sessionId) return;
       try {
         final res = await api.execute(
           method: Method.get,
@@ -125,30 +112,23 @@ class _ScreeningPageState extends State<ScreeningPage> {
         final status = res['status'] as String?;
         if (status == 'success' || status == 'failed') {
           if (!mounted || _pollingSession != sessionId) return;
-          final m =
-              (res['metadata'] as Map?)?.cast<String, dynamic>() ?? const {};
+          final m = (res['metadata'] as Map?)?.cast<String, dynamic>() ?? const {};
           setState(() {
-            _ppPhase =
-                status == 'success' ? _PpPhase.success : _PpPhase.failed;
+            _ppPhase = status == 'success' ? _PpPhase.success : _PpPhase.failed;
             _ppSeverity = m['ahrq_severity'] as String?;
             _ppTotal = m['ahrq_total'];
           });
           return;
         }
-      } catch (_) {
-        // Transient network/server hiccup → keep polling.
-      }
+      } catch (_) {}
     }
-    // Timed out (~40s). Surface as failed so the user gets a retry; the score
-    // may still land in "Your results" once the background job finishes.
     if (mounted && _pollingSession == sessionId) {
       setState(() => _ppPhase = _PpPhase.failed);
     }
   }
 
-  // Re-trigger scoring (idempotent) then poll again — for a failed/slow run.
   Future<void> _retryPostProcess(String sessionId) async {
-    _pollingSession = null; // allow _pollPostProcess to restart
+    _pollingSession = null;
     if (mounted) setState(() => _ppPhase = _PpPhase.processing);
     try {
       await getIt<ApiHelper>().execute(
@@ -156,9 +136,7 @@ class _ScreeningPageState extends State<ScreeningPage> {
         url: '/me/screen/$sessionId/postprocess',
         queryParameters: {'force': true},
       );
-    } catch (_) {
-      // Ignore — the poll loop below reflects whatever the server ends up with.
-    }
+    } catch (_) {}
     _pollPostProcess(sessionId);
   }
 
@@ -181,7 +159,6 @@ class _ScreeningPageState extends State<ScreeningPage> {
     });
   }
 
-  // Read-only viewer for a past conversation set.
   void _viewSession(ScreeningSessionModel s) {
     final ds = context.read<DisplaySettingsBloc>().state.settings;
     final theme = Theme.of(context);
@@ -204,13 +181,7 @@ class _ScreeningPageState extends State<ScreeningPage> {
             if (m.role == 'user') {
               return _UserBubble(text: m.content, settings: ds);
             }
-            return _AssistantCard(
-              text: m.content,
-              isSummary: false,
-              bg: bg,
-              fg: fg,
-              settings: ds,
-            );
+            return _AssistantCard(text: m.content, isSummary: false, bg: bg, fg: fg, settings: ds);
           },
         ),
       ),
@@ -218,11 +189,10 @@ class _ScreeningPageState extends State<ScreeningPage> {
   }
 
   void _reset() {
-    _pollingSession = null; // stop polling the finished session
+    _pollingSession = null;
     _ppPhase = null;
     context.read<ScreeningBloc>().add(ResetScreeningEvent());
     _controller.clear();
-    // Back to the intro; refresh the results list (a run may have completed).
     _loadResults();
   }
 
@@ -235,146 +205,205 @@ class _ScreeningPageState extends State<ScreeningPage> {
     final fg = fgColor(s.colorTheme);
 
     return Scaffold(
-      backgroundColor: theme.colorScheme.surface,
-      appBar: AppBar(
-        backgroundColor: theme.colorScheme.surface,
-        elevation: 0,
-        centerTitle: false,
-        title: Text('Pre-Screening',
-            style: TextStyle(color: theme.colorScheme.onSurface)),
-        actions: [
-          _BarAction(
-            icon: Icons.refresh_rounded,
-            label: 'Restart',
-            color: theme.colorScheme.onSurface,
-            onTap: _reset,
+      backgroundColor: Colors.white,
+      body: Stack(
+        children: [
+          // === BACKGROUND 2 LAPIS UNGU (DIPERPENDEK) ===
+          // Lapisan bawah (lebih panjang sedikit untuk efek mengintip)
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              height: 120, // Diperpendek dari persentase layar
+              decoration: const BoxDecoration(
+                color: _purpleLight,
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(32),
+                  bottomRight: Radius.circular(32),
+                ),
+              ),
+            ),
           ),
-          const SizedBox(width: 12),
+          // Lapisan atas (gradient)
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              height: 100, // Diperpendek agar pas di atas konten
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [_purpleLight, _purplePrimary],
+                ),
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(24),
+                  bottomRight: Radius.circular(24),
+                ),
+              ),
+            ),
+          ),
+
+          // === KONTEN UTAMA ===
+          Column(
+            children: [
+              _buildHeader(context),
+              Expanded(
+                child: BlocConsumer<ScreeningBloc, ScreeningState>(
+                  listener: (ctx, state) {
+                    if (state is ScreeningQuestionState || state is ScreeningLoading) {
+                      _scrollToBottom();
+                    }
+                    if (state is ScreeningQuestionState && state.isComplete) {
+                      _pollPostProcess(state.sessionId);
+                    }
+                  },
+                  builder: (ctx, state) {
+                    if (state is ScreeningInitial) {
+                      return _IntroView(
+                        fg: theme.colorScheme.onSurface,
+                        loading: _loadingResults,
+                        completed: _completed,
+                        incomplete: _incomplete,
+                        onStart: _start,
+                        onContinue: _continue,
+                        onView: _viewSession,
+                      );
+                    }
+                    if (state is ScreeningErrorState && state.messages.isEmpty) {
+                      return Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.error_outline, size: 48, color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
+                              const SizedBox(height: 16),
+                              Text('Failed to start: ${state.message}', style: TextStyle(color: theme.colorScheme.onSurface), textAlign: TextAlign.center),
+                              const SizedBox(height: 16),
+                              FilledButton.icon(
+                                onPressed: () => context.read<ScreeningBloc>().add(StartScreeningEvent()),
+                                icon: const Icon(Icons.refresh),
+                                label: const Text('Retry'),
+                                style: FilledButton.styleFrom(backgroundColor: _purplePrimary),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }
+
+                    final messages = state is ScreeningQuestionState
+                        ? state.messages
+                        : state is ScreeningLoading
+                            ? state.messages
+                            : state is ScreeningErrorState
+                                ? state.messages
+                                : <ChatMessage>[];
+
+                    final isComplete = state is ScreeningQuestionState && state.isComplete;
+                    final isLoading = state is ScreeningLoading;
+
+                    return Column(
+                      children: [
+                        Expanded(
+                          child: messages.isEmpty
+                              ? Center(child: Text('Starting…', style: TextStyle(color: theme.colorScheme.onSurface)))
+                              : ListView.builder(
+                                  controller: _scrollController,
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                  itemCount: messages.length,
+                                  itemBuilder: (ctx, i) {
+                                    final msg = messages[i];
+                                    if (msg.isUser) {
+                                      return _UserBubble(text: msg.text, settings: s);
+                                    }
+                                    return _AssistantCard(text: msg.text, isSummary: msg.isSummary, bg: bg, fg: fg, settings: s);
+                                  },
+                                ),
+                        ),
+                        if (isComplete) ...[
+                          _PostProcessBanner(
+                            phase: _ppPhase ?? _PpPhase.processing,
+                            severity: _ppSeverity,
+                            total: _ppTotal,
+                            fg: theme.colorScheme.onSurface,
+                            onRetry: () => _retryPostProcess(state.sessionId),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                            child: FilledButton.icon(
+                              onPressed: _reset,
+                              icon: const Icon(Icons.refresh),
+                              label: const Text('Done'),
+                              style: FilledButton.styleFrom(backgroundColor: _purplePrimary),
+                            ),
+                          ),
+                        ],
+                        if (!isComplete)
+                          _InputBar(
+                            controller: _controller,
+                            enabled: !isLoading,
+                            theme: theme,
+                            textStyle: dyslexiaTextStyle(s, theme.colorScheme.onSurface),
+                            onSend: _send,
+                          ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
         ],
       ),
-      body: BlocConsumer<ScreeningBloc, ScreeningState>(
-        listener: (ctx, state) {
-          if (state is ScreeningQuestionState || state is ScreeningLoading) {
-            _scrollToBottom();
-          }
-          // Session just finished → start polling the background ARHQ scoring.
-          if (state is ScreeningQuestionState && state.isComplete) {
-            _pollPostProcess(state.sessionId);
-          }
-        },
-        builder: (ctx, state) {
-          if (state is ScreeningInitial) {
-            return _IntroView(
-              fg: theme.colorScheme.onSurface,
-              loading: _loadingResults,
-              completed: _completed,
-              incomplete: _incomplete,
-              onStart: _start,
-              onContinue: _continue,
-              onView: _viewSession,
-            );
-          }
-          if (state is ScreeningErrorState && state.messages.isEmpty) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.error_outline,
-                        size: 48, color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Failed to start: ${state.message}',
-                      style: TextStyle(color: theme.colorScheme.onSurface),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 16),
-                    FilledButton.icon(
-                      onPressed: () =>
-                          context.read<ScreeningBloc>().add(StartScreeningEvent()),
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('Retry'),
-                    ),
-                  ],
-                ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.only(left: 24, right: 24, top: 48, bottom: 16),
+      child: Row(
+        children: [
+          IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.black),
+            onPressed: () => Navigator.of(context).pop(),
+            style: IconButton.styleFrom(
+              backgroundColor: Colors.white,
+              fixedSize: const Size(40, 40),
+            ),
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Text(
+              'Pre-Screening',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
               ),
-            );
-          }
-
-          final messages = state is ScreeningQuestionState
-              ? state.messages
-              : state is ScreeningLoading
-                  ? state.messages
-                  : state is ScreeningErrorState
-                      ? state.messages
-                      : <ChatMessage>[];
-
-          final isComplete =
-              state is ScreeningQuestionState && state.isComplete;
-          final isLoading = state is ScreeningLoading;
-
-          return Column(
-            children: [
-              Expanded(
-                child: messages.isEmpty
-                    ? Center(
-                        child: Text('Starting…',
-                            style: TextStyle(color: theme.colorScheme.onSurface)))                      : ListView.builder(
-                        controller: _scrollController,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 12),
-                        itemCount: messages.length,
-                        itemBuilder: (ctx, i) {
-                          final msg = messages[i];
-                          if (msg.isUser) {
-                            return _UserBubble(text: msg.text, settings: s);
-                          }
-                          return _AssistantCard(
-                            text: msg.text,
-                            isSummary: msg.isSummary,
-                            bg: bg,
-                            fg: fg,
-                            settings: s,
-                          );
-                        },
-                      ),
-              ),
-              if (isComplete) ...[
-                _PostProcessBanner(
-                  phase: _ppPhase ?? _PpPhase.processing,
-                  severity: _ppSeverity,
-                  total: _ppTotal,
-                  fg: theme.colorScheme.onSurface,
-                  onRetry: () => _retryPostProcess(state.sessionId),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                  child: FilledButton.icon(
-                    onPressed: _reset,
-                    icon: const Icon(Icons.refresh),
-                    label: const Text('Done'),
-                  ),
-                ),
-              ],
-              if (!isComplete)
-                _InputBar(
-                  controller: _controller,
-                  enabled: !isLoading,
-                  theme: theme,
-                  textStyle:
-                      dyslexiaTextStyle(s, theme.colorScheme.onSurface),
-                  onSend: _send,
-                ),
-            ],
-          );
-        },
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: 12),
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded, color: Colors.black),
+            onPressed: _reset,
+            style: IconButton.styleFrom(
+              backgroundColor: Colors.white,
+              fixedSize: const Size(40, 40),
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-/// Idle view: short intro + Start + resumable sessions + past results.
+// === WIDGET-WIDGET LAINNYA TETAP SAMA ===
+
 class _IntroView extends StatelessWidget {
   final Color fg;
   final bool loading;
@@ -396,9 +425,7 @@ class _IntroView extends StatelessWidget {
 
   Widget _heading(String t) => Padding(
         padding: const EdgeInsets.only(bottom: 12),
-        child: Text(t,
-            style: TextStyle(
-                fontSize: 15, fontWeight: FontWeight.w600, color: fg)),
+        child: Text(t, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: fg)),
       );
 
   @override
@@ -408,14 +435,8 @@ class _IntroView extends StatelessWidget {
       children: [
         Icon(Icons.fact_check_rounded, size: 48, color: fg.withValues(alpha: 0.8)),
         const SizedBox(height: 16),
-        Text('Pre-Screening',
-            style: TextStyle(
-                fontSize: 22, fontWeight: FontWeight.bold, color: fg),
-            textAlign: TextAlign.center),
-        const SizedBox(height: 8),
         Text(
-          'A short set of questions about your reading habits. '
-          'This is an informal check-in, not a diagnosis.',
+          'A short set of questions about your reading habits. This is an informal check-in, not a diagnosis.',
           style: TextStyle(fontSize: 14, color: fg.withValues(alpha: 0.7), height: 1.4),
           textAlign: TextAlign.center,
         ),
@@ -424,55 +445,50 @@ class _IntroView extends StatelessWidget {
           onPressed: onStart,
           icon: const Icon(Icons.play_arrow_rounded),
           label: const Text('Start pre-screening'),
+          style: FilledButton.styleFrom(backgroundColor: _purplePrimary),
         ),
         if (loading) ...[
           const SizedBox(height: 28),
-          const Center(child: Padding(
-            padding: EdgeInsets.all(16),
-            child: SizedBox(
-                width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2)),
-          )),
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2)),
+            ),
+          ),
         ] else ...[
           if (incomplete.isNotEmpty) ...[
             const SizedBox(height: 28),
             _heading('Continue where you left off'),
-            ...incomplete.map((s) =>
-                _ContinueCard(session: s, fg: fg, onTap: () => onContinue(s))),
+            ...incomplete.map((s) => _ContinueCard(session: s, fg: fg, onTap: () => onContinue(s))),
           ],
           const SizedBox(height: 28),
           _heading('Your results'),
           if (completed.isEmpty)
-            Text('No results yet — complete a pre-screening to see it here.',
-                style: TextStyle(fontSize: 13, color: fg.withValues(alpha: 0.5)))
+            Text('No results yet — complete a pre-screening to see it here.', style: TextStyle(fontSize: 13, color: fg.withValues(alpha: 0.5)))
           else
-            ...completed
-                .map((s) => _ResultCard(session: s, fg: fg, onTap: () => onView(s))),
+            ...completed.map((s) => _ResultCard(session: s, fg: fg, onTap: () => onView(s))),
         ],
       ],
     );
   }
 }
 
-/// Tappable card for an unfinished session — resumes it.
 class _ContinueCard extends StatelessWidget {
   final ScreeningSessionModel session;
   final Color fg;
   final VoidCallback onTap;
-  const _ContinueCard(
-      {required this.session, required this.fg, required this.onTap});
+  const _ContinueCard({required this.session, required this.fg, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    const accent = Color(0xFF3D5A99);
     final d = session.updatedAt;
-    final date =
-        '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+    final date = '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: accent.withValues(alpha: 0.08),
+        color: _purpleLight,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: accent.withValues(alpha: 0.3)),
+        border: Border.all(color: _purplePrimary.withValues(alpha: 0.3)),
       ),
       child: Material(
         color: Colors.transparent,
@@ -483,26 +499,18 @@ class _ContinueCard extends StatelessWidget {
             padding: const EdgeInsets.all(14),
             child: Row(
               children: [
-                const Icon(Icons.play_circle_fill_rounded, color: accent),
+                const Icon(Icons.play_circle_fill_rounded, color: _purplePrimary),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                          'In progress — ${session.answeredCount}/${session.totalTopics} answered',
-                          style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: fg)),
-                      Text('Last activity $date · tap to continue',
-                          style: TextStyle(
-                              fontSize: 12, color: fg.withValues(alpha: 0.5))),
+                      Text('In progress — ${session.answeredCount}/${session.totalTopics} answered', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: fg)),
+                      Text('Last activity $date · tap to continue', style: TextStyle(fontSize: 12, color: fg.withValues(alpha: 0.5))),
                     ],
                   ),
                 ),
-                Icon(Icons.chevron_right_rounded,
-                    color: fg.withValues(alpha: 0.4)),
+                Icon(Icons.chevron_right_rounded, color: fg.withValues(alpha: 0.4)),
               ],
             ),
           ),
@@ -516,8 +524,7 @@ class _ResultCard extends StatelessWidget {
   final ScreeningSessionModel session;
   final Color fg;
   final VoidCallback onTap;
-  const _ResultCard(
-      {required this.session, required this.fg, required this.onTap});
+  const _ResultCard({required this.session, required this.fg, required this.onTap});
 
   static const _severityColors = {
     'mild': Color(0xFF2E7D32),
@@ -533,8 +540,7 @@ class _ResultCard extends StatelessWidget {
     final total = m['ahrq_total'];
     final color = scored ? (_severityColors[severity] ?? fg) : fg;
     final d = session.updatedAt;
-    final date =
-        '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+    final date = '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -553,37 +559,24 @@ class _ResultCard extends StatelessWidget {
             child: Row(
               children: [
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: color,
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: Text(severity.toUpperCase(),
-                      style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700)),
+                  child: Text(severity.toUpperCase(), style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      if (total != null)
-                        Text('Score: $total',
-                            style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: fg)),
-                      Text('$date · tap to view conversation',
-                          style: TextStyle(
-                              fontSize: 12, color: fg.withValues(alpha: 0.5))),
+                      if (total != null) Text('Score: $total', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: fg)),
+                      Text('$date · tap to view conversation', style: TextStyle(fontSize: 12, color: fg.withValues(alpha: 0.5))),
                     ],
                   ),
                 ),
-                Icon(Icons.chevron_right_rounded,
-                    color: fg.withValues(alpha: 0.4)),
+                Icon(Icons.chevron_right_rounded, color: fg.withValues(alpha: 0.4)),
               ],
             ),
           ),
@@ -593,7 +586,6 @@ class _ResultCard extends StatelessWidget {
   }
 }
 
-/// Live status of the background ARHQ scoring, shown under the completed chat.
 class _PostProcessBanner extends StatelessWidget {
   final _PpPhase phase;
   final String? severity;
@@ -601,13 +593,7 @@ class _PostProcessBanner extends StatelessWidget {
   final Color fg;
   final VoidCallback onRetry;
 
-  const _PostProcessBanner({
-    required this.phase,
-    required this.severity,
-    required this.total,
-    required this.fg,
-    required this.onRetry,
-  });
+  const _PostProcessBanner({required this.phase, required this.severity, required this.total, required this.fg, required this.onRetry});
 
   static const _severityColors = {
     'mild': Color(0xFF2E7D32),
@@ -619,18 +605,11 @@ class _PostProcessBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final (color, child) = switch (phase) {
       _PpPhase.processing => (
-          const Color(0xFF3D5A99),
+          _purplePrimary, 
           Row(children: [
-            const SizedBox(
-                width: 18,
-                height: 18,
-                child: CircularProgressIndicator(strokeWidth: 2)),
+            const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(_purplePrimary))),
             const SizedBox(width: 12),
-            Expanded(
-              child: Text('Analyzing your responses…',
-                  style: TextStyle(
-                      fontSize: 13, fontWeight: FontWeight.w600, color: fg)),
-            ),
+            Expanded(child: Text('Analyzing your responses…', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: fg))),
           ]),
         ),
       _PpPhase.success => () {
@@ -645,16 +624,8 @@ class _PostProcessBanner extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Result ready — ${sev.toUpperCase()}',
-                        style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: fg)),
-                    if (total != null)
-                      Text('Score: $total',
-                          style: TextStyle(
-                              fontSize: 12,
-                              color: fg.withValues(alpha: 0.6))),
+                    Text('Result ready — ${sev.toUpperCase()}', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: fg)),
+                    if (total != null) Text('Score: $total', style: TextStyle(fontSize: 12, color: fg.withValues(alpha: 0.6))),
                   ],
                 ),
               ),
@@ -664,14 +635,9 @@ class _PostProcessBanner extends StatelessWidget {
       _PpPhase.failed => (
           const Color(0xFFC62828),
           Row(children: [
-            const Icon(Icons.error_outline_rounded,
-                color: Color(0xFFC62828), size: 20),
+            const Icon(Icons.error_outline_rounded, color: Color(0xFFC62828), size: 20),
             const SizedBox(width: 12),
-            Expanded(
-              child: Text("Couldn't score your responses.",
-                  style: TextStyle(
-                      fontSize: 13, fontWeight: FontWeight.w600, color: fg)),
-            ),
+            Expanded(child: Text("Couldn't score your responses.", style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: fg))),
             TextButton(onPressed: onRetry, child: const Text('Retry')),
           ]),
         ),
@@ -702,20 +668,12 @@ class _UserBubble extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.75,
-        ),
+        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
         decoration: BoxDecoration(
-          color: const Color(0xFF3D5A99),
-          borderRadius: BorderRadius.circular(18).copyWith(
-            bottomRight: Radius.zero,
-          ),
+          color: _purplePrimary, 
+          borderRadius: BorderRadius.circular(18).copyWith(bottomRight: Radius.zero),
         ),
-        // Font/size/spacing from display settings; white on the blue bubble.
-        child: Text(
-          text,
-          style: dyslexiaTextStyle(settings, Colors.white),
-        ),
+        child: Text(text, style: dyslexiaTextStyle(settings, Colors.white)),
       ),
     );
   }
@@ -728,13 +686,7 @@ class _AssistantCard extends StatelessWidget {
   final Color fg;
   final DisplaySettingsEntity settings;
 
-  const _AssistantCard({
-    required this.text,
-    required this.isSummary,
-    required this.bg,
-    required this.fg,
-    required this.settings,
-  });
+  const _AssistantCard({required this.text, required this.isSummary, required this.bg, required this.fg, required this.settings});
 
   @override
   Widget build(BuildContext context) {
@@ -743,9 +695,7 @@ class _AssistantCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(18).copyWith(
-          bottomLeft: Radius.zero,
-        ),
+        borderRadius: BorderRadius.circular(18).copyWith(bottomLeft: Radius.zero),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -753,20 +703,11 @@ class _AssistantCard extends StatelessWidget {
           Row(
             children: [
               if (isSummary) ...[
-                Icon(Icons.check_circle,
-                    size: 18, color: Colors.green.shade400),
+                Icon(Icons.check_circle, size: 18, color: Colors.green.shade400),
                 const SizedBox(width: 6),
-                Text(
-                  'Screening Complete',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13,
-                    color: Colors.green.shade400,
-                  ),
-                ),
+                Text('Screening Complete', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.green.shade400)),
               ],
               const Spacer(),
-              // Every result is copyable.
               InkWell(
                 onTap: () {
                   Clipboard.setData(ClipboardData(text: text));
@@ -775,19 +716,12 @@ class _AssistantCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(6),
                 child: Padding(
                   padding: const EdgeInsets.all(4),
-                  child: Icon(Icons.copy_rounded,
-                      size: 16, color: fg.withValues(alpha: 0.6)),
+                  child: Icon(Icons.copy_rounded, size: 16, color: fg.withValues(alpha: 0.6)),
                 ),
               ),
             ],
           ),
-          ReaderTextDisplay(
-            text: text,
-            settings: settings,
-            fgColor: fg,
-            bgColor: bg,
-            scrollable: false,
-          ),
+          ReaderTextDisplay(text: text, settings: settings, fgColor: fg, bgColor: bg, scrollable: false),
         ],
       ),
     );
@@ -801,21 +735,15 @@ class _InputBar extends StatelessWidget {
   final TextStyle textStyle;
   final VoidCallback onSend;
 
-  const _InputBar({
-    required this.controller,
-    required this.enabled,
-    required this.theme,
-    required this.textStyle,
-    required this.onSend,
-  });
+  const _InputBar({required this.controller, required this.enabled, required this.theme, required this.textStyle, required this.onSend});
 
   @override
   Widget build(BuildContext context) {
     final fg = theme.colorScheme.onSurface;
     return Container(
-      padding: const EdgeInsets.fromLTRB(12, 8, 8, 12),
+      padding: const EdgeInsets.fromLTRB(12, 8, 8, 16),
       decoration: BoxDecoration(
-        color: fg.withValues(alpha: 0.04),
+        color: Colors.white,
         border: Border(top: BorderSide(color: fg.withValues(alpha: 0.1))),
       ),
       child: SafeArea(
@@ -833,13 +761,16 @@ class _InputBar extends StatelessWidget {
                 decoration: InputDecoration(
                   hintText: 'Type your answer…',
                   hintStyle: TextStyle(color: fg.withValues(alpha: 0.4)),
-                  fillColor: fg.withValues(alpha: 0.08),
+                  fillColor: fg.withValues(alpha: 0.06),
                   filled: true,
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(24),
-                    borderSide: BorderSide.none,
+                    borderSide: BorderSide(color: fg.withValues(alpha: 0.2)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    borderSide: const BorderSide(color: _purplePrimary, width: 1.5), 
                   ),
                 ),
                 onSubmitted: enabled ? (_) => onSend() : null,
@@ -849,9 +780,7 @@ class _InputBar extends StatelessWidget {
             IconButton(
               icon: Icon(
                 Icons.send_rounded,
-                color: enabled
-                    ? const Color(0xFF3D5A99)
-                    : fg.withValues(alpha: 0.3),
+                color: enabled ? _purplePrimary : fg.withValues(alpha: 0.3), 
               ),
               onPressed: enabled ? onSend : null,
             ),
@@ -860,36 +789,4 @@ class _InputBar extends StatelessWidget {
       ),
     );
   }
-}
-
-class _BarAction extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-  final VoidCallback? onTap;
-  const _BarAction({
-    required this.icon,
-    required this.label,
-    required this.color,
-    this.onTap,
-  });
-  @override
-  Widget build(BuildContext context) => Material(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(8),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(8),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            child: Row(mainAxisSize: MainAxisSize.min, children: [
-              Icon(icon, size: 14, color: color),
-              const SizedBox(width: 4),
-              Text(label,
-                  style: TextStyle(
-                      fontSize: 11, fontWeight: FontWeight.w600, color: color)),
-            ]),
-          ),
-        ),
-      );
 }

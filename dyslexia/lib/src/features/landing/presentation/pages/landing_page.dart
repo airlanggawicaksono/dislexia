@@ -6,15 +6,16 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/widgets/adaptive/adaptive.dart';
 import '../../../../routes/app_route_path.dart';
-import '../widgets/action_tile.dart';
 
 class LandingPage extends StatelessWidget {
   const LandingPage({super.key});
 
-  // TODO(fep): ugly colors, move to theme
-  static const _bgColor = Color(0xFFF5F0E8);
-  static const _iconBgColor = Color(0xFFE2DDD4);
-  static const _iconColor = Color(0xFF3D5A99);
+  static const _headerColorStart = Color(0xFFC9B8F0); 
+  static const _headerColorEnd = Color(0xFFB596E5); 
+  static const _headerBottomLayer = Color(0xFFD7C8FC); // Lapisan bawah yang lebih tipis
+  static const _textColor = Colors.white;
+  static const _iconBgColor = Color(0xFFE0D5F7);
+  static const _iconColor = Color(0xFF8B6FB8);
 
   Future<void> _pasteFromClipboard(BuildContext context) async {
     final data = await Clipboard.getData(Clipboard.kTextPlain);
@@ -30,147 +31,218 @@ class LandingPage extends StatelessWidget {
     );
   }
 
+  IconData _getIconForAction(String label) {
+    switch (label) {
+      case 'Paste from Clipboard':
+        return _isCupertino ? CupertinoIcons.doc_on_clipboard : Icons.content_paste_rounded;
+      case 'Upload File':
+        return _isCupertino ? CupertinoIcons.cloud_upload : Icons.upload_file_rounded;
+      case 'Scan with Camera':
+        return _isCupertino ? CupertinoIcons.camera : Icons.camera_alt_rounded;
+      case 'Lens':
+        return _isCupertino ? CupertinoIcons.viewfinder : Icons.center_focus_strong_rounded;
+      case 'Summarize':
+        return _isCupertino ? CupertinoIcons.text_badge_checkmark : Icons.summarize_rounded;
+      case 'Define':
+        return _isCupertino ? CupertinoIcons.book : Icons.menu_book_rounded;
+      case 'Professionalize':
+        return _isCupertino ? CupertinoIcons.briefcase : Icons.business_center_rounded;
+      case 'Pre-Screening':
+        return _isCupertino ? CupertinoIcons.checkmark_seal : Icons.fact_check_rounded;
+      default:
+        return Icons.help_outline;
+    }
+  }
+
+  Widget _buildActionCard({
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: const BoxDecoration(
+                    color: _iconBgColor,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    _getIconForAction(label),
+                    color: _iconColor,
+                    size: 28,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ),
+                Icon(
+                  _isCupertino ? CupertinoIcons.chevron_right : Icons.chevron_right,
+                  color: Colors.grey.shade400,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final actions = <Widget>[
-      ActionTile(
-        icon: _isCupertino
-            ? CupertinoIcons.doc_on_clipboard
-            : Icons.content_paste_rounded,
-        label: 'Paste from Clipboard',
-        onTap: () => _pasteFromClipboard(context),
-      ),
-      ActionTile(
-        icon: _isCupertino
-            ? CupertinoIcons.cloud_upload
-            : Icons.upload_file_rounded,
-        label: 'Upload File',
-        onTap: () => context.pushNamed(AppRoute.upload.name),
-      ),
-      ActionTile(
-        icon: _isCupertino
-            ? CupertinoIcons.camera
-            : Icons.camera_alt_rounded,
-        label: 'Scan with Camera',
-        onTap: () => context.pushNamed(AppRoute.scanPaste.name),
-      ),
-      ActionTile(
-        icon: _isCupertino
-            ? CupertinoIcons.viewfinder
-            : Icons.center_focus_strong_rounded,
-        label: 'Lens',
-        onTap: () => context.pushNamed(AppRoute.lens.name),
-      ),
-      ActionTile(
-        icon: _isCupertino
-            ? CupertinoIcons.text_badge_checkmark
-            : Icons.summarize_rounded,
-        label: 'Summarize',
-        onTap: () => context.pushNamed(AppRoute.summarize.name),
-      ),
-      ActionTile(
-        icon: _isCupertino ? CupertinoIcons.book : Icons.menu_book_rounded,
-        label: 'Define',
-        onTap: () => context.pushNamed(AppRoute.define.name),
-      ),
-      ActionTile(
-        icon: _isCupertino
-            ? CupertinoIcons.briefcase
-            : Icons.business_center_rounded,
-        label: 'Professionalize',
-        onTap: () => context.pushNamed(AppRoute.professionalize.name),
-      ),
-      ActionTile(
-        icon: _isCupertino
-            ? CupertinoIcons.checkmark_seal
-            : Icons.fact_check_rounded,
-        label: 'Pre-Screening',
-        onTap: () => context.pushNamed(AppRoute.screening.name),
-      ),
+    final List<Map<String, dynamic>> actions = [
+      {'label': 'Summarize', 'onTap': () => context.pushNamed(AppRoute.summarize.name)},
+      {'label': 'Define', 'onTap': () => context.pushNamed(AppRoute.define.name)},
+      {'label': 'Professionalize', 'onTap': () => context.pushNamed(AppRoute.professionalize.name)},
+      {'label': 'Pre-Screening', 'onTap': () => context.pushNamed(AppRoute.screening.name)},
+      {'label': 'Lens', 'onTap': () => context.pushNamed(AppRoute.lens.name)},
+      {'label': 'Paste from Clipboard', 'onTap': () => _pasteFromClipboard(context)},
+      {'label': 'Upload File', 'onTap': () => context.pushNamed(AppRoute.upload.name)},
+      {'label': 'Scan with Camera', 'onTap': () => context.pushNamed(AppRoute.scanPaste.name)},
+
+
     ];
 
     return Scaffold(
-      backgroundColor: _bgColor,
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(
           children: [
-            const SizedBox(height: 12),
-            Align(
-              alignment: Alignment.centerRight,
-              child: Padding(
-                padding: const EdgeInsets.only(right: 12),
-                child: AdaptiveIconButton(
-                  icon: Icon(
-                    _isCupertino
-                        ? CupertinoIcons.settings
-                        : Icons.settings_rounded,
-                    color: Colors.black54,
-                  ),
-                  onPressed: () =>
-                      context.pushNamed(AppRoute.displaySettings.name),
-                ),
-              ),
-            ),
-            // Top: hero, roughly the upper half.
-            Expanded(
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 80,
-                      height: 80,
-                      decoration: const BoxDecoration(
-                        color: _iconBgColor,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.document_scanner_rounded,
-                        size: 38,
-                        color: _iconColor,
+            // Header dengan efek 2 lapis (hanya melengkung di bawah)
+            Container(
+              width: double.infinity,
+              child: Stack(
+                children: [
+                  // Lapisan bawah (ungu tipis)
+                  // Height dibuat sedikit lebih besar & radius lebih besar (32) agar "mengintip" di sudut bawah
+                  Container(
+                    width: double.infinity,
+                    height: 110, 
+                    decoration: const BoxDecoration(
+                      color: _headerBottomLayer,
+                      borderRadius: BorderRadius.only(
+                        bottomLeft: Radius.circular(32),
+                        bottomRight: Radius.circular(32),
                       ),
                     ),
-                    const SizedBox(height: 24),
+                  ),
+                  // Lapisan atas (ungu tebal dengan gradient)
+                  // Radius bawah lebih kecil (24) agar lapisan bawah terlihat di belakangnya
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          _headerColorStart,
+                          _headerColorEnd,
+                        ],
+                      ),
+                      borderRadius: BorderRadius.only(
+                        bottomLeft: Radius.circular(24),
+                        bottomRight: Radius.circular(24),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        // Settings icon di kiri
+                        GestureDetector(
+                          onTap: () => context.pushNamed(AppRoute.displaySettings.name),
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: const BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black12,
+                                  blurRadius: 4,
+                                  offset: Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.settings_rounded,
+                              color: Colors.black87,
+                              size: 24,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        // Title di tengah - Bold
+                        const Expanded(
+                          child: Text(
+                            'Reazy',
+                            style: TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold,
+                              color: _textColor,
+                              letterSpacing: 0.5,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        const SizedBox(width: 56), // Spacer untuk menyeimbangkan layout
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          
+            // Area Putih untuk List (Scrollable content)
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     const Text(
-                      'Add your text to get started',
+                      'Explore our tools:',
                       style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
                         color: Colors.black87,
                       ),
-                      textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 10),
-                    const Text(
-                      'Paste text, upload a file, or scan a\ndocument with your camera',
-                      style: TextStyle(
-                          fontSize: 14, color: Colors.black45, height: 1.5),
-                      textAlign: TextAlign.center,
-                    ),
+                    const SizedBox(height: 16),
+                    ...actions.map((action) => Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: _buildActionCard(
+                        label: action['label'] as String,
+                        onTap: action['onTap'] as VoidCallback,
+                      ),
+                    )),
                   ],
-                ),
-              ),
-            ),
-            // Bottom: half-page action list, same colour, faded as it scrolls.
-            Expanded(
-              child: ShaderMask(
-                shaderCallback: (rect) => const LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.transparent,
-                    Colors.black,
-                    Colors.black,
-                    Colors.transparent,
-                  ],
-                  stops: [0.0, 0.06, 0.9, 1.0],
-                ).createShader(rect),
-                blendMode: BlendMode.dstIn,
-                child: ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
-                  itemCount: actions.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 10),
-                  itemBuilder: (_, i) => actions[i],
                 ),
               ),
             ),

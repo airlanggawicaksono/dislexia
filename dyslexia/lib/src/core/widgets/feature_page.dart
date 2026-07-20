@@ -3,6 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+
+import '../../features/sidebar/presentation/bloc/sidebar/sidebar_bloc.dart';
+import '../../features/sidebar/presentation/bloc/sidebar/sidebar_event.dart';
+import '../../features/sidebar/domain/entities/sidebar_section.dart';
+import '../../features/reader/presentation/bloc/reader_shell/reader_shell_bloc.dart';
+import '../../features/reader/presentation/bloc/reader_shell/reader_shell_event.dart';
+
+import '../widgets/level_slider.dart'; 
+
 import '../../configs/injector/injector_conf.dart';
 import '../../features/display_settings/domain/entities/display_settings_entity.dart';
 import '../../features/display_settings/presentation/bloc/display_settings/display_settings_bloc.dart';
@@ -26,18 +35,12 @@ class FeaturePage extends StatelessWidget {
   final bool inputExpanded;
   final ValueChanged<bool> onToggleInput;
   final void Function(String text, String result)? onViewResult;
-
-  /// Clears the input + result. When null, no reset button is shown.
   final VoidCallback? onReset;
-
-  /// Optional feature-specific knob controls (e.g. summarize level slider,
-  /// professionalize email fields). Rendered above the input field.
   final Widget? controls;
-
-  /// When true, [controls] always render inline above the input field (both
-  /// widths) instead of moving into the mobile quick-actions sheet. Use for
-  /// controls that belong next to the field — e.g. email recipient/sender.
   final bool controlsInline;
+  final List<String>? levelLabels;
+  final int initialLevel;
+  final ValueChanged<int>? onLevelChanged;
 
   const FeaturePage({
     super.key,
@@ -57,6 +60,9 @@ class FeaturePage extends StatelessWidget {
     this.onReset,
     this.controls,
     this.controlsInline = false,
+    this.levelLabels,
+    this.initialLevel = 2,
+    this.onLevelChanged,
   });
 
   void _onPaste(BuildContext context) async {
@@ -83,13 +89,10 @@ class FeaturePage extends StatelessWidget {
         return;
       }
       if (!context.mounted) return;
-      // getIt, not context.read: mobile routes don't wrap pages in a
-      // Provider<PdfExtractorService> — only the desktop shell did.
       final text = await getIt<PdfExtractorService>().extractText(bytes);
       if (!context.mounted) return;
       if (text.trim().isEmpty) {
-        showAdaptiveFeedback(
-            context, 'PDF appears empty or contains only images');
+        showAdaptiveFeedback(context, 'PDF appears empty or contains only images');
         return;
       }
       controller.text = text;
@@ -99,175 +102,18 @@ class FeaturePage extends StatelessWidget {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    // Display settings drive the input text style too — every text box.
-    final settings = context.watch<DisplaySettingsBloc>().state.settings;
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final w = MediaQuery.of(context).size.width;
-        final narrow = w < 800;
-        final pad = w < 800 ? 12.0 : 24.0;
-
-        return Scaffold(
-          backgroundColor: theme.colorScheme.surface,
-          floatingActionButton: narrow
-              ? FloatingActionButton.small(
-                  heroTag: heroTag,
-                  backgroundColor: const Color(0xFF3D5A99),
-                  onPressed: () => _showQuickActions(context),
-                  child: const Icon(Icons.add_rounded, color: Colors.white),
-                )
-              : null,
-          appBar: AppBar(
-            backgroundColor: theme.colorScheme.surface,
-            elevation: 0,
-            centerTitle: false,
-            title: Text(title, style: TextStyle(color: theme.colorScheme.onSurface)),
-            actions: narrow
-                ? [
-                    if (onReset != null) ...[
-                      _FeatureBarAction(
-                          icon: Icons.refresh_rounded,
-                          label: 'Reset',
-                          color: theme.colorScheme.onSurface,
-                          onTap: onReset),
-                      const SizedBox(width: 4),
-                    ],
-                    _FeatureBarAction(
-                        icon: Icons.history_rounded,
-                        label: 'History',
-                        color: theme.colorScheme.onSurface,
-                        onTap: () => _showHistory(context)),
-                    const SizedBox(width: 4),
-                    _FeatureBarAction(
-                        icon: Icons.auto_awesome,
-                        label: title,
-                        color: Colors.white,
-                        backgroundColor: const Color(0xFF3D5A99),
-                        onTap: onSubmit),
-                    const SizedBox(width: 12),
-                  ]
-                : [
-                    if (onReset != null) ...[
-                      _FeatureBarAction(
-                          icon: Icons.refresh_rounded,
-                          label: 'Reset',
-                          color: theme.colorScheme.onSurface,
-                          onTap: onReset),
-                      const SizedBox(width: 4),
-                    ],
-                    _FeatureBarAction(
-                        icon: Icons.history_rounded,
-                        label: 'History',
-                        color: theme.colorScheme.onSurface,
-                        onTap: () => _showHistory(context)),
-                    const SizedBox(width: 4),
-                    _FeatureBarAction(
-                        icon: Icons.content_paste_rounded,
-                        label: 'Paste',
-                        color: theme.colorScheme.onSurface,
-                        onTap: () => _onPaste(context)),
-                    const SizedBox(width: 4),
-                    _FeatureBarAction(
-                        icon: Icons.upload_file_rounded,
-                        label: 'PDF',
-                        color: theme.colorScheme.onSurface,
-                        onTap: () => _pickPdf(context)),
-                    const SizedBox(width: 12),
-                    _FeatureBarAction(
-                        icon: Icons.auto_awesome,
-                        label: title,
-                        color: Colors.white,
-                        backgroundColor: const Color(0xFF3D5A99),
-                        onTap: onSubmit),
-                    const SizedBox(width: 12),
-                  ],
-          ),
-          body: Padding(
-            padding: EdgeInsets.all(pad),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(
-                  child: hasResult
-                      ? Flex(
-                          direction: narrow ? Axis.vertical : Axis.horizontal,
-                          children: [
-                            if (inputExpanded) ...[
-                              Flexible(flex: 2, child: _inputColumn(theme, narrow, settings)),
-                              narrow
-                                  ? const SizedBox(height: 12)
-                                  : const SizedBox(width: 12),
-                            ],
-                            Flexible(
-                                flex: 3,
-                                child: isLoading
-                                    ? const Center(
-                                        child: CircularProgressIndicator())
-                                    : FeatureResultCard(
-                                        text: viewResultText ?? resultText,
-                                        title: viewResultTitle ?? resultTitle,
-                                        inputExpanded: inputExpanded,
-                                        onToggleInput: () =>
-                                            onToggleInput(!inputExpanded),
-                                      )),
-                          ],
-                        )
-                      : _inputColumn(theme, narrow, settings),
-                ),
-              ],
-            ),
-          ),
-        );
-      },      );
-  }
-
-  // Input field with optional feature knob controls stacked above it.
-  // On narrow (mobile) the controls live in the quick-actions sheet instead,
-  // so we only stack them inline on wide layouts — unless controlsInline is
-  // set, in which case they always sit above the field.
-  Widget _inputColumn(ThemeData theme, bool narrow, DisplaySettingsEntity settings) {
-    if (controls == null || (narrow && !controlsInline)) {
-      return _inputField(theme, settings);
-    }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        controls!,
-        const SizedBox(height: 12),
-        Expanded(child: _inputField(theme, settings)),
-      ],
-    );
-  }
-
-  Widget _inputField(ThemeData theme, DisplaySettingsEntity settings) => TextField(
-        controller: controller,
-        maxLines: null,
-        expands: true,
-        textAlignVertical: TextAlignVertical.top,
-        style: dyslexiaTextStyle(settings, theme.colorScheme.onSurface),
-        decoration: InputDecoration(
-          hintText: 'Type text to ${title.toLowerCase()}…',
-          hintStyle: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.4)),
-          fillColor: theme.colorScheme.onSurface.withValues(alpha: 0.06),
-          filled: true,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: theme.colorScheme.onSurface.withValues(alpha: 0.2))),
-          enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: theme.colorScheme.onSurface.withValues(alpha: 0.2))),
-          focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: theme.colorScheme.onSurface, width: 1.5)),
-        ),
-        onSubmitted: (_) => onSubmit(),
+  void _handleBack(BuildContext context) {
+    try {
+      context.read<SidebarBloc>().add(
+        SidebarSectionSelected(SidebarSection.reader),
       );
+      context.read<ReaderShellBloc>().add(
+        const ClearTextEvent(),
+      );
+    } catch (e) {
+      Navigator.of(context).pop();
+    }
+  }
 
   void _showHistory(BuildContext context) {
     showModalBottomSheet(
@@ -288,123 +134,348 @@ class FeaturePage extends StatelessWidget {
     );
   }
 
-  void _showQuickActions(BuildContext context) {
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final fg = theme.colorScheme.onSurface;
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => DraggableScrollableSheet(
-        expand: false,
-        initialChildSize: 0.5,
-        minChildSize: 0.3,
-        maxChildSize: 0.92,
-        builder: (ctx, scrollController) => Container(
-          decoration: BoxDecoration(
-            // Same surface colour as the page.
-            color: theme.colorScheme.surface,
-            borderRadius:
-                const BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: Column(
-            children: [
-              // Grip handle.
-              Container(
-                margin: const EdgeInsets.symmetric(vertical: 10),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: fg.withValues(alpha: 0.25),
-                  borderRadius: BorderRadius.circular(2),
+    final settings = context.watch<DisplaySettingsBloc>().state.settings;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 800;
+    final screenHeight = MediaQuery.of(context).size.height;
+
+    return Scaffold(
+      backgroundColor: Colors.white, 
+      body: Stack(
+        children: [
+          // === BACKGROUND 2 LAPIS UNGU ===
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              height: screenHeight * 0.55,
+              decoration: const BoxDecoration(
+                color: Color(0xFFD7C8FC),
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(48),
+                  bottomRight: Radius.circular(48),
                 ),
               ),
+            ),
+          ),
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              height: screenHeight * 0.50,
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFFC9B8F0), Color(0xFFB596E5)],
+                ),
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(32),
+                  bottomRight: Radius.circular(32),
+                ),
+              ),
+            ),
+          ),
+          
+          Column(
+            children: [
+              _buildHeader(context), 
               Expanded(
-                // Fade content at the top/bottom edges as it scrolls under.
-                child: ShaderMask(
-                  shaderCallback: (rect) => const LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.transparent,
-                      Colors.black,
-                      Colors.black,
-                      Colors.transparent,
-                    ],
-                    stops: [0.0, 0.05, 0.93, 1.0],
-                  ).createShader(rect),
-                  blendMode: BlendMode.dstIn,
-                  child: ListView(
-                    controller: scrollController,
-                    padding: EdgeInsets.fromLTRB(
-                        16, 8, 16, 24 + MediaQuery.viewInsetsOf(ctx).bottom),
-                    children: [
-                      // Inline controls stay with the field; don't duplicate here.
-                      if (controls != null && !controlsInline) ...[
-                        controls!,
-                        Divider(height: 28, color: fg.withValues(alpha: 0.1)),
-                      ],
-                      ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        leading: Icon(Icons.content_paste_rounded, color: fg),
-                        title: Text('Paste from clipboard',
-                            style: TextStyle(color: fg)),
-                        onTap: () {
-                          Navigator.pop(ctx);
-                          _onPaste(context);
-                        },
-                      ),
-                      ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        leading: Icon(Icons.upload_file_rounded, color: fg),
-                        title:
-                            Text('Upload PDF', style: TextStyle(color: fg)),
-                        onTap: () {
-                          Navigator.pop(ctx);
-                          _pickPdf(context);
-                        },
-                      ),
-                    ],
+                child: hasResult
+                    ? _buildResultView(context, theme, settings, isMobile)
+                    : _buildInputView(context, theme, settings, isMobile),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.only(left: 24, right: 24, top: 48, bottom: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.black),
+                onPressed: () => _handleBack(context),
+                style: IconButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  fixedSize: const Size(40, 40),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
                   ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 12),
+              if (onReset != null)
+                IconButton(
+                  icon: const Icon(Icons.restart_alt, color: Colors.black),
+                  onPressed: onReset,
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    fixedSize: const Size(40, 40),
+                  ),
+                ),
+              const SizedBox(width: 12),
+              if (onViewResult != null)
+                IconButton(
+                  icon: const Icon(Icons.history_rounded, color: Colors.black),
+                  onPressed: () => _showHistory(context),
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    fixedSize: const Size(40, 40),
+                  ),
+                ),
+            ],
+          ),
+          if (levelLabels != null && levelLabels!.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            LevelSlider(
+              label: title == 'Summarize' ? 'Summary Length' : 'Detail Level', 
+              valueLabels: levelLabels!,
+              initialIndex: initialLevel,
+              onChanged: (index) {
+                if (onLevelChanged != null) {
+                  onLevelChanged!(index);
+                }
+              },
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInputView(BuildContext context, ThemeData theme, DisplaySettingsEntity settings, bool isMobile) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (controls != null && (controlsInline || !isMobile)) ...[
+            controls!,
+            const SizedBox(height: 16),
+          ],
+          Expanded(
+            child: _buildTextInputCard(context, theme, settings),
+          ),
+          const SizedBox(height: 24),
+          _buildActionButtons(context, theme),
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildResultView(BuildContext context, ThemeData theme, DisplaySettingsEntity settings, bool isMobile) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (inputExpanded) ...[
+            _buildTextInputCard(context, theme, settings),
+            const SizedBox(height: 16),
+          ],
+          isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : FeatureResultCard(
+                  text: viewResultText ?? resultText,
+                  title: viewResultTitle ?? resultTitle,
+                  inputExpanded: inputExpanded,
+                  onToggleInput: () => onToggleInput(!inputExpanded),
+                ),
+          const SizedBox(height: 24),
+          _buildActionButtons(context, theme),
+          const SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTextInputCard(BuildContext context, ThemeData theme, DisplaySettingsEntity settings) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: controller,
+              minLines: 12,
+              maxLines: null,
+              textAlignVertical: TextAlignVertical.top,
+              style: dyslexiaTextStyle(settings, Colors.black87),
+              decoration: const InputDecoration(
+                hintText: 'Type text here or insert from external source\nusing the "+" button.',
+                hintStyle: TextStyle(
+                  color: Colors.grey,
+                  fontSize: 16,
+                  height: 1.5,
+                ),
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.zero,
+                counterText: '', 
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '${controller.text.length}/5000',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey.shade600,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              FloatingActionButton(
+                mini: true,
+                onPressed: () => _showAddSourceDialog(context),
+                backgroundColor: Colors.white,
+                elevation: 2,
+                child: const Icon(
+                  Icons.add,
+                  color: Colors.black87,
+                  size: 24,
                 ),
               ),
             ],
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButtons(BuildContext context, ThemeData theme) {
+    return Row(
+      children: [
+        Expanded(
+          child: Container(
+            height: 56,
+            decoration: BoxDecoration(
+              color: isLoading ? Colors.grey : const Color(0xFFB596E5),
+              borderRadius: BorderRadius.circular(28),
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: isLoading || controller.text.isEmpty ? null : onSubmit,
+                borderRadius: BorderRadius.circular(28),
+                child: Center(
+                  child: isLoading
+                      ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text(
+                          'Submit',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        _circularButton(icon: Icons.content_copy_outlined, onTap: () {}),
+        const SizedBox(width: 12),
+        _circularButton(icon: Icons.share_outlined, onTap: () {}),
+      ],
+    );
+  }
+
+  Widget _circularButton({required IconData icon, required VoidCallback onTap}) {
+    return Container(
+      width: 56,
+      height: 56,
+      decoration: const BoxDecoration(
+        color: Color(0xFFB596E5),
+        shape: BoxShape.circle,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          customBorder: const CircleBorder(),
+          child: Icon(icon, color: Colors.white, size: 24),
         ),
       ),
     );
   }
-}
 
-class _FeatureBarAction extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-  final Color? backgroundColor;
-  final VoidCallback? onTap;
-  const _FeatureBarAction(
-      {required this.icon,
-      required this.label,
-      required this.color,
-      this.backgroundColor,
-      this.onTap});
-  @override
-  Widget build(BuildContext context) => Material(
-        color: backgroundColor ?? color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(8),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(8),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            child: Row(mainAxisSize: MainAxisSize.min, children: [
-              Icon(icon, size: 14, color: color),
-              const SizedBox(width: 4),
-              Text(label,
-                  style: TextStyle(
-                      fontSize: 11, fontWeight: FontWeight.w600, color: color)),
-            ]),
-          ),
+  void _showAddSourceDialog(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Add Text From',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 24),
+            ListTile(
+              leading: const Icon(Icons.content_paste),
+              title: const Text('Paste from Clipboard'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _onPaste(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.upload_file),
+              title: const Text('Upload PDF'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _pickPdf(context);
+              },
+            ),
+          ],
         ),
-      );
+      ),
+    );
+  }
 }

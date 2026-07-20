@@ -30,30 +30,16 @@ import '../../features/sidebar/presentation/pages/sidebar_shell_page.dart';
 import '../../features/auth/presentation/widgets/auth_user_menu.dart';
 import '../widgets/reader_landing_view.dart';
 
+// Warna ungu untuk background 2 lapis
+const Color _headerColorStart = Color(0xFFC9B8F0);
+const Color _headerColorEnd = Color(0xFFB596E5);
+const Color _headerBottomLayer = Color(0xFFD7C8FC);
+
 /// Width below which the sidebar collapses to icon-only.
 const double kSidebarIconBreakpoint = 900;
 /// Width below which the sidebar is completely hidden.
 const double kSidebarHiddenBreakpoint = 700;
 
-/// 3-column desktop shell driven by [SidebarBloc]:
-///   [ SidebarShellPage ] [ Main content ] [ DisplaySettingsPanel? ]
-///
-/// - Column 1: sidebar rail (Reader, Summarize, Define, Personalize,
-///   Screening). 96 px wide; selection state lives in [SidebarBloc].
-/// - Column 2: the main content area. Switches on the active
-///   [SidebarSection]. Reader renders the existing
-///   [FeatureCanvas]+[MainColumn]+landing stack; the other 4 sections
-///   render a [PlaceholderPanel].
-/// - Column 3: typography/accessibility settings. Only shown when the
-///   active section is implemented (currently just Reader) AND the
-///   window is at least [kShellCompactBreakpoint] wide.
-///
-/// The reader main column's view-state (loaded text, source, PDF
-/// progress) is owned by [ReaderShellBloc] so the column itself is a
-/// pure stateless widget that BlocBuilder's the state. Children that
-/// need to mutate the column (FeatureCanvas, ReaderPage) dispatch
-/// events through `context.read<ReaderShellBloc>()` — no ancestor
-/// state lookup is required.
 class DesktopShell extends StatefulWidget {
   const DesktopShell({super.key});
 
@@ -67,6 +53,8 @@ class _DesktopShellState extends State<DesktopShell> {
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return ScreenUtilInit(
       useInheritedMediaQuery: true,
       designSize: const Size(1920, 1080),
@@ -75,10 +63,6 @@ class _DesktopShellState extends State<DesktopShell> {
       builder: (context, child) {
         return MultiBlocProvider(
           providers: [
-            // getIt-backed blocs are lazySingletons — use .value so this shell
-            // doesn't close them on dispose (create: would, killing the
-            // singleton with "add after close" on next use). Only the two
-            // genuinely per-shell blocs below are created with create:.
             BlocProvider.value(value: getIt<ThemeBloc>()),
             BlocProvider.value(value: getIt<DisplaySettingsBloc>()),
             BlocProvider.value(value: getIt<SummarizeBloc>()),
@@ -98,92 +82,131 @@ class _DesktopShellState extends State<DesktopShell> {
                     debugShowCheckedModeBanner: false,
                     theme: AppTheme.data(themeState.isDarkMode),
                     home: Scaffold(
-                      body: Column(
+                      backgroundColor: Colors.white, // Background putih untuk area bawah
+                      body: Stack(
                         children: [
-                          _ShellHeaderBar(
-                            showGear: true,
-                            onToggleSettings: () => setState(
-                                () => _settingsPanelOpen = !_settingsPanelOpen),
+                          // ==========================================
+                          // BACKGROUND 2 LAPIS UNGU (SAMPAI TENGAH)
+                          // ==========================================
+                          
+                          // Lapisan bawah (ungu tipis)
+                          Positioned(
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            child: Container(
+                              height: screenHeight * 0.55,
+                              decoration: const BoxDecoration(
+                                color: _headerBottomLayer,
+                                borderRadius: BorderRadius.only(
+                                  bottomLeft: Radius.circular(48),
+                                  bottomRight: Radius.circular(48),
+                                ),
+                              ),
+                            ),
                           ),
-                          Expanded(
-                            child: LayoutBuilder(
-                              builder: (context, constraints) {
-                                final compactSidebar = constraints.maxWidth <
-                                    kSidebarIconBreakpoint;
-                                final bottomNav = constraints.maxWidth <
-                                    kSidebarHiddenBreakpoint;
-                                final hiddenSidebar = bottomNav;
-                                final touchMode = constraints.maxWidth < 800;
-                                return BlocBuilder<SidebarBloc, SidebarState>(
-                                  builder: (context, sidebar) {
-                                    if (bottomNav) {
-                                      return Column(
-                                        children: [
-                                          Expanded(
-                                              child: _bottomSettings
-                                                  ? const DisplaySettingsPanel()
-                                                : switch (sidebar.section) {
-                                                    SidebarSection.reader => const MainColumn(),
-                                                    SidebarSection.summarize =>
-                                                      const SummarizePage(),
-                                                    SidebarSection.define =>
-                                                      const DefinePage(),
-                                                    SidebarSection.professionalize =>
-                                                      const ProfessionalizePage(),
-                                                    SidebarSection.screening =>
-                                                      const ScreeningPage(),
-                                                  },
-                                          ),
-                                          _BottomNavBar(
-                                            currentSection: sidebar.section,
-                                            showSettings: _bottomSettings,
-                                            onSectionSelected: (s) {
-                                              setState(() => _bottomSettings = false);
-                                              context
-                                                  .read<SidebarBloc>()
-                                                  .add(SidebarSectionSelected(s));
-                                            },
-                                            onToggleSettings: () => setState(
-                                                () => _bottomSettings = !_bottomSettings),
-                                          ),
-                                        ],
-                                      );
-                                    }
-                                    if (_bottomSettings && hiddenSidebar) {
-                                      return Row(
-                                        children: [
-                                          Expanded(
-                                            child: const DisplaySettingsPanel(),
-                                          ),
-                                        ],
-                                      );
-                                    }
-                                    return Row(
-                                      children: [
-                                        if (!hiddenSidebar)
-                                          SidebarShellPage(
-                                              compact: compactSidebar, touchMode: touchMode),
-                                        Expanded(
-                                          child: switch (sidebar.section) {
-                                            SidebarSection.reader => const MainColumn(),
-                                            SidebarSection.summarize =>
-                                              const SummarizePage(),
-                                            SidebarSection.define =>
-                                              const DefinePage(),
-                                            SidebarSection.professionalize =>
-                                              const ProfessionalizePage(),
-                                            SidebarSection.screening =>
-                                              const ScreeningPage(),
-                                          },
-                                        ),
-                                        if (!hiddenSidebar && _settingsPanelOpen)
-                                          const DisplaySettingsPanel(),
-                                      ],
+                          
+                          // Lapisan atas (ungu tebal gradient)
+                          Positioned(
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            child: Container(
+                              height: screenHeight * 0.50,
+                              decoration: const BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    _headerColorStart,
+                                    _headerColorEnd,
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.only(
+                                  bottomLeft: Radius.circular(32),
+                                  bottomRight: Radius.circular(32),
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          // ==========================================
+                          // KONTEN UTAMA (DITUMPANGKAN DI ATAS BACKGROUND)
+                          // ==========================================
+                          Column(
+                            children: [
+                              // Header bar yang transparan
+                              _ShellHeaderBar(
+                                showGear: true,
+                                onToggleSettings: () => setState(
+                                    () => _settingsPanelOpen = !_settingsPanelOpen),
+                              ),
+                              Expanded(
+                                child: LayoutBuilder(
+                                  builder: (context, constraints) {
+                                    final compactSidebar = constraints.maxWidth < kSidebarIconBreakpoint;
+                                    final bottomNav = constraints.maxWidth < kSidebarHiddenBreakpoint;
+                                    final hiddenSidebar = bottomNav;
+                                    final touchMode = constraints.maxWidth < 800;
+                                    
+                                    return BlocBuilder<SidebarBloc, SidebarState>(
+                                      builder: (context, sidebar) {
+                                        if (bottomNav) {
+                                          return Column(
+                                            children: [
+                                              Expanded(
+                                                child: _bottomSettings
+                                                    ? const DisplaySettingsPanel()
+                                                    : switch (sidebar.section) {
+                                                        SidebarSection.reader => const MainColumn(),
+                                                        SidebarSection.summarize => const SummarizePage(),
+                                                        SidebarSection.define => const DefinePage(),
+                                                        SidebarSection.professionalize => const ProfessionalizePage(),
+                                                        SidebarSection.screening => const ScreeningPage(),
+                                                      },
+                                              ),
+                                              _BottomNavBar(
+                                                currentSection: sidebar.section,
+                                                showSettings: _bottomSettings,
+                                                onSectionSelected: (s) {
+                                                  setState(() => _bottomSettings = false);
+                                                  context.read<SidebarBloc>().add(SidebarSectionSelected(s));
+                                                },
+                                                onToggleSettings: () => setState(() => _bottomSettings = !_bottomSettings),
+                                              ),
+                                            ],
+                                          );
+                                        }
+                                        if (_bottomSettings && hiddenSidebar) {
+                                          return const Row(
+                                            children: [
+                                              Expanded(child: DisplaySettingsPanel()),
+                                            ],
+                                          );
+                                        }
+                                        return Row(
+                                          children: [
+                                            if (!hiddenSidebar)
+                                              SidebarShellPage(compact: compactSidebar, touchMode: touchMode),
+                                            Expanded(
+                                              child: switch (sidebar.section) {
+                                                SidebarSection.reader => const MainColumn(),
+                                                SidebarSection.summarize => const SummarizePage(),
+                                                SidebarSection.define => const DefinePage(),
+                                                SidebarSection.professionalize => const ProfessionalizePage(),
+                                                SidebarSection.screening => const ScreeningPage(),
+                                              },
+                                            ),
+                                            if (!hiddenSidebar && _settingsPanelOpen)
+                                              const DisplaySettingsPanel(),
+                                          ],
+                                        );
+                                      },
                                     );
                                   },
-                                );
-                              },
-                            ),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -199,12 +222,8 @@ class _DesktopShellState extends State<DesktopShell> {
   }
 }
 
-/// Column 2: main content area. The reader page is the default destination;
-/// before any text is loaded we show the web landing content (paste/upload CTA).
-///
-/// View-state is owned by [ReaderShellBloc] — the widget is stateless and
-/// BlocBuilder's the state. The auto-load of the sample text is dispatched
-/// on first frame.
+// ... (MainColumn, _PdfProgressOverlay, _ShellHeaderBar, _BottomNavBar tetap sama seperti kode Anda sebelumnya) ...
+
 class MainColumn extends StatefulWidget {
   const MainColumn({super.key});
 
@@ -214,7 +233,6 @@ class MainColumn extends StatefulWidget {
 
 class _MainColumnState extends State<MainColumn> {
   void _onBack() {
-    // Returning to landing clears the loaded text.
     context.read<ReaderShellBloc>().add(const ClearTextEvent());
   }
 
@@ -245,8 +263,6 @@ class _MainColumnState extends State<MainColumn> {
   }
 }
 
-/// Translucent PDF processing overlay. Pulled out of [MainColumn] so the
-/// state-building branch stays readable.
 class _PdfProgressOverlay extends StatelessWidget {
   final int current;
   final int total;
@@ -259,7 +275,7 @@ class _PdfProgressOverlay extends StatelessWidget {
     final fg = theme.colorScheme.onSurface;
     return Positioned.fill(
       child: Container(
-        color: fg.withValues(alpha: 0.3),
+        color: fg.withValues(alpha: 0.9),
         child: Center(
           child: Card(
             color: theme.colorScheme.surface,
@@ -269,13 +285,11 @@ class _PdfProgressOverlay extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.picture_as_pdf,
-                      size: 40, color: fg.withValues(alpha: 0.6)),
+                  Icon(Icons.picture_as_pdf, size: 40, color: fg.withValues(alpha: 0.6)),
                   const SizedBox(height: 16),
-                  Text(
+                  const Text(
                     'Processing PDF...',
-                    style: TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.w600, color: fg),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 20),
                   ClipRRect(
@@ -284,15 +298,13 @@ class _PdfProgressOverlay extends StatelessWidget {
                       value: pct,
                       minHeight: 8,
                       backgroundColor: fg.withValues(alpha: 0.15),
-                      valueColor:
-                          const AlwaysStoppedAnimation(Color(0xFF3D5A99)),
+                      valueColor: const AlwaysStoppedAnimation(Color(0xFF3D5A99)),
                     ),
                   ),
                   const SizedBox(height: 10),
                   Text(
                     'Page $current of $total',
-                    style: TextStyle(
-                        fontSize: 13, color: fg.withValues(alpha: 0.6)),
+                    style: TextStyle(fontSize: 13, color: fg.withValues(alpha: 0.6)),
                   ),
                 ],
               ),
@@ -304,11 +316,6 @@ class _PdfProgressOverlay extends StatelessWidget {
   }
 }
 
-/// Slim top bar that sits above the 3-column body. Hosts the
-/// [DisplaySettingsPanel] toggle (gear icon) and the [AuthUserMenu]
-/// on the right edge. The gear button is only shown on wider screens
-/// (>= 700px) — on narrow screens the settings toggle lives in the
-/// bottom nav bar.
 class _ShellHeaderBar extends StatelessWidget {
   final bool showGear;
   final VoidCallback? onToggleSettings;
@@ -318,26 +325,23 @@ class _ShellHeaderBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final screenW = MediaQuery.of(context).size.width;
     return Container(
-      height: 40,
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        border: Border(
-          bottom: BorderSide(
-            color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
-          ),
-        ),
-      ),
+      height: 56,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: const BoxDecoration(color: Colors.transparent),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
           if (showGear && screenW >= kSidebarHiddenBreakpoint)
             IconButton(
               tooltip: 'Toggle display settings',
-              icon: Icon(Icons.tune_outlined, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6), size: 20),
+              icon: Icon(
+                Icons.tune_outlined,
+                color: Colors.white.withValues(alpha: 0.9),
+                size: 24,
+              ),
               onPressed: onToggleSettings,
             ),
-          const SizedBox(width: 4),
+          const SizedBox(width: 8),
           const AuthUserMenu(),
         ],
       ),
@@ -381,7 +385,17 @@ class _BottomNavBar extends StatelessWidget {
                   children: [
                     Icon(section.materialIcon, size: 20, color: fg),
                     const SizedBox(height: 2),
-                    Text(section.label, style: TextStyle(fontSize: 9, fontWeight: selected ? FontWeight.w600 : FontWeight.w500, color: fg), textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis),
+                    Text(
+                      section.label,
+                      style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                        color: fg,
+                      ),
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ],
                 ),
               ),
@@ -393,9 +407,23 @@ class _BottomNavBar extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(showSettings ? Icons.tune : Icons.tune_outlined, size: 20, color: showSettings ? accent : muted),
+                  Icon(
+                    showSettings ? Icons.tune : Icons.tune_outlined,
+                    size: 20,
+                    color: showSettings ? accent : muted,
+                  ),
                   const SizedBox(height: 2),
-                  Text('Settings', style: TextStyle(fontSize: 9, fontWeight: showSettings ? FontWeight.w600 : FontWeight.w500, color: showSettings ? accent : muted), textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis),
+                  Text(
+                    'Settings',
+                    style: TextStyle(
+                      fontSize: 9,
+                      fontWeight: showSettings ? FontWeight.w600 : FontWeight.w500,
+                      color: showSettings ? accent : muted,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ],
               ),
             ),

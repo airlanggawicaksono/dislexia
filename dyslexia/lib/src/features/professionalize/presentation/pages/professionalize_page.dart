@@ -11,6 +11,7 @@ import '../bloc/professionalize_state.dart';
 class ProfessionalizePage extends StatefulWidget {
   final String? initialText;
   const ProfessionalizePage({super.key, this.initialText});
+
   @override
   State<ProfessionalizePage> createState() => _ProfessionalizePageState();
 }
@@ -42,65 +43,72 @@ class _ProfessionalizePageState extends State<ProfessionalizePage> {
   }
 
   @override
-  Widget build(BuildContext context) =>
-      BlocBuilder<ProfessionalizeBloc, ProfessionalizeState>(
-    builder: (ctx, state) {
-      final hasResult = state is ProfessionalizeResultState;
-      final isLoading = state is ProfessionalizeLoading;
-      return FeaturePage(
-        controller: _controller,
-        title: 'Professionalize', resultTitle: 'Professionalized text', heroTag: 'professionalize',
-        controlsInline: true,
-        controls: _EmailControls(
-          recipient: _recipient,
-          sender: _sender,
-          initialOn: _emailMode,
-          onModeChanged: (v) => _emailMode = v,
-        ),
-        resultText: hasResult ? state.result : '',
-        viewResultText: _viewResultText,
-        viewResultTitle: _viewResultTitle,
-        hasResult: hasResult || isLoading || _viewResultText != null,
-        isLoading: isLoading,
-        inputExpanded: _inputExpanded,
-        onToggleInput: (v) => setState(() => _inputExpanded = v),
-        onSubmit: () {
-          setState(() { _viewResultText = null; _viewResultTitle = null; });
-          final t = _controller.text.trim();
-          if (t.isEmpty) return;
-          final rcp = _recipient.text.trim();
-          final snd = _sender.text.trim();
-          // Email mode needs BOTH names — backend 422s otherwise.
-          if (_emailMode && (rcp.isEmpty || snd.isEmpty)) {
-            showAdaptiveFeedback(ctx, 'Enter both recipient and sender names');
-            return;
-          }
-          ctx.read<ProfessionalizeBloc>().add(ProfessionalizeTextEvent(
-                t,
-                recipientName: _emailMode ? rcp : null,
-                senderName: _emailMode ? snd : null,
-              ));
+  Widget build(BuildContext context) => BlocBuilder<ProfessionalizeBloc, ProfessionalizeState>(
+        builder: (ctx, state) {
+          final hasResult = state is ProfessionalizeResultState;
+          final isLoading = state is ProfessionalizeLoading;
+          
+          return FeaturePage(
+            controller: _controller,
+            title: 'Professionalize',
+            resultTitle: 'Professionalized text',
+            heroTag: 'professionalize',
+            controlsInline: true,
+            controls: _EmailControls(
+              recipient: _recipient,
+              sender: _sender,
+              initialOn: _emailMode,
+              onModeChanged: (v) => setState(() => _emailMode = v),
+            ),
+            resultText: hasResult ? state.result : '',
+            viewResultText: _viewResultText,
+            viewResultTitle: _viewResultTitle,
+            hasResult: hasResult || isLoading || _viewResultText != null,
+            isLoading: isLoading,
+            inputExpanded: _inputExpanded,
+            onToggleInput: (v) => setState(() => _inputExpanded = v),
+            onSubmit: () {
+              setState(() {
+                _viewResultText = null;
+                _viewResultTitle = null;
+              });
+              final t = _controller.text.trim();
+              if (t.isEmpty) return;
+              final rcp = _recipient.text.trim();
+              final snd = _sender.text.trim();
+              
+              // Email mode needs BOTH names — backend 422s otherwise.
+              if (_emailMode && (rcp.isEmpty || snd.isEmpty)) {
+                showAdaptiveFeedback(ctx, 'Enter both recipient and sender names');
+                return;
+              }
+              ctx.read<ProfessionalizeBloc>().add(ProfessionalizeTextEvent(
+                    t,
+                    recipientName: _emailMode ? rcp : null,
+                    senderName: _emailMode ? snd : null,
+                  ));
+            },
+            onReset: () {
+              _controller.clear();
+              _recipient.clear();
+              _sender.clear();
+              setState(() {
+                _viewResultText = null;
+                _viewResultTitle = null;
+              });
+              ctx.read<ProfessionalizeBloc>().add(ClearProfessionalizeEvent());
+            },
+            onViewResult: (text, result) => setState(() {
+              _controller.text = text;
+              _viewResultText = result;
+              _viewResultTitle = 'History';
+            }),
+          );
         },
-        onReset: () {
-          _controller.clear();
-          _recipient.clear();
-          _sender.clear();
-          setState(() { _viewResultText = null; _viewResultTitle = null; });
-          ctx.read<ProfessionalizeBloc>().add(ClearProfessionalizeEvent());
-        },
-        onViewResult: (text, result) => setState(() {
-          _controller.text = text;
-          _viewResultText = result;
-          _viewResultTitle = 'History';
-        }),
       );
-    },
-  );
 }
 
-/// Self-managing email-mode controls: owns the toggle so it redraws correctly
-/// inside a modal sheet (parent page setState can't reach it there). Reports
-/// the mode up via [onModeChanged]; text lives in the passed controllers.
+/// Self-managing email-mode controls
 class _EmailControls extends StatefulWidget {
   final TextEditingController recipient;
   final TextEditingController sender;
@@ -121,44 +129,54 @@ class _EmailControls extends StatefulWidget {
 class _EmailControlsState extends State<_EmailControls> {
   late bool _on = widget.initialOn;
 
-  Widget _nameField(
-          TextEditingController c, String hint, Color fg, TextStyle style) =>
-      TextField(
-        controller: c,
-        style: style,
-        decoration: InputDecoration(
-          hintText: hint,
-          hintStyle: TextStyle(color: fg.withValues(alpha: 0.4)),
-          fillColor: fg.withValues(alpha: 0.06),
-          filled: true,
-          isDense: true,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: fg.withValues(alpha: 0.2)),
-          ),
+  // Widget field yang diperbarui dengan background putih dan border ungu saat fokus
+  Widget _nameField(TextEditingController c, String hint) {
+    return TextField(
+      controller: c,
+      style: const TextStyle(color: Colors.black87, fontSize: 14),
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: TextStyle(color: Colors.grey.shade500),
+        fillColor: Colors.white, // <-- DIUBAH MENJADI PUTIH
+        filled: true,
+        isDense: true,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: Colors.grey.shade300),
         ),
-      );
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFFB596E5), width: 1.5), // Border ungu saat diklik
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    final fg = Theme.of(context).colorScheme.onSurface;
-    final settings = context.watch<DisplaySettingsBloc>().state.settings;
-    final fieldStyle = dyslexiaTextStyle(settings, fg);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Row(
           children: [
             Expanded(
-              child: Text('Email mode',
-                  style: TextStyle(
-                      fontSize: 13, fontWeight: FontWeight.w600, color: fg)),
+              child: Text(
+                'Email mode',
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+              ),
             ),
             Switch(
               value: _on,
-              activeThumbColor: const Color(0xFF3D5A99),
+              activeColor: const Color(0xFFB596E5), // Disesuaikan dengan tema ungu aplikasi
               onChanged: (v) {
                 setState(() => _on = v);
                 widget.onModeChanged(v);
@@ -167,16 +185,16 @@ class _EmailControlsState extends State<_EmailControls> {
           ],
         ),
         if (_on) ...[
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
           Row(
             children: [
               Expanded(
-                  child: _nameField(
-                      widget.recipient, 'To (recipient)', fg, fieldStyle)),
-              const SizedBox(width: 8),
+                child: _nameField(widget.recipient, 'To (recipient)'),
+              ),
+              const SizedBox(width: 12),
               Expanded(
-                  child:
-                      _nameField(widget.sender, 'From (you)', fg, fieldStyle)),
+                child: _nameField(widget.sender, 'From (you)'),
+              ),
             ],
           ),
         ],
