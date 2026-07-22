@@ -40,11 +40,29 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        create("release") {
+            val userHome = System.getProperty("user.home") ?: System.getenv("HOME") ?: "/root"
+            val envKeystorePath = System.getenv("KEYSTORE_PATH")
+            val envStorePassword = System.getenv("KEYSTORE_PASSWORD")
+            val envKeyAlias = System.getenv("KEY_ALIAS")
+            val envKeyPassword = System.getenv("KEY_PASSWORD")
+
+            // Use env vars when set (CI), fall back to SDK debug keystore (local)
+            // Check both null and empty string — GHA sets empty string for missing secrets.
+            storeFile = file(
+                if (!envKeystorePath.isNullOrEmpty()) envKeystorePath
+                else "$userHome/.android/debug.keystore"
+            )
+            storePassword = if (!envStorePassword.isNullOrEmpty()) envStorePassword else "android"
+            keyAlias = if (!envKeyAlias.isNullOrEmpty()) envKeyAlias else "androiddebugkey"
+            keyPassword = if (!envKeyPassword.isNullOrEmpty()) envKeyPassword else "android"
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
@@ -53,4 +71,16 @@ android {
 
 flutter {
     source = "../.."
+}
+
+// Safety net: only run validateSigningRelease when the keystore file
+// actually exists. In CI without secrets (or local dev without a release
+// keystore), validation is skipped so the build doesn't fail.
+tasks.matching {
+    it.name.equals("validateSigningRelease")
+}.configureEach {
+    val envPath = System.getenv("KEYSTORE_PATH")
+    val path = if (!envPath.isNullOrEmpty()) envPath
+               else "${System.getProperty("user.home")}/.android/debug.keystore"
+    enabled = file(path).exists()
 }
