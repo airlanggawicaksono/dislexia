@@ -1,5 +1,6 @@
 plugins {
     id("com.android.application")
+    id("org.jetbrains.kotlin.android")
     // The Flutter Gradle Plugin handles Kotlin internally now.
     id("dev.flutter.flutter-gradle-plugin")
 }
@@ -19,6 +20,13 @@ android {
         // JDK running Gradle (21), which trips AGP's Java/Kotlin JVM-target
         // consistency check.
         jvmTarget = JavaVersion.VERSION_17.toString()
+    }
+
+    lint {
+        // Prevent lint from crashing the build with certain plugin versions
+        // on AGP 8.x (e.g., camera_android_camerax lintVitalAnalyzeRelease).
+        abortOnError = false
+        checkReleaseBuilds = false
     }
 
     defaultConfig {
