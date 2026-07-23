@@ -6,9 +6,6 @@ import '../../../../core/widgets/app_splash.dart';
 import '../bloc/auth/auth_bloc.dart';
 import '../widgets/auth_text_field.dart';
 
-/// Desktop auth page. Rendered in place of the main shell when the
-/// user has no active session. Allows the user to log in with their
-/// 6-digit account number.
 class AuthPage extends StatefulWidget {
   const AuthPage({super.key});
 
@@ -37,15 +34,12 @@ class _AuthPageState extends State<AuthPage> {
     final screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
-
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-
+          // 1. Background Ungu
           Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
+            top: 0, left: 0, right: 0,
             child: Container(
               height: screenHeight * 0.15,
               decoration: const BoxDecoration(
@@ -57,11 +51,8 @@ class _AuthPageState extends State<AuthPage> {
               ),
             ),
           ),
-
           Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
+            top: 0, left: 0, right: 0,
             child: Container(
               height: screenHeight * 0.1,
               decoration: const BoxDecoration(
@@ -78,7 +69,7 @@ class _AuthPageState extends State<AuthPage> {
             ),
           ),
 
-  
+          // 2. Konten Utama (HANYA BlocConsumer, tanpa BlocListener navigasi)
           Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 480),
@@ -93,16 +84,17 @@ class _AuthPageState extends State<AuthPage> {
                   }
                 },
                 builder: (context, state) {
-                  // Tampilkan splash screen saat loading atau baru mulai
+                  // Tampilkan loading/splash saat proses login atau saat baru authenticated 
+                  // (GoRouter akan segera mengambil alih dan me-redirect halaman ini)
                   if (state is AuthInitial ||
                       state is AuthLoading ||
                       state is Authenticated) {
                     return const AppSplash();
                   }
 
+                  // Tampilkan form login
                   return SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 32, vertical: 48),
+                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 48),
                     child: Form(
                       key: _formKey,
                       child: Column(
@@ -122,7 +114,7 @@ class _AuthPageState extends State<AuthPage> {
                             textAlign: TextAlign.center,
                             style: theme.textTheme.headlineMedium?.copyWith(
                               fontWeight: FontWeight.w700,
-                              color: Colors.black, 
+                              color: Colors.black,
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -144,12 +136,8 @@ class _AuthPageState extends State<AuthPage> {
                             ],
                             validator: (value) {
                               final v = (value ?? '').trim();
-                              if (v.isEmpty) {
-                                return 'Please enter your account number';
-                              }
-                              if (v.length != 6) {
-                                return 'Account number must be 6 digits';
-                              }
+                              if (v.isEmpty) return 'Please enter your account number';
+                              if (v.length != 6) return 'Account number must be 6 digits';
                               return null;
                             },
                           ),

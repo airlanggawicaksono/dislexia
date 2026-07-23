@@ -40,7 +40,28 @@ class _SummarizePageState extends State<SummarizePage> {
   }
 
   @override
-  Widget build(BuildContext context) => BlocBuilder<SummarizeBloc, SummarizeState>(
+  Widget build(BuildContext context) {
+    // ✅ 1. BlocListener untuk menangkap hasil dan memaksa update text box
+    return BlocListener<SummarizeBloc, SummarizeState>(
+      listener: (ctx, state) {
+        if (state is SummarizeResultState) {
+          // 🔍 DEBUG: Cek di console apakah hasil benar-benar sampai
+          debugPrint('🚀 SUMMARIZE RESULT RECEIVED: ${state.result}');
+          
+          if (state.result.isNotEmpty) {
+            // ✅ 2. addPostFrameCallback memaksa update setelah frame selesai, 
+            // mencegah Flutter mengabaikan perubahan controller
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _controller.text = state.result;
+              _controller.selection = TextSelection.fromPosition(
+                TextPosition(offset: _controller.text.length),
+              );
+              debugPrint('✅ TEXT CONTROLLER BERHASIL DI-UPDATE');
+            });
+          }
+        }
+      },
+      child: BlocBuilder<SummarizeBloc, SummarizeState>(
         builder: (ctx, state) {
           final hasResult = state is SummarizeResultState;
           final isLoading = state is SummarizeLoading;
@@ -50,10 +71,6 @@ class _SummarizePageState extends State<SummarizePage> {
             title: 'Summarize',
             resultTitle: 'Summary',
             heroTag: 'summarize',
-            
-            // --- PERUBAHAN PENTING DI SINI ---
-            // 1. HAPUS baris: controls: _levelControl(),
-            // 2. GUNAKAN parameter ini agar slider muncul di HEADER:
             levelLabels: _levelPct,
             initialLevel: _levels.indexOf(_level),
             onLevelChanged: (index) {
@@ -61,8 +78,6 @@ class _SummarizePageState extends State<SummarizePage> {
                 _level = _levels[index];
               });
             },
-            // ---------------------------------
-
             resultText: hasResult ? state.result : '',
             viewResultText: _viewResultText,
             viewResultTitle: _viewResultTitle,
@@ -77,6 +92,7 @@ class _SummarizePageState extends State<SummarizePage> {
               });
               final t = _controller.text.trim();
               if (t.isNotEmpty) {
+                debugPrint('📤 MENGIRIM EVENT SUMMARIZE UNTUK: $t');
                 ctx.read<SummarizeBloc>().add(SummarizeTextEvent(t, level: _level));
               }
             },
@@ -89,11 +105,16 @@ class _SummarizePageState extends State<SummarizePage> {
               ctx.read<SummarizeBloc>().add(ClearSummarizeEvent());
             },
             onViewResult: (text, result) => setState(() {
-              _controller.text = text;
-              _viewResultText = result;
-              _viewResultTitle = 'History';
+              // Saat pilih dari history, masukkan HASIL ke text box
+              _controller.text = result;
+              _viewResultText = null;
+              _viewResultTitle = null;
             }),
+            // ✅ 3. WAJIB: Mencegah FeatureResultCard muncul
+            replaceInputWithResult: true, 
           );
         },
-      );
+      ),
+    );
+  }
 }

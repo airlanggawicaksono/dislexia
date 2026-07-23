@@ -1,11 +1,14 @@
 enum AppRoute {
   auth(path: "/auth"),
-  login(path: "login"),
-  register(path: "register"),
+  login(path: "/login"),
+  register(path: "/register"),
   home(path: "/home/:user_id/:email/:username"),
   createProduct(path: "/product/add"),
   updateProduct(path: "/product/update/:product_id/:product_name/:product_price"),
-  landing(path: "/landing"),
+
+  landing(path: "/landing"),           
+  desktopLanding(path: "/desktop-landing"), 
+  readerLanding(path: "/reader-landing"),   
   displaySettings(path: "/display-settings"),
   upload(path: "/upload"),
   scanPaste(path: "/scan-paste"),

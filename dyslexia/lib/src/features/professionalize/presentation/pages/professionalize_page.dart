@@ -77,7 +77,6 @@ class _ProfessionalizePageState extends State<ProfessionalizePage> {
               final rcp = _recipient.text.trim();
               final snd = _sender.text.trim();
               
-              // Email mode needs BOTH names — backend 422s otherwise.
               if (_emailMode && (rcp.isEmpty || snd.isEmpty)) {
                 showAdaptiveFeedback(ctx, 'Enter both recipient and sender names');
                 return;
@@ -99,16 +98,18 @@ class _ProfessionalizePageState extends State<ProfessionalizePage> {
               ctx.read<ProfessionalizeBloc>().add(ClearProfessionalizeEvent());
             },
             onViewResult: (text, result) => setState(() {
-              _controller.text = text;
-              _viewResultText = result;
-              _viewResultTitle = 'History';
+              // ✅ Langsung tampilkan hasil di text box
+              _controller.text = result;
+              _viewResultText = null;
+              _viewResultTitle = null;
             }),
+            // ✅ Aktifkan mode replace input
+            replaceInputWithResult: true,
           );
         },
       );
 }
 
-/// Self-managing email-mode controls
 class _EmailControls extends StatefulWidget {
   final TextEditingController recipient;
   final TextEditingController sender;
@@ -129,7 +130,6 @@ class _EmailControls extends StatefulWidget {
 class _EmailControlsState extends State<_EmailControls> {
   late bool _on = widget.initialOn;
 
-  // Widget field yang diperbarui dengan background putih dan border ungu saat fokus
   Widget _nameField(TextEditingController c, String hint) {
     return TextField(
       controller: c,
@@ -137,7 +137,7 @@ class _EmailControlsState extends State<_EmailControls> {
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: TextStyle(color: Colors.grey.shade500),
-        fillColor: Colors.white, // <-- DIUBAH MENJADI PUTIH
+        fillColor: Colors.white,
         filled: true,
         isDense: true,
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -151,7 +151,7 @@ class _EmailControlsState extends State<_EmailControls> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFFB596E5), width: 1.5), // Border ungu saat diklik
+          borderSide: const BorderSide(color: Color(0xFFB596E5), width: 1.5),
         ),
       ),
     );
@@ -176,7 +176,7 @@ class _EmailControlsState extends State<_EmailControls> {
             ),
             Switch(
               value: _on,
-              activeColor: const Color(0xFFB596E5), // Disesuaikan dengan tema ungu aplikasi
+              activeColor: const Color.fromARGB(255, 255, 255, 255),
               onChanged: (v) {
                 setState(() => _on = v);
                 widget.onModeChanged(v);

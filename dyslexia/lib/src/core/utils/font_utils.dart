@@ -1,23 +1,40 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-
 import '../../features/display_settings/domain/entities/display_settings_entity.dart';
 
-/// Reusable text style that reflects the user's display settings (font, size,
-/// spacing). Use for every text box + history text so input matches output —
-/// [color] comes from the caller (theme foreground / display colour).
-TextStyle dyslexiaTextStyle(DisplaySettingsEntity s, Color color) =>
-    applyDyslexiaFont(
-      font: s.font,
-      baseStyle: TextStyle(
-        fontSize: s.fontSize,
-        color: color,
-        height: s.lineSpacing,
-        letterSpacing: s.letterSpacing,
-        wordSpacing: s.wordSpacing,
-      ),
-    );
+/// 1. Helper untuk mengubah Enum menjadi String nama font yang 100% AKURAT
+String getGlobalFontFamily(DyslexiaFont font) {
+  switch (font) {
+    case DyslexiaFont.openDyslexic:   return 'OpenDyslexic'; // Pastikan ada di pubspec.yaml
+    case DyslexiaFont.lexend:         return GoogleFonts.lexend().fontFamily!;
+    case DyslexiaFont.plusJakartaSans:return GoogleFonts.plusJakartaSans().fontFamily!;
+    case DyslexiaFont.sassoonPrimary: return 'SassoonPrimary'; // Pastikan ada di pubspec.yaml
+    case DyslexiaFont.tahoma:         return 'Tahoma'; // Pastikan ada di pubspec.yaml
+    case DyslexiaFont.weezerFont:     return 'WeezerFont'; // Pastikan ada di pubspec.yaml
+    case DyslexiaFont.arial:          return GoogleFonts.arimo().fontFamily!;
+    case DyslexiaFont.calibri:        return GoogleFonts.lato().fontFamily!;
+    case DyslexiaFont.verdana:        return GoogleFonts.cabin().fontFamily!;
+    case DyslexiaFont.trebuchetMS:    return GoogleFonts.titilliumWeb().fontFamily!;
+    case DyslexiaFont.helvetica:      return GoogleFonts.inter().fontFamily!;
+    case DyslexiaFont.comicSansMS:    return GoogleFonts.comicNeue().fontFamily!;
+  }
+}
 
+/// 2. Style untuk ukuran, spasi, dan warna (untuk input text spesifik)
+TextStyle dyslexiaTextStyle(DisplaySettingsEntity s, Color color) {
+  return applyDyslexiaFont(
+    font: s.font,
+    baseStyle: TextStyle(
+      fontSize: s.fontSize,
+      color: color,
+      height: s.lineSpacing,
+      letterSpacing: s.letterSpacing,
+      wordSpacing: s.wordSpacing,
+    ),
+  );
+}
+
+/// 3. FUNGSI INI WAJIB ADA untuk widget yang butuh override spesifik
 TextStyle applyDyslexiaFont({
   required DyslexiaFont font,
   required TextStyle baseStyle,

@@ -15,9 +15,6 @@ import 'reader_landing_view_stub.dart'
     if (dart.library.js_interop) 'reader_landing_view_web.dart';
 
 /// Landing page shown when no text is loaded in the reader.
-///
-/// Displays a PDF drop zone (with native browser drag-and-drop on web),
-/// paste text card, and load sample card matching the web reference mockup layout.
 class ReaderLandingView extends StatefulWidget {
   const ReaderLandingView({super.key});
 
@@ -52,34 +49,24 @@ class _ReaderLandingViewState extends State<ReaderLandingView> {
   Future<void> _processPdfBytes(Uint8List bytes, String fileName) async {
     if (!mounted) return;
     setState(() => _isProcessing = true);
-    context
-        .read<ReaderShellBloc>()
-        .add(const SetPdfProgressEvent(current: 0, total: 1));
+    context.read<ReaderShellBloc>().add(const SetPdfProgressEvent(current: 0, total: 1));
     try {
       final text = await getIt<PdfExtractorService>().extractText(
         bytes,
         onProgress: (current, total) {
           if (!mounted) return;
-          context
-              .read<ReaderShellBloc>()
-              .add(SetPdfProgressEvent(current: current, total: total));
+          context.read<ReaderShellBloc>().add(SetPdfProgressEvent(current: current, total: total));
         },
       );
       if (!mounted) return;
       if (text.trim().isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content:
-                  Text('PDF appears to be empty or contains only images')),
+          const SnackBar(content: Text('PDF appears to be empty or contains only images')),
         );
-        context
-            .read<ReaderShellBloc>()
-            .add(const SetPdfProgressEvent(current: 1, total: 1));
+        context.read<ReaderShellBloc>().add(const SetPdfProgressEvent(current: 1, total: 1));
         return;
       }
-      context
-          .read<ReaderShellBloc>()
-          .add(LoadTextEvent(text, source: fileName));
+      context.read<ReaderShellBloc>().add(LoadTextEvent(text, source: fileName));
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -122,125 +109,220 @@ class _ReaderLandingViewState extends State<ReaderLandingView> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final muted = theme.colorScheme.onSurface.withValues(alpha: 0.5);
+    
+    // Deteksi ukuran layar untuk responsivitas desktop (SAMA PERSIS DENGAN FeaturePage)
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 800;
 
-    return Center(
-      child: SizedBox(
-        width: double.infinity,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Stack(
           children: [
-            // PDF drop zone with native browser drag-and-drop
-            GestureDetector(
-              onTap: _isProcessing ? null : _pickPdf,
-              child: MouseRegion(
-                cursor: SystemMouseCursors.click,
-                child: SizedBox(
-                  width: double.infinity,
-                  height: 260,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      // HTML drop zone in the background — handles native drag events (web only)
-                      if (kIsWeb)
-                        const Positioned.fill(
-                          child: HtmlElementView(viewType: 'pdf-dropzone-view'),
-                        ),
+            // 1. Background Ungu HANYA untuk Mobile
+            if (isMobile) ...[
+              Positioned(
+                top: 0, left: 0, right: 0,
+                child: Container(
+                  height: MediaQuery.of(context).size.height * 0.40,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFD7C8FC),
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(32),
+                      bottomRight: Radius.circular(32),
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 0, left: 0, right: 0,
+                child: Container(
+                  height: MediaQuery.of(context).size.height * 0.35,
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(0xFFC9B8F0), Color(0xFFB596E5)],
+                    ),
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(24),
+                      bottomRight: Radius.circular(24),
+                    ),
+                  ),
+                ),
+              ),
+            ],
 
-                      // Visual UI in the foreground
-                      IgnorePointer(
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          width: double.infinity,
-                          constraints: const BoxConstraints(maxWidth: 560),
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 40, horizontal: 32),
-                          decoration: BoxDecoration(
-                            color: _isDragOver
-                                ? theme.colorScheme.primaryContainer
-                                    .withValues(alpha: 0.4)
-                                : theme.colorScheme.surfaceContainerHighest
-                                    .withValues(alpha: 0.3),
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: _isDragOver
-                                  ? theme.colorScheme.primary
-                                  : theme.colorScheme.onSurface
-                                      .withValues(alpha: 0.15),
-                              width: _isDragOver ? 2.5 : 2,
+            // 2. Konten Utama
+            Center(
+              child: SizedBox(
+                width: double.infinity,
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isMobile ? 24 : 48, 
+                    vertical: isMobile ? 24 : 40,
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      GestureDetector(
+                        onTap: _isProcessing ? null : _pickPdf,
+                        child: MouseRegion(
+                          cursor: SystemMouseCursors.click,
+                          child: SizedBox(
+                            width: double.infinity,
+                            height: 260,
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                if (kIsWeb)
+                                  const Positioned.fill(
+                                    child: HtmlElementView(viewType: 'pdf-dropzone-view'),
+                                  ),
+
+                                IgnorePointer(
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 200),
+                                    width: double.infinity,
+                                    constraints: BoxConstraints(maxWidth: isMobile ? 560 : 700),
+                                    padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 32),
+                                    decoration: BoxDecoration(
+                                      // Desktop: Putih bersih dengan shadow halus. Mobile: Theme color.
+                                      color: !isMobile ? Colors.white : (_isDragOver
+                                          ? theme.colorScheme.primaryContainer.withValues(alpha: 0.3)
+                                          : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3)),
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(
+                                        color: _isDragOver
+                                            ? theme.colorScheme.primary
+                                            : (!isMobile ? Colors.grey.shade300 : theme.colorScheme.onSurface.withValues(alpha: 0.15)),
+                                        width: _isDragOver ? 2.5 : (!isMobile ? 1.5 : 2),
+                                      ),
+                                      boxShadow: !isMobile ? [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.04),
+                                          blurRadius: 12,
+                                          offset: const Offset(0, 4),
+                                        ),
+                                      ] : null,
+                                    ),
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.cloud_upload_rounded,
+                                          size: 48,
+                                          color: _isDragOver ? theme.colorScheme.primary : muted,
+                                        ),
+                                        const SizedBox(height: 16),
+                                        Text(
+                                          _isDragOver ? 'Release to upload' : 'Drop a PDF here',
+                                          style: theme.textTheme.titleMedium?.copyWith(
+                                            color: _isDragOver ? theme.colorScheme.primary : theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          'Drag and drop any PDF file to start\nreading with your preferred settings',
+                                          textAlign: TextAlign.center,
+                                          style: theme.textTheme.bodyMedium?.copyWith(
+                                            color: muted,
+                                            height: 1.5,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 12),
+                                        Text(
+                                          'or browse your files',
+                                          style: theme.textTheme.bodyMedium?.copyWith(
+                                            color: theme.colorScheme.primary,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+
+                                // Loading spinner overlay
+                                Positioned.fill(
+                                  child: AnimatedOpacity(
+                                    opacity: _isProcessing ? 1.0 : 0.0,
+                                    duration: const Duration(milliseconds: 200),
+                                    child: IgnorePointer(
+                                      ignoring: !_isProcessing,
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          color: Colors.black.withValues(alpha: 0.06),
+                                          borderRadius: BorderRadius.circular(16),
+                                        ),
+                                        child: const Center(
+                                          child: SizedBox(
+                                            width: 36,
+                                            height: 36,
+                                            child: CircularProgressIndicator(strokeWidth: 3),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.cloud_upload_rounded,
-                                size: 48,
-                                color: _isDragOver
-                                    ? theme.colorScheme.primary
-                                    : muted,
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                _isDragOver
-                                    ? 'Release to upload'
-                                    : 'Drop a PDF here',
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  color: _isDragOver
-                                      ? theme.colorScheme.primary
-                                      : theme.colorScheme.onSurface
-                                          .withValues(alpha: 0.6),
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Drag and drop any PDF file to start\nreading with your preferred settings',
-                                textAlign: TextAlign.center,
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: muted,
-                                  height: 1.5,
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              Text(
-                                'or browse your files',
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: theme.colorScheme.primary,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
                           ),
                         ),
                       ),
-
-                      // Loading spinner overlay during PDF extraction
-                      Positioned.fill(
-                        child: AnimatedOpacity(
-                          opacity: _isProcessing ? 1.0 : 0.0,
-                          duration: const Duration(milliseconds: 200),
-                          child: IgnorePointer(
-                            ignoring: !_isProcessing,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: Colors.black.withValues(alpha: 0.06),
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: const Center(
-                                child: SizedBox(
-                                  width: 36,
-                                  height: 36,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 3,
-                                  ),
-                                ),
+                      const SizedBox(height: 20),
+                      
+                      // Paste Text and Load Sample cards
+                      ConstrainedBox(
+                        constraints: BoxConstraints(maxWidth: isMobile ? 560 : 700),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: _ActionCard(
+                                isMobile: isMobile,
+                                icon: Icons.description_rounded,
+                                label: 'Paste Text',
+                                subtitle: 'From clipboard or type',
+                                onTap: () async {
+                                  try {
+                                    final data = await Clipboard.getData(Clipboard.kTextPlain);
+                                    final text = data?.text;
+                                    if (!context.mounted) return;
+                                    if (text != null && text.isNotEmpty) {
+                                      context.read<ReaderShellBloc>().add(LoadTextEvent(text, source: 'Pasted'));
+                                    } else {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('Clipboard is empty'), duration: Duration(seconds: 2)),
+                                      );
+                                    }
+                                  } catch (_) {
+                                    if (!context.mounted) return;
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('Unable to read clipboard'), duration: Duration(seconds: 2)),
+                                    );
+                                  }
+                                },
                               ),
                             ),
-                          ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: _ActionCard(
+                                isMobile: isMobile,
+                                icon: Icons.menu_book_rounded,
+                                label: 'Load Sample',
+                                subtitle: 'See how it looks first',
+                                onTap: () {
+                                  context.read<ReaderShellBloc>().add(
+                                    const LoadTextEvent(kDyslexiaSampleText, source: 'Sample'),
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -248,69 +330,7 @@ class _ReaderLandingViewState extends State<ReaderLandingView> {
                 ),
               ),
             ),
-            const SizedBox(height: 20),
-            // Paste Text and Load Sample cards
-            Center(
-              child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 560),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _ActionCard(
-                      icon: Icons.description_rounded,
-                      label: 'Paste Text',
-                      subtitle: 'From clipboard or type',
-                      onTap: () async {
-                        try {
-                          final data = await Clipboard.getData(Clipboard.kTextPlain);
-                          final text = data?.text;
-                          if (!context.mounted) return;
-                          if (text != null && text.isNotEmpty) {
-                            context.read<ReaderShellBloc>().add(
-                                  LoadTextEvent(text, source: 'Pasted'),
-                                );
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Clipboard is empty'),
-                                duration: Duration(seconds: 2),
-                              ),
-                            );
-                          }
-                        } catch (_) {
-                          if (!context.mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Unable to read clipboard'),
-                              duration: Duration(seconds: 2),
-                            ),
-                          );
-                        }
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _ActionCard(
-                      icon: Icons.menu_book_rounded,
-                      label: 'Load Sample',
-                      subtitle: 'See how it looks first',
-                      onTap: () {
-                        context.read<ReaderShellBloc>().add(
-                              const LoadTextEvent(
-                                kDyslexiaSampleText,
-                                source: 'Sample',
-                              ),
-                            );
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            ),
           ],
-        ),
         ),
       ),
     );
@@ -319,12 +339,14 @@ class _ReaderLandingViewState extends State<ReaderLandingView> {
 
 /// Card widget for landing page actions (Paste Text, Load Sample).
 class _ActionCard extends StatelessWidget {
+  final bool isMobile; 
   final IconData icon;
   final String label;
   final String subtitle;
   final VoidCallback onTap;
 
   const _ActionCard({
+    required this.isMobile,
     required this.icon,
     required this.label,
     required this.subtitle,
@@ -335,8 +357,13 @@ class _ActionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Material(
-      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-      borderRadius: BorderRadius.circular(12),
+      // Desktop: Putih bersih dengan shadow & border tipis. Mobile: Theme color.
+      color: !isMobile ? Colors.white : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+      elevation: !isMobile ? 2 : 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: !isMobile ? BorderSide(color: Colors.grey.shade200) : BorderSide.none,
+      ),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
@@ -364,8 +391,7 @@ class _ActionCard extends StatelessWidget {
                     Text(
                       subtitle,
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurface
-                            .withValues(alpha: 0.5),
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                       ),
                     ),
                   ],

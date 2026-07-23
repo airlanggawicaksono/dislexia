@@ -1,43 +1,43 @@
 import 'dart:async';
-
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:go_router/go_router.dart';
 
 import 'src/app.dart';
 import 'src/configs/adapter/adapter_conf.dart';
 import 'src/configs/injector/injector_conf.dart';
 import 'src/core/api/api_url.dart';
 import 'src/core/constants/list_translation_locale.dart';
-import 'src/core/shell/desktop_shell.dart';
+import 'src/routes/app_route_conf.dart'; 
 import 'src/core/utils/observer.dart';
 import 'src/core/themes/app_theme.dart';
+
+// Import BLoC
 import 'src/features/auth/presentation/bloc/auth/auth_bloc.dart';
 import 'src/features/auth/presentation/bloc/logout_bus.dart';
-import 'src/features/auth/presentation/pages/auth_page.dart';
 import 'src/core/blocs/theme/theme_bloc.dart';
+import 'src/features/sidebar/presentation/bloc/sidebar/sidebar_bloc.dart';
+import 'src/features/display_settings/presentation/bloc/display_settings/display_settings_bloc.dart';
+import 'src/features/reader/presentation/bloc/reader_shell/reader_shell_bloc.dart';
+import 'src/features/summarize/presentation/bloc/summarize_bloc.dart';
+import 'src/features/define/presentation/bloc/define_bloc.dart';
+import 'src/features/professionalize/presentation/bloc/professionalize_bloc.dart';
+import 'src/features/screening/presentation/bloc/screening_bloc.dart';
+
+// ✅ IMPORT FONT HELPER
+import 'src/core/utils/font_utils.dart'; 
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await EasyLocalization.ensureInitialized();
 
-  // Hive and HydratedBloc are no longer initialised — no bloc uses
-  // HydratedBloc (DisplaySettingsBloc was migrated to a regular Bloc
-  // with a SharedPreferences-backed repository). Hive's IndexedDB
-  // implementation is not wasm-compatible.
-
-  // Apply any build-time / env-time base URL override before the DI
-  // container (and therefore the Dio client) is constructed, so the
-  // very first request goes to the configured host. The flag is read
-  // via --dart-define=API_BASE_URL=https://...
-  ApiUrl.configure(
-    baseUrlOverride: const String.fromEnvironment('API_BASE_URL'),
-  );
-
+  GoogleFonts.config.allowRuntimeFetching = true;
+  ApiUrl.configure(baseUrlOverride: const String.fromEnvironment('API_BASE_URL'));
   configureAdapter();
   configureDepedencies();
-
   Bloc.observer = AppBlocObserver();
 
   runApp(
@@ -55,94 +55,113 @@ class DyslexiaApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Web platform renders the desktop shell. The shell is wrapped in a
-    // [BlocProvider] for [AuthBloc] so the auth page (shown when the
-    // user is logged out) and the rest of the shell can both dispatch
-    // events on the same bloc instance.
-    if (kIsWeb) {
-      return BlocProvider<AuthBloc>(
-        create: (_) => getIt<AuthBloc>()..add(const RestoreSessionEvent()),
-        child: BlocProvider(
-          create: (_) => getIt<ThemeBloc>(),
-          child: BlocBuilder<ThemeBloc, ThemeState>(
-            builder: (context, state) {
-              return MaterialApp(
-                debugShowCheckedModeBanner: false,
-                localizationsDelegates: context.localizationDelegates,
-                supportedLocales: context.supportedLocales,
-                locale: context.locale,
-                theme: AppTheme.data(state.isDarkMode),
-                home: const _DesktopShellGate(),
-              );
-            },
-          ),
-        ),
-      );
-    }
-    // Mobile/native platforms use the existing GoRouter-based app.
-    return const MyApp();
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<AuthBloc>(create: (_) => getIt<AuthBloc>()..add(const RestoreSessionEvent())),
+        BlocProvider<ThemeBloc>(create: (_) => getIt<ThemeBloc>()),
+        BlocProvider<SidebarBloc>(create: (_) => SidebarBloc()),
+        BlocProvider<DisplaySettingsBloc>(create: (_) => getIt<DisplaySettingsBloc>()),
+        BlocProvider<ReaderShellBloc>(create: (_) => getIt<ReaderShellBloc>()),
+        BlocProvider<SummarizeBloc>(create: (_) => getIt<SummarizeBloc>()),
+        BlocProvider<DefineBloc>(create: (_) => getIt<DefineBloc>()),
+        BlocProvider<ProfessionalizeBloc>(create: (_) => getIt<ProfessionalizeBloc>()),
+        BlocProvider<ScreeningBloc>(create: (_) => getIt<ScreeningBloc>()),
+      ],
+      child: const _AppRouterWrapper(),
+    );
   }
 }
 
-/// Tiny gate that swaps between the [AuthPage] and the full
-/// [DesktopShell] based on the current [AuthState]. Kept separate from
-/// [DyslexiaApp] so [BlocProvider] is only constructed once for the
-/// entire web experience.
-///
-/// In addition to rendering, this widget also wires the [LogoutBus]
-/// (a global broadcast stream) into the [AuthBloc]: whenever the
-/// [AuthInterceptor] sees a 401 on an authenticated request, the bus
-/// fires and we dispatch a [LogoutEvent] on the bloc. That keeps the
-/// session-expired path on the same state machine the user would use
-/// to sign out manually.
-class _DesktopShellGate extends StatefulWidget {
-  const _DesktopShellGate();
-
+class _AppRouterWrapper extends StatefulWidget {
+  const _AppRouterWrapper();
   @override
-  State<_DesktopShellGate> createState() => _DesktopShellGateState();
+  State<_AppRouterWrapper> createState() => _AppRouterWrapperState();
 }
 
-class _DesktopShellGateState extends State<_DesktopShellGate> {
-  StreamSubscription<void>? _logoutSub;
+class _AppRouterWrapperState extends State<_AppRouterWrapper> {
+  late final GoRouter _router;
 
   @override
   void initState() {
     super.initState();
-    // Listen to the bus at the gateway so any 401 fired by the
-    // AuthInterceptor gets translated into a LogoutEvent on the
-    // hosted AuthBloc.
-    _logoutSub = LogoutBus.stream.listen((_) {
-      if (!mounted) return;
-      final bloc = context.read<AuthBloc>();
-      // No-op if the user is already signed out — saves us from a
-      // redundant storage wipe and a needless re-emit.
-      if (bloc.state is Authenticated) {
-        bloc.add(const LogoutEvent());
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _logoutSub?.cancel();
-    super.dispose();
+    _router = AppRouteConf().buildRouter(context.read<AuthBloc>());
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AuthBloc, AuthState>(
-      // We only care about the authenticated / unauthenticated buckets
-      // here — initial + loading both render the shell so users see the
-      // loading indicator instead of a flash of the auth page on the
-      // first launch when the session is being restored.
-      buildWhen: (prev, curr) =>
-          curr is Authenticated || curr is Unauthenticated,
-      builder: (context, state) {
-        if (state is Authenticated) {
-          return const DesktopShell();
-        }
-        return const AuthPage();
+    return BlocBuilder<DisplaySettingsBloc, DisplaySettingsState>(
+      builder: (context, displayState) {
+        final String currentFontFamily = getGlobalFontFamily(displayState.settings.font);
+        
+        print('🔄 MAIN.DART: Font berubah menjadi -> $currentFontFamily');
+
+        return BlocBuilder<ThemeBloc, ThemeState>(
+          builder: (context, themeState) {
+            final baseTheme = AppTheme.data(themeState.isDarkMode);
+            
+            final ThemeData updatedTheme = baseTheme.copyWith(
+              textTheme: baseTheme.textTheme.apply(fontFamily: currentFontFamily),
+              primaryTextTheme: baseTheme.primaryTextTheme.apply(fontFamily: currentFontFamily),
+            );
+
+            return LogoutListener(
+              child: MaterialApp.router(
+                debugShowCheckedModeBanner: false,
+                localizationsDelegates: context.localizationDelegates,
+                supportedLocales: context.supportedLocales,
+                locale: context.locale,
+                theme: updatedTheme,
+                
+                // ✅ PERBAIKAN: Buat ThemeData eksplisit dengan fontFamily
+                builder: (context, child) {
+                  final ThemeData explicitTheme = ThemeData(
+                    brightness: updatedTheme.brightness,
+                    colorScheme: updatedTheme.colorScheme,
+                    scaffoldBackgroundColor: updatedTheme.scaffoldBackgroundColor,
+                    fontFamily: currentFontFamily, // Eksplisit di sini
+                    textTheme: updatedTheme.textTheme,
+                    primaryTextTheme: updatedTheme.primaryTextTheme,
+                  );
+
+                  return Theme(
+                    data: explicitTheme,
+                    child: DefaultTextStyle(
+                      style: TextStyle(fontFamily: currentFontFamily),
+                      child: child!,
+                    ),
+                  );
+                },
+                
+                routerConfig: _router, 
+              ),
+            );
+          },
+        );
       },
     );
   }
+}
+
+class LogoutListener extends StatefulWidget {
+  final Widget child;
+  const LogoutListener({super.key, required this.child});
+  @override
+  State<LogoutListener> createState() => _LogoutListenerState();
+}
+
+class _LogoutListenerState extends State<LogoutListener> {
+  StreamSubscription<void>? _logoutSub;
+  @override
+  void initState() {
+    super.initState();
+    _logoutSub = LogoutBus.stream.listen((_) {
+      if (!mounted) return;
+      final bloc = context.read<AuthBloc>();
+      if (bloc.state is Authenticated) bloc.add(const LogoutEvent());
+    });
+  }
+  @override
+  void dispose() { _logoutSub?.cancel(); super.dispose(); }
+  @override
+  Widget build(BuildContext context) => widget.child;
 }

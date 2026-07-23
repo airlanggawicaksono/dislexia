@@ -50,10 +50,6 @@ class _DefinePageState extends State<DefinePage> {
             title: 'Define',
             resultTitle: 'Definition',
             heroTag: 'define',
-            
-            // --- PERUBAHAN PENTING DI SINI ---
-            // 1. HAPUS baris: controls: _levelControl(),
-            // 2. GUNAKAN parameter ini agar slider muncul di HEADER:
             levelLabels: _levelPct,
             initialLevel: _levels.indexOf(_level),
             onLevelChanged: (index) {
@@ -61,8 +57,6 @@ class _DefinePageState extends State<DefinePage> {
                 _level = _levels[index];
               });
             },
-            // ---------------------------------
-
             resultText: hasResult ? state.result : '',
             viewResultText: _viewResultText,
             viewResultTitle: _viewResultTitle,
@@ -89,10 +83,13 @@ class _DefinePageState extends State<DefinePage> {
               ctx.read<DefineBloc>().add(ClearDefineEvent());
             },
             onViewResult: (text, result) => setState(() {
-              _controller.text = text;
-              _viewResultText = result;
-              _viewResultTitle = 'History';
+              // ✅ Langsung tampilkan hasil di text box
+              _controller.text = result;
+              _viewResultText = null;
+              _viewResultTitle = null;
             }),
+            // ✅ Aktifkan mode replace input
+            replaceInputWithResult: true,
           );
         },
       );

@@ -20,7 +20,7 @@ import '../widgets/adaptive/adaptive.dart';
 import '../widgets/feature_result_card.dart';
 import '../widgets/history_panel.dart';
 
-class FeaturePage extends StatelessWidget {
+class FeaturePage extends StatefulWidget {
   final String title;
   final String resultTitle;
   final String heroTag;
@@ -40,6 +40,9 @@ class FeaturePage extends StatelessWidget {
   final List<String>? levelLabels;
   final int initialLevel;
   final ValueChanged<int>? onLevelChanged;
+  
+  // ✅ PARAMETER BARU: Untuk mengganti isi text box langsung tanpa result card
+  final bool replaceInputWithResult;
 
   const FeaturePage({
     super.key,
@@ -62,9 +65,29 @@ class FeaturePage extends StatelessWidget {
     this.levelLabels,
     this.initialLevel = 2,
     this.onLevelChanged,
+    this.replaceInputWithResult = false,
   });
 
-  // ... (Fungsi _onPaste, _pickPdf, _handleBack, _showHistory tetap sama) ...
+  @override
+  State<FeaturePage> createState() => _FeaturePageState();
+}
+
+class _FeaturePageState extends State<FeaturePage> {
+  @override
+  void didUpdateWidget(covariant FeaturePage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // ✅ Saat hasil selesai diproses, langsung replace isi text box
+    if (widget.replaceInputWithResult && widget.hasResult && !widget.isLoading) {
+      if (widget.resultText.isNotEmpty && widget.controller.text != widget.resultText) {
+        widget.controller.text = widget.resultText;
+        // Pindahkan kursor ke akhir teks agar user bisa langsung melanjutkan edit
+        widget.controller.selection = TextSelection.fromPosition(
+          TextPosition(offset: widget.controller.text.length),
+        );
+      }
+    }
+  }
+
   void _onPaste(BuildContext context) async {
     final data = await Clipboard.getData(Clipboard.kTextPlain);
     if (!context.mounted) return;
@@ -73,7 +96,7 @@ class FeaturePage extends StatelessWidget {
       showAdaptiveFeedback(context, 'Nothing found in clipboard');
       return;
     }
-    controller.text = t;
+    widget.controller.text = t;
   }
 
   Future<void> _pickPdf(BuildContext context) async {
@@ -95,7 +118,7 @@ class FeaturePage extends StatelessWidget {
         showAdaptiveFeedback(context, 'PDF appears empty or contains only images');
         return;
       }
-      controller.text = text;
+      widget.controller.text = text;
     } catch (e) {
       if (!context.mounted) return;
       showAdaptiveFeedback(context, 'Failed to read PDF: $e');
@@ -120,15 +143,14 @@ class FeaturePage extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       builder: (ctx) => HistoryPanel(
-        feature: title.toLowerCase(),
+        feature: widget.title.toLowerCase(),
         onSelectInput: (text) {
           Navigator.pop(ctx);
-          controller.text = text;
+          widget.controller.text = text;
         },
         onSelectResult: (item) {
           Navigator.pop(ctx);
-          controller.text = item.inputText;
-          onViewResult?.call(item.inputText, item.outputText);
+          widget.onViewResult?.call(item.inputText, item.outputText);
         },
       ),
     );
@@ -139,56 +161,61 @@ class FeaturePage extends StatelessWidget {
     final theme = Theme.of(context);
     final settings = context.watch<DisplaySettingsBloc>().state.settings;
     final screenWidth = MediaQuery.of(context).size.width;
-    final isMobile = screenWidth < 800;
+    final isMobile = screenWidth < 800; 
     final screenHeight = MediaQuery.of(context).size.height;
+
+    // ✅ Jika replaceInputWithResult aktif, paksa tetap di input view
+    final showResultView = widget.hasResult && !widget.replaceInputWithResult;
 
     return Scaffold(
       backgroundColor: Colors.white, 
       body: Stack(
         children: [
-          Positioned(
-            top: 0, left: 0, right: 0,
-            child: Container(
-              height: screenHeight * 0.55,
-              decoration: const BoxDecoration(
-                color: Color(0xFFD7C8FC),
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(48),
-                  bottomRight: Radius.circular(48),
+          if (isMobile) ...[
+            Positioned(
+              top: 0, left: 0, right: 0,
+              child: Container(
+                height: screenHeight * 0.55,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFD7C8FC),
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(48),
+                    bottomRight: Radius.circular(48),
+                  ),
                 ),
               ),
             ),
-          ),
-          Positioned(
-            top: 0, left: 0, right: 0,
-            child: Container(
-              height: screenHeight * 0.50,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Color(0xFFC9B8F0), Color(0xFFB596E5)],
-                ),
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(32),
-                  bottomRight: Radius.circular(32),
+            Positioned(
+              top: 0, left: 0, right: 0,
+              child: Container(
+                height: screenHeight * 0.50,
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFFC9B8F0), Color(0xFFB596E5)],
+                  ),
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(32),
+                    bottomRight: Radius.circular(32),
+                  ),
                 ),
               ),
             ),
-          ),
+          ],
           
           Column(
             children: [
-              _buildHeader(context), 
+              _buildHeader(context, isMobile),
               Expanded(
-                child: hasResult
+                child: showResultView
                     ? _buildResultView(context, theme, settings, isMobile)
                     : _buildInputView(context, theme, settings, isMobile),
               ),
             ],
           ),
 
-          if (isLoading)
+          if (widget.isLoading)
             Container(
               color: Colors.black.withOpacity(0.3),
               child: const Center(
@@ -230,27 +257,37 @@ class FeaturePage extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildHeader(BuildContext context, bool isMobile) {
     return Container(
-      padding: const EdgeInsets.only(left: 24, right: 24, top: 48, bottom: 24),
+      padding: EdgeInsets.only(
+        left: 24, 
+        right: 24, 
+        top: isMobile ? 48 : 16, 
+        bottom: 24
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.black),
-                onPressed: () => _handleBack(context),
-                style: IconButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  fixedSize: const Size(40, 40),
+              if (isMobile) ...[
+                IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.black),
+                  onPressed: () => _handleBack(context),
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    fixedSize: const Size(40, 40),
+                    elevation: 0, 
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
+                const SizedBox(width: 12),
+              ],
+              
               Expanded(
                 child: Text(
-                  title,
-                  style: const TextStyle(
+                  widget.title,
+                  textAlign: isMobile ? TextAlign.start : TextAlign.center, 
+                  style: TextStyle( // Dihapus const agar bisa inherit font global
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
                     color: Colors.black,
@@ -258,37 +295,40 @@ class FeaturePage extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
+              
               const SizedBox(width: 12),
-              if (onReset != null)
+              if (widget.onReset != null)
                 IconButton(
                   icon: const Icon(Icons.restart_alt, color: Colors.black),
-                  onPressed: onReset,
+                  onPressed: widget.onReset,
                   style: IconButton.styleFrom(
                     backgroundColor: Colors.white,
                     fixedSize: const Size(40, 40),
+                    elevation: isMobile ? 0 : 2,
                   ),
                 ),
               const SizedBox(width: 12),
-              if (onViewResult != null)
+              if (widget.onViewResult != null)
                 IconButton(
                   icon: const Icon(Icons.history_rounded, color: Colors.black),
                   onPressed: () => _showHistory(context),
                   style: IconButton.styleFrom(
                     backgroundColor: Colors.white,
                     fixedSize: const Size(40, 40),
+                    elevation: isMobile ? 0 : 2,
                   ),
                 ),
             ],
           ),
-          if (levelLabels != null && levelLabels!.isNotEmpty) ...[
+          if (widget.levelLabels != null && widget.levelLabels!.isNotEmpty) ...[
             const SizedBox(height: 16),
             LevelSlider(
-              label: title == 'Summarize' ? 'Summary Length' : 'Detail Level', 
-              valueLabels: levelLabels!,
-              initialIndex: initialLevel,
+              label: widget.title == 'Summarize' ? 'Summary Length' : 'Detail Level', 
+              valueLabels: widget.levelLabels!,
+              initialIndex: widget.initialLevel,
               onChanged: (index) {
-                if (onLevelChanged != null) {
-                  onLevelChanged!(index);
+                if (widget.onLevelChanged != null) {
+                  widget.onLevelChanged!(index);
                 }
               },
             ),
@@ -305,41 +345,38 @@ class FeaturePage extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (controls != null && (controlsInline || !isMobile)) ...[
-            controls!,
+          if (widget.controls != null && (widget.controlsInline || !isMobile)) ...[
+            widget.controls!,
             const SizedBox(height: 16),
           ],
           _buildTextInputCard(context, theme, settings),
           const SizedBox(height: 24),
-          _buildActionButtons(context, theme),
+          _buildActionButtons(context, theme, isMobile),
           SizedBox(height: MediaQuery.of(context).viewInsets.bottom + 24),
         ],
       ),
     );
   }
 
-  // === PERBAIKAN UTAMA DI SINI ===
   Widget _buildResultView(BuildContext context, ThemeData theme, DisplaySettingsEntity settings, bool isMobile) {
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min, // PENTING: Agar Column tidak memaksa tinggi
+        mainAxisSize: MainAxisSize.min, 
         children: [
-          if (inputExpanded) ...[
+          if (widget.inputExpanded) ...[
             _buildTextInputCard(context, theme, settings),
             const SizedBox(height: 16),
           ],
-          // HAPUS Flexible. Biarkan FeatureResultCard mengambil tinggi alaminya
-          // sehingga SingleChildScrollView bisa men-scroll seluruh konten ke bawah.
           FeatureResultCard(
-            text: viewResultText ?? resultText,
-            title: viewResultTitle ?? resultTitle,
-            inputExpanded: inputExpanded,
-            onToggleInput: () => onToggleInput(!inputExpanded),
+            text: widget.viewResultText ?? widget.resultText,
+            title: widget.viewResultTitle ?? widget.resultTitle,
+            inputExpanded: widget.inputExpanded,
+            onToggleInput: () => widget.onToggleInput(!widget.inputExpanded),
           ),
           const SizedBox(height: 24),
-          _buildActionButtons(context, theme),
+          _buildActionButtons(context, theme, isMobile),
           const SizedBox(height: 24),
         ],
       ),
@@ -369,7 +406,7 @@ class FeaturePage extends StatelessWidget {
               maxHeight: 400,
             ),
             child: TextField(
-              controller: controller,
+              controller: widget.controller,
               minLines: 6,
               maxLines: null,
               textAlignVertical: TextAlignVertical.top,
@@ -391,13 +428,18 @@ class FeaturePage extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                '${controller.text.length}/5000',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey.shade600,
-                  fontWeight: FontWeight.w500,
-                ),
+              ValueListenableBuilder<TextEditingValue>(
+                valueListenable: widget.controller,
+                builder: (context, value, child) {
+                  return Text(
+                    '${value.text.length}/5000',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey.shade600,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  );
+                },
               ),
               FloatingActionButton(
                 mini: true,
@@ -417,14 +459,48 @@ class FeaturePage extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButtons(BuildContext context, ThemeData theme) {
-    final isSubmitDisabled = isLoading || controller.text.trim().isEmpty;
+  // ✅ PERUBAHAN DI SINI: Layout tombol untuk Mobile dimaksimalkan
+  Widget _buildActionButtons(BuildContext context, ThemeData theme, bool isMobile) {
+    return ValueListenableBuilder<TextEditingValue>(
+      valueListenable: widget.controller,
+      builder: (context, value, child) {
+        final isSubmitDisabled = widget.isLoading || value.text.trim().isEmpty;
 
-    return Row(
-      children: [
-        Expanded(
+        if (!isMobile) {
+          // Desktop: Tetap di tengah dengan lebar maksimal yang rapi (300)
+          return Center(
+            child: SizedBox(
+              width: 300, 
+              child: FilledButton(
+                onPressed: isSubmitDisabled ? null : widget.onSubmit,
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFFB596E5),
+                  foregroundColor: Colors.white,
+                  disabledBackgroundColor: Colors.grey.shade300,
+                  disabledForegroundColor: Colors.white70,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(28),
+                  ),
+                ),
+                child: Text(
+                  'Submit',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          );
+        }
+
+        // ✅ MOBILE: Hapus Copy & Share. Gunakan SizedBox width: double.infinity 
+        // agar tombol Submit memenuhi lebar area (yang sudah ada padding horizontal 24 dari parent)
+        return SizedBox(
+          width: double.infinity,
           child: FilledButton(
-            onPressed: isSubmitDisabled ? null : onSubmit,
+            onPressed: isSubmitDisabled ? null : widget.onSubmit,
             style: FilledButton.styleFrom(
               backgroundColor: const Color(0xFFB596E5),
               foregroundColor: Colors.white,
@@ -443,55 +519,8 @@ class FeaturePage extends StatelessWidget {
               ),
             ),
           ),
-        ),
-        const SizedBox(width: 12),
-        _circularButton(
-          icon: Icons.content_copy_outlined,
-          onTap: isLoading
-              ? null
-              : () {
-                  if (controller.text.trim().isNotEmpty) {
-                    Clipboard.setData(ClipboardData(text: controller.text));
-                    showAdaptiveFeedback(context, 'Text copied to clipboard');
-                  }
-                },
-        ),
-        const SizedBox(width: 12),
-        _circularButton(
-          icon: Icons.share_outlined,
-          onTap: isLoading
-              ? null
-              : () {
-                  if (controller.text.trim().isNotEmpty) {
-                    showAdaptiveFeedback(context, 'Share feature coming soon');
-                  }
-                },
-        ),
-      ],
-    );
-  }
-
-  Widget _circularButton({required IconData icon, required VoidCallback? onTap}) {
-    final isEnabled = onTap != null;
-    return Container(
-      width: 56,
-      height: 56,
-      decoration: BoxDecoration(
-        color: isEnabled ? const Color(0xFFB596E5) : Colors.grey.shade300,
-        shape: BoxShape.circle,
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          customBorder: const CircleBorder(),
-          child: Icon(
-            icon,
-            color: isEnabled ? Colors.white : Colors.white54,
-            size: 24,
-          ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -503,7 +532,7 @@ class FeaturePage extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
+            Text(
               'Add Text From',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),

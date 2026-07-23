@@ -4,16 +4,23 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 
 import 'configs/injector/injector_conf.dart';
 import 'core/blocs/theme/theme_bloc.dart';
 import 'core/themes/app_theme.dart';
 import 'features/auth/presentation/bloc/auth/auth_bloc.dart';
 import 'features/auth/presentation/bloc/logout_bus.dart';
+
+// ✅ TAMBAHKAN IMPORT INI agar AppColorTheme dan DyslexiaFont dikenali
 import 'features/display_settings/domain/entities/display_settings_entity.dart';
+
 import 'features/display_settings/presentation/bloc/display_settings/display_settings_bloc.dart';
 import 'features/display_settings/presentation/theme/display_colors.dart';
 import 'routes/app_route_conf.dart';
+
+// ✅ IMPORT FONT HELPER
+import 'core/utils/font_utils.dart';
 
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
@@ -23,22 +30,18 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  // One AuthBloc for the whole mobile app lifetime. It drives both the
-  // GoRouter auth gate (via the router's refreshListenable/redirect) and
-  // the AuthPage, so both see the same instance. Restore any stored
-  // session on boot before the first frame so a returning user lands
-  // straight in the app instead of flashing the login screen.
   late final AuthBloc _authBloc;
-  late final _router = getIt<AppRouteConf>().buildRouter(_authBloc);
+  late final GoRouter _router;
   StreamSubscription<void>? _logoutSub;
 
   @override
   void initState() {
     super.initState();
     _authBloc = getIt<AuthBloc>()..add(const RestoreSessionEvent());
-    // A 401 on any authenticated request fires LogoutBus (from the
-    // AuthInterceptor). Translate it into a LogoutEvent so the session is
-    // cleared and the router's redirect bounces the user to /auth.
+    
+    // ✅ Router dibuat SEKALI di initState agar tidak reset saat font berubah
+    _router = getIt<AppRouteConf>().buildRouter(_authBloc);
+    
     _logoutSub = LogoutBus.stream.listen((_) {
       if (!mounted) return;
       if (_authBloc.state is Authenticated) {
@@ -66,42 +69,57 @@ class _MyAppState extends State<MyApp> {
         child: MultiBlocProvider(
           providers: [
             BlocProvider<AuthBloc>.value(value: _authBloc),
-            BlocProvider(
-              create: (_) => getIt<ThemeBloc>(),
-            ),
-            BlocProvider(
-              create: (_) => getIt<DisplaySettingsBloc>(),
-            ),
+            BlocProvider(create: (_) => getIt<ThemeBloc>()),
+            BlocProvider(create: (_) => getIt<DisplaySettingsBloc>()),
           ],
-          // The global theme depends on auth state:
-          //  * logged out / freshly logged in → off-white auth palette
-          //  * logged in → follow the user's display-settings colour
-          //    (stored device-locally via SharedPreferences).
           child: BlocBuilder<AuthBloc, AuthState>(
             builder: (context, authState) {
               return BlocBuilder<DisplaySettingsBloc, DisplaySettingsState>(
                 builder: (context, dsState) {
-                  final ThemeData theme;
+                  final ThemeData baseTheme;
                   if (authState is Authenticated) {
                     final ct = dsState.settings.colorTheme;
-                    theme = AppTheme.fromColors(
+                    baseTheme = AppTheme.fromColors(
                       background: bgColor(ct),
                       foreground: fgColor(ct),
                       isDark: ct == AppColorTheme.dark,
                     );
                   } else {
-                    theme = AppTheme.fromColors(
+                    baseTheme = AppTheme.fromColors(
                       background: AppTheme.authSurface,
                       foreground: AppTheme.authForeground,
                       isDark: false,
                     );
                   }
+
+                  // ✅ Terapkan font global untuk Mobile
+                  final String currentFontFamily = getGlobalFontFamily(dsState.settings.font);
+                  
+                  // ✅ PERBAIKAN: Gunakan copyWith HANYA untuk textTheme agar bebas dari error analyzer
+                  final ThemeData updatedTheme = baseTheme.copyWith(
+                    textTheme: baseTheme.textTheme.apply(fontFamily: currentFontFamily),
+                    primaryTextTheme: baseTheme.primaryTextTheme.apply(fontFamily: currentFontFamily),
+                  );
+
                   return MaterialApp.router(
                     debugShowCheckedModeBanner: false,
                     localizationsDelegates: context.localizationDelegates,
                     supportedLocales: context.supportedLocales,
                     locale: context.locale,
-                    theme: theme,
+                    theme: updatedTheme,
+                    
+                    // ✅ Paksa semua teks di aplikasi mobile untuk inherit font ini
+                    builder: (context, child) {
+                      return Theme(
+                        data: updatedTheme,
+                        child: DefaultTextStyle(
+                          style: TextStyle(fontFamily: currentFontFamily),
+                          child: child!,
+                        ),
+                      );
+                    },
+                    
+                    // Gunakan instance router yang STABIL (dibuat di initState)
                     routerConfig: _router,
                   );
                 },
