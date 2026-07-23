@@ -1,16 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:provider/provider.dart';
 
+import '../../configs/injector/injector_conf.dart';
+import '../blocs/theme/theme_bloc.dart';
+import '../themes/app_theme.dart';
+import '../../core/api/api_helper.dart';
 import '../../features/display_settings/presentation/bloc/display_settings/display_settings_bloc.dart';
+import '../../features/reader/presentation/bloc/reader/reader_bloc.dart';
 import '../../features/reader/presentation/bloc/reader_shell/reader_shell_bloc.dart';
 import '../../features/reader/presentation/bloc/reader_shell/reader_shell_event.dart';
 import '../../features/reader/presentation/bloc/reader_shell/reader_shell_state.dart';
 import '../../features/reader/presentation/pages/reader_page.dart';
 import '../../features/sidebar/domain/entities/sidebar_section.dart';
+import '../../features/summarize/presentation/bloc/summarize_bloc.dart';
 import '../../features/summarize/presentation/pages/summarize_page.dart';
+import '../../features/define/presentation/bloc/define_bloc.dart';
 import '../../features/define/presentation/pages/define_page.dart';
+import '../../features/professionalize/presentation/bloc/professionalize_bloc.dart';
 import '../../features/professionalize/presentation/pages/professionalize_page.dart';
+import '../../features/screening/presentation/bloc/screening_bloc.dart';
 import '../../features/screening/presentation/pages/screening_page.dart';
 import 'display_settings_panel.dart';
 import '../../features/sidebar/presentation/bloc/sidebar/sidebar_bloc.dart';
@@ -40,10 +50,10 @@ class _DesktopShellState extends State<DesktopShell> {
 
   @override
   Widget build(BuildContext context) {
-    // ✅ 1. Force rebuild DesktopShell saat font berubah. 
-    // Karena MultiBlocProvider dihapus, ini pasti memantau instance yang SAMA dengan main.dart
-    final currentFont = context.watch<DisplaySettingsBloc>().state.settings.font;
-    print('🔄 DESKTOPSHELL: Rebuilding dengan font -> $currentFont');
+    // ✅ KUNCI UTAMA: Memaksa DesktopShell untuk rebuild setiap kali font berubah.
+    // Karena DisplaySettingsBloc sudah disediakan di main.dart (root), 
+    // context.watch di sini akan mendeteksi perubahan dan memicu rebuild seluruh halaman.
+    final _ = context.watch<DisplaySettingsBloc>().state.settings.font;
 
     final screenHeight = MediaQuery.of(context).size.height;
 
@@ -53,118 +63,135 @@ class _DesktopShellState extends State<DesktopShell> {
       minTextAdapt: true,
       splitScreenMode: false,
       builder: (context, child) {
-        // ✅ 2. HAPUS MultiBlocProvider yang redundan di sini.
-        // Semua BLoC sudah disediakan secara global di main.dart.
-        // Menghapusnya mencegah konflik instance dan memastikan font global diwariskan dengan benar.
-        return Scaffold(
-          backgroundColor: Colors.white,
-          body: Stack(
-            children: [
-              Positioned(
-                top: 0, left: 0, right: 0,
-                child: Container(
-                  height: screenHeight * 0.55,
-                  decoration: const BoxDecoration(
-                    color: _headerBottomLayer,
-                    borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.circular(48),
-                      bottomRight: Radius.circular(48),
+        return MultiBlocProvider(
+          providers: [
+            BlocProvider.value(value: getIt<ThemeBloc>()),
+            BlocProvider.value(value: getIt<DisplaySettingsBloc>()),
+            BlocProvider.value(value: getIt<SummarizeBloc>()),
+            BlocProvider.value(value: getIt<DefineBloc>()),
+            BlocProvider.value(value: getIt<ProfessionalizeBloc>()),
+            BlocProvider.value(value: getIt<ScreeningBloc>()),
+            BlocProvider.value(value: getIt<ReaderBloc>()),
+            BlocProvider(create: (_) => SidebarBloc()),
+            BlocProvider(create: (_) => ReaderShellBloc()),
+            Provider.value(value: getIt<ApiHelper>()),
+          ],
+          child: Scaffold(
+            backgroundColor: Colors.white,
+            body: Stack(
+              children: [
+                // ==========================================
+                // BACKGROUND 2 LAPIS UNGU (SAMPAI TENGAH)
+                // ==========================================
+                Positioned(
+                  top: 0, left: 0, right: 0,
+                  child: Container(
+                    height: screenHeight * 0.55,
+                    decoration: const BoxDecoration(
+                      color: _headerBottomLayer,
+                      borderRadius: BorderRadius.only(
+                        bottomLeft: Radius.circular(48),
+                        bottomRight: Radius.circular(48),
+                      ),
                     ),
                   ),
                 ),
-              ),
-              Positioned(
-                top: 0, left: 0, right: 0,
-                child: Container(
-                  height: screenHeight * 0.50,
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [_headerColorStart, _headerColorEnd],
-                    ),
-                    borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.circular(32),
-                      bottomRight: Radius.circular(32),
+                Positioned(
+                  top: 0, left: 0, right: 0,
+                  child: Container(
+                    height: screenHeight * 0.50,
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [_headerColorStart, _headerColorEnd],
+                      ),
+                      borderRadius: BorderRadius.only(
+                        bottomLeft: Radius.circular(32),
+                        bottomRight: Radius.circular(32),
+                      ),
                     ),
                   ),
                 ),
-              ),
 
-              Column(
-                children: [
-                  _ShellHeaderBar(
-                    showGear: true,
-                    onToggleSettings: () => setState(() => _settingsPanelOpen = !_settingsPanelOpen),
-                  ),
-                  Expanded(
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        final compactSidebar = constraints.maxWidth < kSidebarIconBreakpoint;
-                        final bottomNav = constraints.maxWidth < kSidebarHiddenBreakpoint;
-                        final hiddenSidebar = bottomNav;
-                        final touchMode = constraints.maxWidth < 800;
-                        
-                        return BlocBuilder<SidebarBloc, SidebarState>(
-                          builder: (context, sidebar) {
-                            if (bottomNav) {
-                              return Column(
-                                children: [
-                                  Expanded(
-                                    child: _bottomSettings
-                                        ? const DisplaySettingsPanel()
-                                        : switch (sidebar.section) {
-                                            SidebarSection.reader => const MainColumn(),
-                                            SidebarSection.summarize => const SummarizePage(),
-                                            SidebarSection.define => const DefinePage(),
-                                            SidebarSection.professionalize => const ProfessionalizePage(),
-                                            SidebarSection.screening => const ScreeningPage(),
-                                          },
-                                  ),
-                                  _BottomNavBar(
-                                    currentSection: sidebar.section,
-                                    showSettings: _bottomSettings,
-                                    onSectionSelected: (s) {
-                                      setState(() => _bottomSettings = false);
-                                      context.read<SidebarBloc>().add(SidebarSectionSelected(s));
-                                    },
-                                    onToggleSettings: () => setState(() => _bottomSettings = !_settingsPanelOpen),
-                                  ),
-                                ],
-                              );
-                            }
-                            if (_bottomSettings && hiddenSidebar) {
-                              return const Row(
-                                children: [
-                                  Expanded(child: DisplaySettingsPanel()),
-                                ],
-                              );
-                            }
-                            return Row(
-                              children: [
-                                if (!hiddenSidebar)
-                                  SidebarShellPage(compact: compactSidebar, touchMode: touchMode),
-                                Expanded(
-                                  child: switch (sidebar.section) {
-                                    SidebarSection.reader => const MainColumn(),
-                                    SidebarSection.summarize => const SummarizePage(),
-                                    SidebarSection.define => const DefinePage(),
-                                    SidebarSection.professionalize => const ProfessionalizePage(),
-                                    SidebarSection.screening => const ScreeningPage(),
-                                  },
-                                ),
-                                if (!hiddenSidebar && _settingsPanelOpen)
-                                  const DisplaySettingsPanel(),
-                              ],
-                            );
-                          },
-                        );
-                      },
+                // ==========================================
+                // KONTEN UTAMA (DITUMPANGKAN DI ATAS BACKGROUND)
+                // ==========================================
+                Column(
+                  children: [
+                    _ShellHeaderBar(
+                      showGear: true,
+                      onToggleSettings: () => setState(() => _settingsPanelOpen = !_settingsPanelOpen),
                     ),
-                  ),
-                ],
-              ),
-            ],
+                    Expanded(
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          final compactSidebar = constraints.maxWidth < kSidebarIconBreakpoint;
+                          final bottomNav = constraints.maxWidth < kSidebarHiddenBreakpoint;
+                          final hiddenSidebar = bottomNav;
+                          final touchMode = constraints.maxWidth < 800;
+                          
+                          return BlocBuilder<SidebarBloc, SidebarState>(
+                            builder: (context, sidebar) {
+                              if (bottomNav) {
+                                return Column(
+                                  children: [
+                                    Expanded(
+                                      child: _bottomSettings
+                                          ? const DisplaySettingsPanel()
+                                          : switch (sidebar.section) {
+                                              SidebarSection.reader => const MainColumn(),
+                                              SidebarSection.summarize => const SummarizePage(),
+                                              SidebarSection.define => const DefinePage(),
+                                              SidebarSection.professionalize => const ProfessionalizePage(),
+                                              SidebarSection.screening => const ScreeningPage(),
+                                            },
+                                    ),
+                                    _BottomNavBar(
+                                      currentSection: sidebar.section,
+                                      showSettings: _bottomSettings,
+                                      onSectionSelected: (s) {
+                                        setState(() => _bottomSettings = false);
+                                        context.read<SidebarBloc>().add(SidebarSectionSelected(s));
+                                      },
+                                      onToggleSettings: () => setState(() => _bottomSettings = !_bottomSettings),
+                                    ),
+                                  ],
+                                );
+                              }
+                              if (_bottomSettings && hiddenSidebar) {
+                                return const Row(
+                                  children: [
+                                    Expanded(child: DisplaySettingsPanel()),
+                                  ],
+                                );
+                              }
+                              return Row(
+                                children: [
+                                  if (!hiddenSidebar)
+                                    SidebarShellPage(compact: compactSidebar, touchMode: touchMode),
+                                  Expanded(
+                                    child: switch (sidebar.section) {
+                                      SidebarSection.reader => const MainColumn(),
+                                      SidebarSection.summarize => const SummarizePage(),
+                                      SidebarSection.define => const DefinePage(),
+                                      SidebarSection.professionalize => const ProfessionalizePage(),
+                                      SidebarSection.screening => const ScreeningPage(),
+                                    },
+                                  ),
+                                  if (!hiddenSidebar && _settingsPanelOpen)
+                                    const DisplaySettingsPanel(),
+                                ],
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         );
       },
