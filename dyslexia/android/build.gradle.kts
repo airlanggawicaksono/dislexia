@@ -19,6 +19,17 @@ subprojects {
     project.evaluationDependsOn(":app")
 }
 
+subprojects {
+    // Suppress lintVital across all modules to work around
+    // AndroidLintWorkAction class initialization crashes with
+    // certain AGP + plugin version combinations.
+    tasks.matching {
+        it.name.contains("lintVital", ignoreCase = true)
+    }.configureEach {
+        enabled = false
+    }
+}
+
 tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)
 }
