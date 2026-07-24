@@ -51,8 +51,6 @@ class _DesktopShellState extends State<DesktopShell> {
   @override
   Widget build(BuildContext context) {
     // ✅ KUNCI UTAMA: Memaksa DesktopShell untuk rebuild setiap kali font berubah.
-    // Karena DisplaySettingsBloc sudah disediakan di main.dart (root), 
-    // context.watch di sini akan mendeteksi perubahan dan memicu rebuild seluruh halaman.
     final _ = context.watch<DisplaySettingsBloc>().state.settings.font;
 
     final screenHeight = MediaQuery.of(context).size.height;
@@ -77,7 +75,8 @@ class _DesktopShellState extends State<DesktopShell> {
             Provider.value(value: getIt<ApiHelper>()),
           ],
           child: Scaffold(
-            backgroundColor: Colors.white,
+            // ✅ PERUBAHAN DI SINI: Mengganti background dari Colors.white ke #EFEEFE
+            backgroundColor: const Color(0xFFEFEEFE),
             body: Stack(
               children: [
                 // ==========================================
@@ -154,7 +153,7 @@ class _DesktopShellState extends State<DesktopShell> {
                                         setState(() => _bottomSettings = false);
                                         context.read<SidebarBloc>().add(SidebarSectionSelected(s));
                                       },
-                                      onToggleSettings: () => setState(() => _bottomSettings = !_bottomSettings),
+                                      onToggleSettings: () => setState(() => _bottomSettings = !_settingsPanelOpen),
                                     ),
                                   ],
                                 );

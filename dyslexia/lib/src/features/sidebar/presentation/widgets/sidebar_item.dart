@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -21,8 +22,6 @@ class SidebarItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isCupertino = _useCupertinoIcons();
-    final icon = isCupertino ? section.cupertinoIcon : section.materialIcon;
     final theme = Theme.of(context);
     final accent = const Color(0xFF3D5A99);
     final idleFg = theme.colorScheme.onSurface.withValues(alpha: 0.75);
@@ -32,6 +31,7 @@ class SidebarItem extends StatelessWidget {
     final fg = selected ? selectedFg : idleFg;
     final bg = selected ? selectedBg : idleBg;
     final itemSize = touchMode ? 56.0 : 72.0;
+    final iconSize = compact ? 24.0 : 22.0;
 
     return Tooltip(
       message: section.label,
@@ -57,7 +57,8 @@ class SidebarItem extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: compact ? 24 : 22, color: fg),
+            
+              _buildCustomIcon(section, iconSize, fg),
               if (!compact) ...[
                 const SizedBox(height: 4),
                 Text(
@@ -77,6 +78,28 @@ class SidebarItem extends StatelessWidget {
         ),
       ),
     );
+  }
+
+
+  Widget _buildCustomIcon(SidebarSection section, double size, Color color) {
+    switch (section) {
+      case SidebarSection.reader:
+        return Image.asset('assets/images/reader.png', width: size, height: size);
+      case SidebarSection.summarize:
+        return Image.asset('assets/images/summarize.png', width: size, height: size);
+      case SidebarSection.define:
+        return Image.asset('assets/images/define.png', width: size, height: size);
+      case SidebarSection.professionalize:
+        return Image.asset('assets/images/profesionalize.png', width: size, height: size);
+      case SidebarSection.screening:
+      
+        return Image.asset('assets/images/screenings.png', width: size, height: size);
+
+      default:
+        final isCupertino = _useCupertinoIcons();
+        final icon = isCupertino ? section.cupertinoIcon : section.materialIcon;
+        return Icon(icon, size: size, color: color);
+    }
   }
 
   bool _useCupertinoIcons() {

@@ -203,53 +203,60 @@ class _ScreeningPageState extends State<ScreeningPage> {
     final s = ds.settings;
     final bg = bgColor(s.colorTheme);
     final fg = fgColor(s.colorTheme);
+    
+    // ✅ DETEKSI UKURAN LAYAR UNTUK DESKTOP
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isDesktop = screenWidth >= 800;
 
     return Scaffold(
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-          // === BACKGROUND 2 LAPIS UNGU (DIPERPENDEK) ===
-          // Lapisan bawah (lebih panjang sedikit untuk efek mengintip)
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              height: 120, // Diperpendek dari persentase layar
-              decoration: const BoxDecoration(
-                color: _purpleLight,
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(32),
-                  bottomRight: Radius.circular(32),
+          // ✅ PERUBAHAN: Background ungu HANYA untuk mobile
+          if (!isDesktop) ...[
+            // Lapisan bawah
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                height: 120,
+                decoration: const BoxDecoration(
+                  color: _purpleLight,
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(32),
+                    bottomRight: Radius.circular(32),
+                  ),
                 ),
               ),
             ),
-          ),
-          // Lapisan atas (gradient)
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              height: 100, // Diperpendek agar pas di atas konten
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [_purpleLight, _purplePrimary],
-                ),
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(24),
-                  bottomRight: Radius.circular(24),
+            // Lapisan atas (gradient)
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                height: 100,
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [_purpleLight, _purplePrimary],
+                  ),
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(24),
+                    bottomRight: Radius.circular(24),
+                  ),
                 ),
               ),
             ),
-          ),
+          ],
 
           // === KONTEN UTAMA ===
           Column(
             children: [
-              _buildHeader(context),
+              // ✅ PERUBAHAN: Kirim isDesktop ke header
+              _buildHeader(context, isDesktop),
               Expanded(
                 child: BlocConsumer<ScreeningBloc, ScreeningState>(
                   listener: (ctx, state) {
@@ -362,38 +369,53 @@ class _ScreeningPageState extends State<ScreeningPage> {
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  // ✅ PERUBAHAN: Tambahkan parameter isDesktop untuk mengatur layout header
+  Widget _buildHeader(BuildContext context, bool isDesktop) {
     return Container(
-      padding: const EdgeInsets.only(left: 24, right: 24, top: 48, bottom: 16),
+      padding: EdgeInsets.only(
+        left: isDesktop ? 32 : 24, 
+        right: isDesktop ? 32 : 24, 
+        top: isDesktop ? 24 : 48, // Padding atas lebih kecil di desktop karena tidak ada background ungu
+        bottom: 16
+      ),
       child: Row(
         children: [
-          IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.black),
-            onPressed: () => Navigator.of(context).pop(),
-            style: IconButton.styleFrom(
-              backgroundColor: Colors.white,
-              fixedSize: const Size(40, 40),
-            ),
-          ),
-          const SizedBox(width: 12),
-          const Expanded(
-            child: Text(
-              'Pre-Screening',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
+          // ✅ Tombol Back dan Judul HANYA untuk Mobile
+          if (!isDesktop) ...[
+            IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.black),
+              onPressed: () => Navigator.of(context).pop(),
+              style: IconButton.styleFrom(
+                backgroundColor: Colors.white,
+                fixedSize: const Size(40, 40),
               ),
-              overflow: TextOverflow.ellipsis,
             ),
-          ),
-          const SizedBox(width: 12),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Text(
+                'Pre-Screening',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(width: 12),
+          ],
+          
+          // Spacer untuk mendorong tombol refresh ke kanan pada desktop
+          if (isDesktop) const Spacer(),
+
+          // Tombol Refresh (tetap ada di kedua versi, tapi dengan elevation di desktop agar terlihat di background putih)
           IconButton(
             icon: const Icon(Icons.refresh_rounded, color: Colors.black),
             onPressed: _reset,
             style: IconButton.styleFrom(
               backgroundColor: Colors.white,
               fixedSize: const Size(40, 40),
+              elevation: isDesktop ? 2 : 0, 
             ),
           ),
         ],
@@ -402,7 +424,7 @@ class _ScreeningPageState extends State<ScreeningPage> {
   }
 }
 
-// === WIDGET-WIDGET LAINNYA TETAP SAMA ===
+// === WIDGET-WIDGET LAINNYA TETAP SAMA (TIDAK DIUBAH) ===
 
 class _IntroView extends StatelessWidget {
   final Color fg;

@@ -37,7 +37,7 @@ class DesktopLandingPage extends StatelessWidget {
       backgroundColor: Colors.white,
       body: Column(
         children: [
-          // HEADER DENGAN BACKGROUND UNGU
+          // HEADER DENGAN BACKGROUND UNGU (Welcome Screen)
           Container(
             width: double.infinity,
             child: Stack(
@@ -62,6 +62,8 @@ class DesktopLandingPage extends StatelessWidget {
                   child: Row(
                     children: [
                       Image.asset('assets/images/logo_owl.png', height: 60, width: 60, fit: BoxFit.contain),
+                      const SizedBox(width: 16),
+                      const Text('Dyslexic.app', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: _textColor, letterSpacing: 0.5)),
                       const Spacer(),
                       Container(
                         padding: const EdgeInsets.all(8),
@@ -74,6 +76,21 @@ class DesktopLandingPage extends StatelessWidget {
                           constraints: const BoxConstraints(),
                         ),
                       ),
+                      const SizedBox(width: 12),
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle, boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))]),
+                        child: IconButton(
+                          onPressed: () {
+                            context.read<AuthBloc>().add(const LogoutEvent());
+                            context.goNamed(AppRoute.auth.name);
+                          },
+                          icon: const Icon(Icons.logout_rounded, color: Colors.black87, size: 24),
+                          tooltip: 'Logout',
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -81,72 +98,55 @@ class DesktopLandingPage extends StatelessWidget {
             ),
           ),
 
-          // MAIN CONTENT dengan Grid Layout
+          // MAIN CONTENT (Kartu-kartu fitur)
           Expanded(
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
-              child: Column(
-                children: [
-                  const Text(
-                    'What do you want to do today?',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
-                  ),
-                  const SizedBox(height: 40),
-                  
-                  // Grid untuk 3 kartu pertama (Reader, Define, Summarize)
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 800),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Expanded(child: _buildFeatureCard(section: SidebarSection.reader, onTap: () => _navigateToFeature(context, SidebarSection.reader))),
-                      const SizedBox(width: 20),
-                      Expanded(child: _buildFeatureCard(section: SidebarSection.define, onTap: () => _navigateToFeature(context, SidebarSection.define))),
-                      const SizedBox(width: 20),
-                      Expanded(child: _buildFeatureCard(section: SidebarSection.summarize, onTap: () => _navigateToFeature(context, SidebarSection.summarize))),
+                      const Text('What do you want to do today?', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.black)),
+                      const SizedBox(height: 24),
+                      ...SidebarSection.values.map((section) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: _buildFeatureCard(
+                            section: section,
+                            onTap: () {
+                              print('👆 CARD DITEKAN: ${section.label}');
+                              
+                              // 1. Update SidebarBloc agar DesktopShell tahu fitur mana yang harus ditampilkan
+                              context.read<SidebarBloc>().add(SidebarSectionSelected(section));
+                              
+                              // 2. Pindah ke DesktopShell (PATH HARUS SAMA PERSIS DENGAN APP_ROUTE_CONF)
+                              try {
+                                context.go('/desktop-shell');
+                              } catch (e) {
+                                print('❌ ERROR NAVIGASI: $e');
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('Gagal membuka halaman: $e'), backgroundColor: Colors.red),
+                                  );
+                                }
+                              }
+                            },
+                          ),
+                        );
+                      }).toList(),
                     ],
                   ),
-                  
-                  const SizedBox(height: 20),
-                  
-                  // Grid untuk 2 kartu kedua (Professionalize, Screening) - di tengah
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Expanded(child: _buildFeatureCard(section: SidebarSection.professionalize, onTap: () => _navigateToFeature(context, SidebarSection.professionalize))),
-                      const SizedBox(width: 20),
-                      Expanded(child: _buildFeatureCard(section: SidebarSection.screening, onTap: () => _navigateToFeature(context, SidebarSection.screening))),
-                    ],
-                  ),
-                ],
+                ),
               ),
             ),
           ),
         ],
       ),
     );
-  }
-
-  void _navigateToFeature(BuildContext context, SidebarSection section) {
-    print('👆 CARD DITEKAN: ${section.label}');
-    
-    // 1. Update SidebarBloc agar DesktopShell tahu fitur mana yang harus ditampilkan
-    context.read<SidebarBloc>().add(SidebarSectionSelected(section));
-    
-    // 2. Pindah ke DesktopShell
-    try {
-      context.go('/desktop-shell');
-    } catch (e) {
-      print('❌ ERROR NAVIGASI: $e');
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal membuka halaman: $e'), backgroundColor: Colors.red),
-        );
-      }
-    }
   }
 
   Widget _buildFeatureCard({required SidebarSection section, required VoidCallback onTap}) {
@@ -158,77 +158,41 @@ class DesktopLandingPage extends StatelessWidget {
       SidebarSection.screening: 'Analyze and pre-screen text for specific criteria, tone, or compliance.',
     };
 
-    // Warna background icon untuk setiap fitur
-    final iconColors = {
-      SidebarSection.reader: const Color(0xFFB596E5),
-      SidebarSection.summarize: const Color(0xFF9B7FD6),
-      SidebarSection.define: const Color(0xFF8B6FB8),
-      SidebarSection.professionalize: const Color(0xFF7D62A8),
-      SidebarSection.screening: const Color(0xFF6F5598),
-    };
-
     return Material(
       color: Colors.white,
       borderRadius: BorderRadius.circular(16),
-      elevation: 2,
+      elevation: 0,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
+        highlightColor: Colors.grey.withOpacity(0.1),
+        splashColor: const Color(0xFFB596E5).withOpacity(0.2),
         child: Container(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: Colors.grey.shade200),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 12, offset: const Offset(0, 6))],
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+          child: Row(
             children: [
-              // Icon dengan background bulat
               Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  color: (iconColors[section] ?? const Color(0xFFB596E5)).withOpacity(0.15),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  section.materialIcon,
-                  size: 32,
-                  color: iconColors[section] ?? const Color(0xFFB596E5),
+                width: 50, height: 50,
+                decoration: BoxDecoration(color: const Color(0xFFB596E5).withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                child: Center(child: Icon(section.materialIcon, size: 28, color: const Color(0xFFB596E5))),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(section.label, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.black87)),
+                    const SizedBox(height: 4),
+                    Text(descriptions[section] ?? '', style: TextStyle(fontSize: 14, color: Colors.grey.shade600, height: 1.3), maxLines: 2, overflow: TextOverflow.ellipsis),
+                  ],
                 ),
               ),
-              const SizedBox(height: 16),
-              // Judul
-              Text(
-                section.label,
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black87,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 12),
-              // Deskripsi
-              Text(
-                descriptions[section] ?? '',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey.shade600,
-                  height: 1.4,
-                ),
-                textAlign: TextAlign.center,
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-              ),
+              const Icon(Icons.chevron_right, color: Colors.grey, size: 24),
             ],
           ),
         ),
