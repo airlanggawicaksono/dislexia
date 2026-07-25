@@ -86,7 +86,9 @@ class FeatureService:
             **({"generation_config": generation_config} if generation_config else {}),
         )
         collected = []
-        async for chunk in LmIoStream.stream(llm_req):
+        # Retry transient provider errors that fire before the first token —
+        # same resilience the non-stream `process` path gets from `execute`.
+        async for chunk in LLMRetryPolicy.stream(LmIoStream.stream, llm_req):
             collected.append(chunk.content)
             yield chunk
 
