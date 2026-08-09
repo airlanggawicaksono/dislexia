@@ -100,16 +100,24 @@ Each summarize invocation persists metadata to `feature_history.metadata` (JSONB
 
 ## Screening Post-Processing
 
-`POST /api/v1/me/screen/reply` walks the user through 23 ARHQ questions. On the
-final turn the server sets `is_complete=true` AND runs a second LLM call
-("post-process callback", see `app/services/screening/postprocess.py`) that
-discretizes the free-form chat into a quantifiable ARHQ result.
+`POST /api/v1/me/screen/reply` walks the user through the 15 questions of the
+Smythe & Everatt (2001) Adult Dyslexia Checklist. On the final turn the server
+sets `is_complete=true` AND runs a second LLM call ("post-process callback", see
+`app/services/screening/postprocess/`) that maps each answer to a checklist
+column and computes the weighted result. (Metadata keys keep the `ahrq_` prefix
+for backward-compat; the instrument is the Adult Dyslexia Checklist, not the
+older ARHQ.)
 
-The extractor is asked to emit strict JSON:
+The extractor is asked only to CLASSIFY — pick the answer column (0-4) per
+question; the point weights (`OPTION_WEIGHTS` in `app/policies/ahrq.py`) are
+applied server-side, so scoring math stays deterministic:
 
 ```json
-{ "scores": [int × 23], "comments": [str × 23] }
+{ "scores": [int × 15], "comments": [str × 15] }
 ```
+
+`scores[i]` is the chosen column: `0` = unanswered, `1..4` = the four printed
+columns left→right (least → most indicative).
 
 Response then includes `ahrq_result` (also persisted to
 `feature_history.metadata` on the final row):
@@ -121,12 +129,18 @@ Response then includes `ahrq_result` (also persisted to
   "ahrq_scores": [2, 3, 1, ...],
   "ahrq_comments": "slow reader,work heavy,...",
   "ahrq_total": 45,
-  "ahrq_severity": "mild"
+  "ahrq_max_total": 88,
+  "ahrq_severity": "mild",
+  "ahrq_disclaimer": "This checklist is not a diagnostic assessment. ...",
+  "ahrq_attribution": "Adult Dyslexia Checklist © Ian Smythe & John Everatt, 2001."
 }
 ```
 
-Comments are joined comma-separated, index-aligned to `ahrq_scores`. Sum of
-scores maps to a severity band (see `_SEVERITY_THRESHOLDS` in `postprocess.py`).
+Comments are joined comma-separated, index-aligned to `ahrq_scores`. The
+WEIGHTED total (range 22-88) maps to a published band (`SEVERITY_THRESHOLDS` in
+`app/policies/ahrq.py`): `unlikely` (<45) · `mild` (45-60) · `moderate_severe`
+(>60). `ahrq_disclaimer` + `ahrq_attribution` travel with every result and must
+always be displayed — this is a screening pointer, not a diagnosis.
 
 Failure handling: if the extractor LLM refuses, returns text that starts with a
 known error signature (Together/OpenAI-style `error: …`, `I cannot …`, etc.),
@@ -162,12 +176,12 @@ maintenance flows without new machinery:
 - **Backfill** — sessions that completed before the callback existed show
   `not_started`; POST the endpoint to score them retroactively.
 - **QA / smoke test** — pass `?force=true` to run against an in-progress session
-  without waiting for all 23 questions.
+  without waiting for all 15 questions.
 
 Contract:
 
 - Idempotent — overwrites whatever metadata was on the latest history row.
-- Default: `409` if the session hasn't answered all 23 questions.
+- Default: `409` if the session hasn't answered all 15 questions.
 - `?force=true` — allow the run on incomplete sessions.
 - Never `500`s on extractor/parse errors — those come back as
   `status=failed` in the body so a client can loop retry-on-failure safely.

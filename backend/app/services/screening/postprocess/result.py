@@ -6,7 +6,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Optional
 
-from app.policies import classify_severity
+from app.policies import ATTRIBUTION, DISCLAIMER, MAX_TOTAL, classify_severity, score_total
 from app.dto.feature.screening.enums import PostProcessStatus
 
 
@@ -17,7 +17,9 @@ def build_success_metadata(
     started_at: datetime,
     finished_at: datetime,
 ) -> dict:
-    total = sum(scores)
+    # `scores` are answer-column indices (0=no answer, 1..4); the weighted
+    # total comes from the instrument's own point table, not a plain sum.
+    total = score_total(scores)
     return {
         "ahrq_status": PostProcessStatus.SUCCESS.value,
         "ahrq_started_at": started_at.isoformat(),
@@ -25,7 +27,12 @@ def build_success_metadata(
         "ahrq_scores": scores,
         "ahrq_comments": ",".join(comments),
         "ahrq_total": total,
+        "ahrq_max_total": MAX_TOTAL,
         "ahrq_severity": classify_severity(total),
+        # Disclaimer + attribution travel WITH the result so a client can never
+        # render a band without them (this is a screening pointer, not a dx).
+        "ahrq_disclaimer": DISCLAIMER,
+        "ahrq_attribution": ATTRIBUTION,
         "ahrq_error": None,
     }
 

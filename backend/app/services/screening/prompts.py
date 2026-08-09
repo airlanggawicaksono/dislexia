@@ -15,30 +15,26 @@ or just getting through emails, how much reading do you find yourself doing?"
 Follow this pattern: acknowledge warmly, then ask the next question naturally.
 """
 
+# The 15 items of the Smythe & Everatt (2001) Adult Dyslexia Checklist, phrased
+# for a natural spoken conversation. Order is significant — the weight table in
+# `policies.ahrq.OPTION_WEIGHTS` is index-aligned to this list. Q1-10 map to a
+# frequency scale, Q11-15 to a difficulty scale (see build_extraction_prompt).
 QUESTIONS: list[str] = [
-    "How would you rate your current reading speed compared with other adults?",
-    "How much reading is required in your work or daily tasks?",
-    "Did you have difficulty learning spelling in elementary school?",
-    "How would you rate your current spelling ability compared with other adults?",
-    "Did anyone ever consider having you repeat a grade because of school problems?",
-    "Do you have difficulty remembering names of people or places?",
-    "Do you have difficulty remembering addresses, phone numbers, or dates?",
-    "Do you have difficulty remembering complex spoken instructions?",
-    "Do you currently reverse letters or numbers when reading or writing?",
-    "How many books do you read for pleasure each year?",
-    "How many magazines do you read for pleasure each month?",
-    "How often do you read a weekday newspaper?",
-    "How often do you read a Sunday newspaper?",
-    "What was your attitude toward school as a child?",
-    "Did you have difficulty learning to read in elementary school?",
-    "Did you need extra help when learning to read?",
-    "Did you reverse letters or numbers when you were a child?",
-    "Did you have difficulty learning letter names or color names as a child?",
-    "How was your reading ability in elementary school compared with your classmates?",
-    "How difficult was schoolwork for you compared with your classmates?",
-    "Did you have difficulty with English or language classes in high school or college?",
-    "What is your current attitude toward reading?",
-    "How much reading do you do for pleasure now?",
+    "Do you confuse visually similar words, such as 'cat' and 'cot'?",
+    "Do you lose your place or skip lines when you are reading?",
+    "Do you mix up the names of objects — for example saying 'table' when you mean 'chair'?",
+    "Do you have trouble telling left from right?",
+    "Do you find map reading, or finding your way to an unfamiliar place, confusing?",
+    "Do you often re-read paragraphs to understand them?",
+    "Do you get confused when you are given several instructions at once?",
+    "Do you make mistakes when taking down telephone messages?",
+    "Do you find it hard to come up with the right word when you are speaking?",
+    "How often do you come up with creative solutions to problems?",
+    "How easy do you find it to sound out unfamiliar words, like 'e-le-phant'?",
+    "When you write, how hard is it to organise your thoughts on paper?",
+    "When you were learning, how easy were the multiplication tables for you?",
+    "How easy do you find it to recite the alphabet in order?",
+    "How hard do you find it to read aloud?",
 ]
 
 
@@ -98,24 +94,32 @@ def build_gate_prompt(current_q: str | None, next_q: str | None) -> str:
 
 
 def build_extraction_prompt() -> str:
-    """System prompt for the ARHQ post-process extraction call.
+    """System prompt for the Adult Dyslexia Checklist post-process call.
 
-    Instructs the model to emit strict JSON with two arrays aligned to the
-    QUESTIONS order. Comments capped so the joined output stays small.
+    The model reads the conversation and, for each of the 15 questions, picks
+    the ONE answer column (1-4) that best matches what the user said — or 0 if
+    they did not answer. It does NOT compute points: the weight table lives
+    server-side (policies.ahrq.OPTION_WEIGHTS), so the model only classifies.
+    `scores` therefore carries column indices, index-aligned to QUESTIONS.
     """
-    from app.policies import SCORE_MIN, SCORE_MAX
-
-    numbered = "\n".join(f"  {i}. {q}" for i, q in enumerate(QUESTIONS))
+    numbered = "\n".join(f"  {i + 1}. {q}" for i, q in enumerate(QUESTIONS))
     return (
-        "You are an ARHQ (Adult Reading History Questionnaire) scorer. "
-        f"Analyze the conversation and produce ONE score ({SCORE_MIN}-{SCORE_MAX}) "
-        "and ONE short comment for each of the questions below, in the SAME ORDER.\n\n"
+        "You are scoring the Smythe & Everatt Adult Dyslexia Checklist from a "
+        "conversation. For EACH of the 15 questions below, choose the ONE answer "
+        "column (1-4) that best matches what the user said. Use 0 if the user did "
+        "not answer that question at all.\n\n"
+        "Questions 1-10 use a FREQUENCY scale (how often it happens):\n"
+        "  1 = Rarely   2 = Occasionally   3 = Often   4 = Most of the time\n"
+        "Questions 11-15 use a DIFFICULTY scale (how hard it is):\n"
+        "  1 = Easy   2 = Challenging   3 = Difficult   4 = Very difficult\n\n"
+        "Direction matters: a HIGHER column always means the more dyslexia-"
+        "indicative answer. Note Q10 (creative solutions) is scored so that MORE "
+        "often = a higher column. Q11, Q13 and Q14 ask 'how easy' — map 'very "
+        "easy' to 1 and 'very hard/impossible' to 4.\n\n"
         f"Questions ({len(QUESTIONS)} items):\n{numbered}\n\n"
-        f"Score rubric: {SCORE_MIN} = no dyslexia indication, {SCORE_MAX} = strong indication. "
-        "If the user did not clearly answer a question, use 0 and set the comment to \"no answer\".\n\n"
         "Output STRICT JSON only (no prose, no markdown fences, no leading text). Schema:\n"
         "{\n"
-        f"  \"scores\": [int, ...]   // exactly {len(QUESTIONS)} ints, each {SCORE_MIN}-{SCORE_MAX}\n"
+        f"  \"scores\": [int, ...]   // exactly {len(QUESTIONS)} ints, each 0-4 (the chosen column, 0 = no answer)\n"
         f"  \"comments\": [str, ...] // exactly {len(QUESTIONS)} strings, each <= 80 chars, NO commas inside\n"
         "}\n\n"
         "Do NOT include commas inside any comment (we join them comma-separated). "

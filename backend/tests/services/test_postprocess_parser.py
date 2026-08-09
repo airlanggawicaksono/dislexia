@@ -10,7 +10,16 @@ from datetime import datetime, timezone
 
 import pytest
 
-from app.policies import SCORE_MIN, SCORE_MAX, classify_severity
+from app.policies import (
+    SCORE_MIN,
+    SCORE_MAX,
+    MIN_TOTAL,
+    MAX_TOTAL,
+    OPTION_WEIGHTS,
+    classify_severity,
+    score_option,
+    score_total,
+)
 from app.services.screening.prompts import QUESTIONS
 from app.services.screening.postprocess.parser import (
     PostProcessError,
@@ -168,15 +177,19 @@ def _ts() -> tuple[datetime, datetime]:
 
 def test_build_success_metadata_shape():
     started, finished = _ts()
-    scores = [2] * _N
+    scores = [2] * _N  # column-2 chosen for every question
     comments = ["ok"] * _N
     md = build_success_metadata(scores, comments, started_at=started, finished_at=finished)
 
     assert md["ahrq_status"] == "success"
     assert md["ahrq_scores"] == scores
     assert md["ahrq_comments"] == ",".join(comments)
-    assert md["ahrq_total"] == sum(scores)
-    assert md["ahrq_severity"] == classify_severity(sum(scores))
+    # Total is WEIGHTED (from OPTION_WEIGHTS), not a plain sum of column indices.
+    assert md["ahrq_total"] == score_total(scores)
+    assert md["ahrq_total"] != sum(scores)  # weights actually applied
+    assert md["ahrq_max_total"] == MAX_TOTAL
+    assert md["ahrq_severity"] == classify_severity(score_total(scores))
+    assert md["ahrq_disclaimer"] and md["ahrq_attribution"]  # always present
     assert md["ahrq_error"] is None
     assert md["ahrq_started_at"] == started.isoformat()
     assert md["ahrq_finished_at"] == finished.isoformat()
@@ -216,18 +229,47 @@ def test_resolve_status(metadata, expected):
     assert resolve_status(metadata) == expected
 
 
-# ─── policy: severity banding ───────────────────────────────────────────────
+# ─── policy: weighted scoring ───────────────────────────────────────────────
+
+def test_score_option_no_answer_is_zero():
+    # 0 = unanswered → contributes nothing, for every question.
+    assert all(score_option(i, 0) == 0 for i in range(_N))
+
+
+def test_score_option_matches_weight_table():
+    # Column c (1..4) for question i must return OPTION_WEIGHTS[i][c-1].
+    for i in range(_N):
+        for col in (1, 2, 3, 4):
+            assert score_option(i, col) == OPTION_WEIGHTS[i][col - 1]
+
+
+def test_score_total_all_column_one_is_min():
+    assert score_total([1] * _N) == MIN_TOTAL == 22
+
+
+def test_score_total_all_column_four_is_max():
+    assert score_total([4] * _N) == MAX_TOTAL == 88
+
+
+def test_score_total_ignores_unanswered():
+    options = [4] * _N
+    options[0] = 0  # drop Q1 (weights 3/6/9/12 → column 4 worth 12)
+    assert score_total(options) == MAX_TOTAL - 12
+
+
+# ─── policy: severity banding (Smythe & Everatt 2001) ───────────────────────
 
 @pytest.mark.parametrize(
     "total, expected",
     [
-        (0, "mild"),
-        (30, "mild"),
-        (31, "moderate"),
-        (60, "moderate"),
-        (61, "severe"),
-        (92, "severe"),
-        (999, "severe"),
+        (0, "unlikely"),
+        (22, "unlikely"),
+        (44, "unlikely"),
+        (45, "mild"),
+        (60, "mild"),
+        (61, "moderate_severe"),
+        (88, "moderate_severe"),
+        (999, "moderate_severe"),
     ],
 )
 def test_classify_severity_bands(total: int, expected: str):

@@ -4,7 +4,14 @@ from app.policies.account import ACCOUNT_NUMBER_LENGTH, ACCOUNT_NUMBER_PATTERN
 from app.policies.ahrq import (
     SCORE_MIN,
     SCORE_MAX,
+    OPTION_WEIGHTS,
+    MIN_TOTAL,
+    MAX_TOTAL,
     SEVERITY_THRESHOLDS,
+    DISCLAIMER,
+    ATTRIBUTION,
+    score_option,
+    score_total,
     classify_severity,
 )
 
@@ -16,6 +23,13 @@ __all__ = [
     "ACCOUNT_NUMBER_PATTERN",
     "SCORE_MIN",
     "SCORE_MAX",
+    "OPTION_WEIGHTS",
+    "MIN_TOTAL",
+    "MAX_TOTAL",
     "SEVERITY_THRESHOLDS",
+    "DISCLAIMER",
+    "ATTRIBUTION",
+    "score_option",
+    "score_total",
     "classify_severity",
 ]

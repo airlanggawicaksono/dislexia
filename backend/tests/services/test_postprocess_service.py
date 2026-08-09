@@ -16,6 +16,7 @@ from app.exceptions import ConflictError
 from app.dto.feature.chat.base import ChatMessageDTO, ChatSessionDTO
 from app.dto.feature.chat.enums import ChatRoleType, FeatureType
 from app.dto.feature.screening.enums import PostProcessStatus
+from app.policies import score_total
 from app.services.screening.prompts import QUESTIONS
 from app.services.screening.postprocess.service import PostProcessService
 from app.services.screening.postprocess import result as result_mod
@@ -93,7 +94,7 @@ async def test_run_success_persists_and_returns_scores(monkeypatch):
 
     assert out.status == PostProcessStatus.SUCCESS
     assert out.metadata["ahrq_scores"] == [2] * _N
-    assert out.metadata["ahrq_total"] == 2 * _N
+    assert out.metadata["ahrq_total"] == score_total([2] * _N)  # weighted, not 2*_N
     assert out.history_id == last_item.id
     # metadata was written back to the latest history row
     save.assert_awaited_once()

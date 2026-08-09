@@ -66,7 +66,7 @@ obtained via `POST /api/v1/auth/login`.
 
 ## Features
 - **Summarize / Professionalize / Define** — single-turn LLM transformations
-- **Screening** — multi-turn ARHQ conversation, server-controlled question sequence
+- **Screening** — multi-turn Adult Dyslexia Checklist conversation, server-controlled question sequence
 - **History** — per-user and admin lookup of past feature usage
 """
 

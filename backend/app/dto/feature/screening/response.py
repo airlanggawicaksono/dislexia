@@ -33,12 +33,19 @@ class ScreeningResponseDTO(BaseModel):
     ahrq_result: Optional[dict] = Field(
         None,
         description=(
-            "ARHQ post-processing result. Present ONLY when is_complete=true. "
-            "Keys: ahrq_status ('success'|'failed'), ahrq_error (null|{reason,message}), "
-            "ahrq_scores (list[int]|null, one per question in ARHQ order), "
+            "Adult Dyslexia Checklist (Smythe & Everatt 2001) result. Present "
+            "ONLY when is_complete=true (async — null until scoring finishes; "
+            "poll the postprocess status endpoint). Keys: "
+            "ahrq_status ('success'|'failed'), ahrq_error (null|{reason,message}), "
+            "ahrq_scores (list[int]|null, chosen answer column 0-4 per question, "
+            "in checklist order — 0 means unanswered), "
             "ahrq_comments (str|null, comma-separated, index-aligned to ahrq_scores), "
-            "ahrq_total (int|null, sum of scores), "
-            "ahrq_severity (str|null, 'mild'|'moderate'|'severe')."
+            "ahrq_total (int|null, WEIGHTED total, range 22-88), "
+            "ahrq_max_total (int, 88), "
+            "ahrq_severity (str|null, 'unlikely' (<45) | 'mild' (45-60) | "
+            "'moderate_severe' (>60)), "
+            "ahrq_disclaimer (str, not-a-diagnosis notice — always display), "
+            "ahrq_attribution (str, © notice — always display)."
         ),
     )
 

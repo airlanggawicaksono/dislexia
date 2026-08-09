@@ -23,8 +23,9 @@ from app.utils.lenient_json_route import LenientJSONRoute
 TAG = {
     "name": "Screening",
     "description": (
-        "Multi-turn dyslexia screening based on the Adult Reading History Questionnaire (ARHQ). "
-        "Server controls the 23-question sequence; the LLM rephrases each one warmly."
+        "Multi-turn dyslexia screening based on the Smythe & Everatt (2001) Adult "
+        "Dyslexia Checklist. Server controls the 15-question sequence; the LLM "
+        "rephrases each one warmly. Screening only — not a diagnostic assessment."
     ),
 }
 
@@ -43,7 +44,7 @@ async def start(
     user: UserResponseDTO = Depends(get_current_user),
 ):
     """
-    Open a new ARHQ screening session.
+    Open a new dyslexia-checklist screening session.
 
     No body required. The server creates a session and the LLM responds with a
     warm greeting plus the first question. Use the returned `session_id` for all
@@ -104,17 +105,17 @@ async def reply(
     satisfies the current topic AND writes the next assistant message
     (returned in `result`):
 
-    - **Answered** → advance to the next ARHQ topic; `result` acknowledges the
-      answer and asks the next question.
+    - **Answered** → advance to the next checklist topic; `result` acknowledges
+      the answer and asks the next question.
     - **Not answered** (vague / off-topic / non-committal) → stay on the SAME
       topic; `result` is a gentle clarifying re-ask. The topic index does not
-      move, so the number of turns can exceed the 23 topics.
+      move, so the number of turns can exceed the 15 topics.
     - **Loop guard**: after 3 clarifications on one topic the server accepts the
       answer and advances anyway, so a user can never get stuck.
 
     Topic progress (`answered_count`, `reask_count`) is persisted on each
-    history row's `metadata`; the 23 ARHQ items remain the scoring backbone.
-    When all 23 topics are answered the response sets `is_complete: true` and
+    history row's `metadata`; the 15 checklist items remain the scoring backbone.
+    When all 15 topics are answered the response sets `is_complete: true` and
     `result` is a warm summary.
 
     To **resume** an unfinished session, just call `/reply` again with its
@@ -124,9 +125,11 @@ async def reply(
     ### Post-processing on completion
 
     When `is_complete=true`, the server runs a SECOND LLM call (the
-    "post-process callback") that discretizes the full conversation into a
-    quantifiable ARHQ result. The result is persisted to
-    `feature_history.metadata` on the final row AND returned as `ahrq_result`.
+    "post-process callback") that maps each answer to a checklist column and
+    computes the weighted result. It is persisted to `feature_history.metadata`
+    on the final row AND returned as `ahrq_result`. (Metadata keys keep the
+    `ahrq_` prefix for backward-compat; the instrument is now the Smythe &
+    Everatt Adult Dyslexia Checklist.)
 
     | key | type | notes |
     |---|---|---|
@@ -134,10 +137,13 @@ async def reply(
     | `ahrq_started_at` | ISO-8601 str | When the extraction LLM call began |
     | `ahrq_finished_at` | ISO-8601 str | When persistence completed |
     | `ahrq_error` | `null` \\| `{reason, message}` | Populated only on failure |
-    | `ahrq_scores` | `list[int]` \\| `null` | 23 ints, sequential order |
+    | `ahrq_scores` | `list[int]` \\| `null` | 15 ints, chosen answer column 0-4 (0 = unanswered) |
     | `ahrq_comments` | `str` \\| `null` | Comma-separated, index-aligned |
-    | `ahrq_total` | `int` \\| `null` | `sum(ahrq_scores)` |
-    | `ahrq_severity` | `str` \\| `null` | `"mild"` \\| `"moderate"` \\| `"severe"` |
+    | `ahrq_total` | `int` \\| `null` | WEIGHTED total, range 22-88 |
+    | `ahrq_max_total` | `int` | 88 |
+    | `ahrq_severity` | `str` \\| `null` | `"unlikely"` (<45) \\| `"mild"` (45-60) \\| `"moderate_severe"` (>60) |
+    | `ahrq_disclaimer` | `str` | Not-a-diagnosis notice — always display |
+    | `ahrq_attribution` | `str` | © notice — always display |
 
     Errors never break `/reply`: transport/parse/schema issues become
     `ahrq_status="failed"` in metadata, but the endpoint still returns 200.
@@ -163,7 +169,7 @@ async def sessions(
     Each item:
     ```
     { "session_id": "...", "is_complete": false,
-      "answered_count": 7, "total_topics": 23,
+      "answered_count": 7, "total_topics": 15,
       "status": "not_started" | "success" | "failed",
       "result": null | { "ahrq_severity": "...", "ahrq_total": ..., ... },
       "messages": [ {"role": "user"|"assistant", "content": "...", ...}, ... ] }

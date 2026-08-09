@@ -37,8 +37,8 @@ docs {
         "ahrq_finished_at": "2026-07-03T12:35:12Z",
         "ahrq_scores": [...] | null,
         "ahrq_comments": "..." | null,
-        "ahrq_total": 45 | null,
-        "ahrq_severity": "mild" | "moderate" | "severe" | null,
+        "ahrq_total": 45 | null,                  // weighted, range 22-88
+        "ahrq_severity": "unlikely" | "mild" | "moderate_severe" | null, // <45 | 45-60 | >60
         "ahrq_error": null | { "reason": "...", "message": "..." }
       } | null
     }
