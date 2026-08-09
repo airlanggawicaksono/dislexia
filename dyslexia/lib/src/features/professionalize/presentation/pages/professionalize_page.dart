@@ -4,6 +4,7 @@ import '../../../../core/utils/font_utils.dart';
 import '../../../../core/widgets/adaptive/adaptive.dart';
 import '../../../../core/widgets/feature_page.dart';
 import '../../../display_settings/presentation/bloc/display_settings/display_settings_bloc.dart';
+import '../../../sidebar/domain/entities/sidebar_section.dart';
 import '../bloc/professionalize_bloc.dart';
 import '../bloc/professionalize_event.dart';
 import '../bloc/professionalize_state.dart';
@@ -53,6 +54,7 @@ class _ProfessionalizePageState extends State<ProfessionalizePage> {
             title: 'Professionalize',
             resultTitle: 'Professionalized text',
             heroTag: 'professionalize',
+            feature: SidebarSection.professionalize,
             controlsInline: true,
             controls: _EmailControls(
               recipient: _recipient,

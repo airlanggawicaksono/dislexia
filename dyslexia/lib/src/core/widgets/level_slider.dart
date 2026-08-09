@@ -8,12 +8,17 @@ class LevelSlider extends StatefulWidget {
   final int initialIndex;
   final ValueChanged<int> onChanged;
 
+  /// Active-track colour; defaults to the app purple. Feature pages pass
+  /// their own accent so the control is colour-coded per feature.
+  final Color accentColor;
+
   const LevelSlider({
     super.key,
     required this.label,
     required this.valueLabels,
     required this.initialIndex,
     required this.onChanged,
+    this.accentColor = const Color(0xFFB596E5),
   });
 
   @override
@@ -56,11 +61,11 @@ class _LevelSliderState extends State<LevelSlider> {
           SliderTheme(
             data: SliderTheme.of(context).copyWith(
               trackHeight: 8,
-              activeTrackColor: const Color(0xFFB596E5), // Warna ungu untuk bagian aktif
+              activeTrackColor: widget.accentColor, // Warna aksen bagian aktif
               inactiveTrackColor: const Color(0xFFE0E0E0), // Abu-abu muda untuk bagian tidak aktif
               thumbColor: Colors.white, // Thumb putih
               thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 14),
-              overlayColor: const Color(0xFFB596E5).withOpacity(0.2),
+              overlayColor: widget.accentColor.withValues(alpha: 0.2),
               overlayShape: const RoundSliderOverlayShape(overlayRadius: 22),
             ),
             child: Slider(
@@ -68,6 +73,8 @@ class _LevelSliderState extends State<LevelSlider> {
               min: 0,
               max: (widget.valueLabels.length - 1).toDouble(),
               divisions: widget.valueLabels.length - 1,
+              // Screen-reader + keyboard announcement for the current value.
+              label: '${widget.label}: ${widget.valueLabels[_i]}',
               onChanged: (v) {
                 final next = v.round();
                 if (next == _i) return;

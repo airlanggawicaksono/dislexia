@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/themes/feature_accent.dart';
 import '../../../../core/widgets/adaptive/adaptive.dart';
 import '../../../../routes/app_route_path.dart';
 
@@ -61,51 +62,64 @@ class LandingPage extends StatelessWidget {
     required String label,
     required VoidCallback onTap,
   }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05), // Shadow lebih halus untuk desktop
-            blurRadius: 12,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
+    // Colour-code each card with its feature accent (if it has one), always
+    // paired with the icon + text label — never colour alone.
+    final accent = featureAccentByLabel(label);
+    return Semantics(
+      label: label,
+      button: true,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 43, 
-                  height: 43,
-                  child: Center(
-                    child: _getIconForAction(label),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Text(
-                    label,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05), // Shadow lebih halus untuk desktop
+              blurRadius: 12,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(16),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Container(
+                    width: 43,
+                    height: 43,
+                    decoration: accent != null
+                        ? BoxDecoration(
+                            color: accent.tint,
+                            borderRadius: BorderRadius.circular(12),
+                          )
+                        : null,
+                    child: Center(
+                      child: _getIconForAction(label),
                     ),
                   ),
-                ),
-                Icon(
-                  _isCupertino ? CupertinoIcons.chevron_right : Icons.chevron_right,
-                  color: Colors.grey.shade400,
-                  size: 20,
-                ),
-              ],
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Text(
+                      label,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ),
+                  Icon(
+                    _isCupertino ? CupertinoIcons.chevron_right : Icons.chevron_right,
+                    color: Colors.grey.shade400,
+                    size: 20,
+                  ),
+                ],
+              ),
             ),
           ),
         ),

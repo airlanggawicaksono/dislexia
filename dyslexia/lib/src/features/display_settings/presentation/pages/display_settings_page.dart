@@ -245,31 +245,41 @@ class _LogoutButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => _confirmAndLogout(context),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        decoration: BoxDecoration(
-          color: Colors.white,
+    return Semantics(
+      label: 'Log out',
+      button: true,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _confirmAndLogout(context),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFEF5350).withValues(alpha: 0.3), width: 1.5),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
+          child: ExcludeSemantics(
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFEF5350).withValues(alpha: 0.3), width: 1.5),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.logout_rounded, size: 20, color: Color(0xFFEF5350)),
+                  SizedBox(width: 12),
+                  Text('Log out',
+                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: Color(0xFFEF5350))),
+                ],
+              ),
             ),
-          ],
-        ),
-        child: const Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.logout_rounded, size: 20, color: Color(0xFFEF5350)),
-            SizedBox(width: 12),
-            Text('Log out',
-                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: Color(0xFFEF5350))),
-          ],
+          ),
         ),
       ),
     );
@@ -295,28 +305,36 @@ class _PresetTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
-          color: selected ? _purpleLight : Colors.white,
+    return Semantics(
+      label: 'Preset $label',
+      button: true,
+      selected: selected,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: selected ? _purplePrimary : Colors.grey.shade200,
-            width: 1.5,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Row(
+          child: ExcludeSemantics(
+            child: Container(
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                color: selected ? _purpleLight : Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: selected ? _purplePrimary : Colors.grey.shade200,
+                  width: 1.5,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Row(
           children: [
             Expanded(
               child: Column(
@@ -347,8 +365,11 @@ class _PresetTile extends StatelessWidget {
                 Icons.check_circle_rounded, 
                 color: Color(0xFFB596E5), 
                 size: 22,
-              ),
-          ],
+                ),
+            ],
+          ),
+          ),
+          ),
         ),
       ),
     );

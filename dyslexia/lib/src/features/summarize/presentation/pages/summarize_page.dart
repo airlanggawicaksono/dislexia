@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/widgets/feature_page.dart';
+import '../../../sidebar/domain/entities/sidebar_section.dart';
 import '../../domain/entities/summary_level.dart';
 import '../bloc/summarize_bloc.dart';
 import '../bloc/summarize_event.dart';
@@ -71,6 +72,7 @@ class _SummarizePageState extends State<SummarizePage> {
             title: 'Summarize',
             resultTitle: 'Summary',
             heroTag: 'summarize',
+            feature: SidebarSection.summarize,
             levelLabels: _levelPct,
             initialLevel: _levels.indexOf(_level),
             onLevelChanged: (index) {

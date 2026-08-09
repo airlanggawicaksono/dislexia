@@ -9,7 +9,8 @@ import '../../features/sidebar/domain/entities/sidebar_section.dart';
 import '../../features/reader/presentation/bloc/reader_shell/reader_shell_bloc.dart';
 import '../../features/reader/presentation/bloc/reader_shell/reader_shell_event.dart';
 
-import '../widgets/level_slider.dart'; 
+import '../widgets/level_slider.dart';
+import '../themes/feature_accent.dart';
 
 import '../../configs/injector/injector_conf.dart';
 import '../../features/display_settings/domain/entities/display_settings_entity.dart';
@@ -24,6 +25,11 @@ class FeaturePage extends StatefulWidget {
   final String title;
   final String resultTitle;
   final String heroTag;
+
+  /// Identifies which feature this page belongs to so its accent colour
+  /// (always paired with icon + text label) can be applied consistently.
+  final SidebarSection? feature;
+
   final TextEditingController controller;
   final String resultText;
   final String? viewResultText;
@@ -49,6 +55,7 @@ class FeaturePage extends StatefulWidget {
     required this.title,
     required this.resultTitle,
     required this.heroTag,
+    this.feature,
     required this.controller,
     required this.resultText,
     this.viewResultText,
@@ -273,12 +280,21 @@ class _FeaturePageState extends State<FeaturePage> {
               if (isMobile) ...[
                 IconButton(
                   icon: const Icon(Icons.arrow_back, color: Colors.black),
+                  tooltip: 'Back',
                   onPressed: () => _handleBack(context),
                   style: IconButton.styleFrom(
                     backgroundColor: Colors.white,
                     fixedSize: const Size(40, 40),
                     elevation: 0, 
                   ),
+                ),
+                const SizedBox(width: 12),
+              ],
+              if (widget.feature != null) ...[
+                _FeatureBadge(
+                  accent: featureAccent(widget.feature!),
+                  icon: widget.feature!.materialIcon,
+                  label: widget.title,
                 ),
                 const SizedBox(width: 12),
               ],
@@ -300,6 +316,7 @@ class _FeaturePageState extends State<FeaturePage> {
               if (widget.onReset != null)
                 IconButton(
                   icon: const Icon(Icons.restart_alt, color: Colors.black),
+                  tooltip: 'Reset input',
                   onPressed: widget.onReset,
                   style: IconButton.styleFrom(
                     backgroundColor: Colors.white,
@@ -311,6 +328,7 @@ class _FeaturePageState extends State<FeaturePage> {
               if (widget.onViewResult != null)
                 IconButton(
                   icon: const Icon(Icons.history_rounded, color: Colors.black),
+                  tooltip: 'History',
                   onPressed: () => _showHistory(context),
                   style: IconButton.styleFrom(
                     backgroundColor: Colors.white,
@@ -323,7 +341,10 @@ class _FeaturePageState extends State<FeaturePage> {
           if (widget.levelLabels != null && widget.levelLabels!.isNotEmpty) ...[
             const SizedBox(height: 16),
             LevelSlider(
-              label: widget.title == 'Summarize' ? 'Summary Length' : 'Detail Level', 
+              label: widget.title == 'Summarize' ? 'Summary Length' : 'Detail Level',
+              accentColor: widget.feature != null
+                  ? featureAccent(widget.feature!).strong
+                  : const Color(0xFFB596E5),
               valueLabels: widget.levelLabels!,
               initialIndex: widget.initialLevel,
               onChanged: (index) {
@@ -346,6 +367,10 @@ class _FeaturePageState extends State<FeaturePage> {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (widget.controls != null && (widget.controlsInline || !isMobile)) ...[
+            // The control region is plain widget.controls: the email-mode
+            // switch and its TextFields are already fully semantic. Merging
+            // them (MergeSemantics) would collapse the fields into a single
+            // non-editable node, so we deliberately don't merge here.
             widget.controls!,
             const SizedBox(height: 16),
           ],
@@ -369,11 +394,17 @@ class _FeaturePageState extends State<FeaturePage> {
             _buildTextInputCard(context, theme, settings),
             const SizedBox(height: 16),
           ],
-          FeatureResultCard(
-            text: widget.viewResultText ?? widget.resultText,
-            title: widget.viewResultTitle ?? widget.resultTitle,
-            inputExpanded: widget.inputExpanded,
-            onToggleInput: () => widget.onToggleInput(!widget.inputExpanded),
+          // Group the output region so assistive tech can focus the result
+          // as a single scrollable block of text.
+          Semantics(
+            container: true,
+            label: '${widget.title} output',
+            child: FeatureResultCard(
+              text: widget.viewResultText ?? widget.resultText,
+              title: widget.viewResultTitle ?? widget.resultTitle,
+              inputExpanded: widget.inputExpanded,
+              onToggleInput: () => widget.onToggleInput(!widget.inputExpanded),
+            ),
           ),
           const SizedBox(height: 24),
           _buildActionButtons(context, theme, isMobile),
@@ -443,6 +474,7 @@ class _FeaturePageState extends State<FeaturePage> {
               ),
               FloatingActionButton(
                 mini: true,
+                tooltip: 'Add text from clipboard or PDF',
                 onPressed: () => _showAddSourceDialog(context),
                 backgroundColor: Colors.white,
                 elevation: 2,
@@ -552,6 +584,51 @@ class _FeaturePageState extends State<FeaturePage> {
                 Navigator.pop(ctx);
                 _pickPdf(context);
               },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Small icon + label chip that colour-codes a feature header. The icon and
+/// text carry the meaning; the tint is a secondary (never the only) signal.
+class _FeatureBadge extends StatelessWidget {
+  final FeatureAccent accent;
+  final IconData icon;
+  final String label;
+
+  const _FeatureBadge({
+    required this.accent,
+    required this.icon,
+    required this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: label,
+      image: true,
+      excludeSemantics: true,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: accent.tint,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 16, color: accent.strong),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: accent.onTint,
+              ),
             ),
           ],
         ),

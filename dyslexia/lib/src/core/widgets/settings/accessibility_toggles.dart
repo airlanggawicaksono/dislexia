@@ -27,30 +27,41 @@ class AccessibilityToggles extends StatelessWidget {
 }
 
 Widget _toggleRow(String label, bool value, VoidCallback onToggle, Color accent) {
-  return Material(
-    color: Colors.transparent,
-    child: InkWell(
-      onTap: onToggle,
-      borderRadius: BorderRadius.circular(6),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        child: Row(
-          children: [
-            Text(label, style: TextStyle(fontSize: 11, color: Colors.black87.withValues(alpha: 0.7))),
-            const Spacer(),
-            Container(
-              width: 32, height: 18,
-              decoration: BoxDecoration(
-                color: value ? accent : Colors.black87.withValues(alpha: 0.25),
-                borderRadius: BorderRadius.circular(9),
+  // The outer Semantics must NOT exclude the child subtree: doing so would
+  // drop the InkWell's tap action from the semantics tree and screen readers
+  // could never activate the switch. Exclude only the visual content below
+  // the InkWell so the label + button + tap action all survive and merge.
+  return Semantics(
+    label: label,
+    toggled: value,
+    button: true,
+    child: Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onToggle,
+        borderRadius: BorderRadius.circular(6),
+        child: ExcludeSemantics(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            child: Row(
+            children: [
+              Text(label, style: TextStyle(fontSize: 11, color: Colors.black87.withValues(alpha: 0.7))),
+              const Spacer(),
+              Container(
+                width: 32, height: 18,
+                decoration: BoxDecoration(
+                  color: value ? accent : Colors.black87.withValues(alpha: 0.25),
+                  borderRadius: BorderRadius.circular(9),
+                ),
+                child: AnimatedAlign(
+                  duration: const Duration(milliseconds: 200),
+                  alignment: value ? Alignment.centerRight : Alignment.centerLeft,
+                  child: Container(margin: const EdgeInsets.all(2), width: 14, height: 14, decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle)),
+                ),
               ),
-              child: AnimatedAlign(
-                duration: const Duration(milliseconds: 200),
-                alignment: value ? Alignment.centerRight : Alignment.centerLeft,
-                child: Container(margin: const EdgeInsets.all(2), width: 14, height: 14, decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle)),
-              ),
-            ),
-          ],
+            ],
+          ),
+          ),
         ),
       ),
     ),

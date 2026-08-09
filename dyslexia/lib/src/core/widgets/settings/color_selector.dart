@@ -29,21 +29,32 @@ class ColorSelector extends StatelessWidget {
             runSpacing: 8,
             children: entries.map((theme) {
               final isSelected = selected == theme;
-              return GestureDetector(
-                onTap: () => bloc.add(UpdateColorThemeEvent(theme)),
-                child: Container(
-                  width: 28, height: 28,
-                  decoration: BoxDecoration(
-                    color: bgColor(theme),
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(
-                      color: isSelected ? const Color(0xFF3D5A99) : Colors.black12,
-                      width: isSelected ? 2 : 1,
+              final label = colorLabel(theme);
+              // Outer Semantics keeps the label/state; the InkWell below keeps
+              // its tap action (excludeSemantics here would kill activation).
+              return Semantics(
+                label: 'Background color $label',
+                button: true,
+                selected: isSelected,
+                child: InkWell(
+                  onTap: () => bloc.add(UpdateColorThemeEvent(theme)),
+                  borderRadius: BorderRadius.circular(6),
+                  child: ExcludeSemantics(
+                    child: Container(
+                      width: 32, height: 32,
+                      decoration: BoxDecoration(
+                        color: bgColor(theme),
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(
+                          color: isSelected ? const Color(0xFF3D5A99) : Colors.black12,
+                          width: isSelected ? 2 : 1,
+                        ),
+                      ),
+                      child: isSelected
+                          ? const Center(child: Icon(Icons.check, size: 14, color: Color(0xFF3D5A99)))
+                          : null,
                     ),
                   ),
-                  child: isSelected
-                      ? const Center(child: Icon(Icons.check, size: 14, color: Color(0xFF3D5A99)))
-                      : null,
                 ),
               );
             }).toList(),
@@ -65,44 +76,52 @@ class ColorSelector extends StatelessWidget {
             final color = bgColor(theme);
             final label = colorLabel(theme);
             final isSelected = selected == theme;
-            return GestureDetector(
-              onTap: () => bloc.add(UpdateColorThemeEvent(theme)),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Expanded(
-                    child: Container(
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: color,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: isSelected ? const Color(0xFF3D5A99) : Colors.black12,
-                          width: isSelected ? 2.5 : 1,
+            return Semantics(
+              label: 'Background color $label',
+              button: true,
+              selected: isSelected,
+              child: InkWell(
+                onTap: () => bloc.add(UpdateColorThemeEvent(theme)),
+                borderRadius: BorderRadius.circular(10),
+                child: ExcludeSemantics(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: Container(
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: color,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: isSelected ? const Color(0xFF3D5A99) : Colors.black12,
+                              width: isSelected ? 2.5 : 1,
+                            ),
+                          ),
+                          child: isSelected
+                              ? Center(
+                                  child: Container(                                  width: 28, height: 28,
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF3D5A99).withValues(alpha: 0.15),
+                                      shape: BoxShape.circle,
+                                    ),                                  child: Icon(
+                                      _cupertinoCheck ? CupertinoIcons.checkmark : Icons.check_rounded,
+                                      size: 18, color: const Color(0xFF3D5A99),
+                                    ),
+                                  ),
+                                )
+                              : null,
                         ),
                       ),
-                      child: isSelected
-                          ? Center(
-                              child: Container(                                  width: 28, height: 28,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF3D5A99).withValues(alpha: 0.15),
-                                  shape: BoxShape.circle,
-                                ),                                  child: Icon(
-                                    _cupertinoCheck ? CupertinoIcons.checkmark : Icons.check_rounded,
-                                    size: 18, color: const Color(0xFF3D5A99),
-                                ),
-                              ),
-                            )
-                          : null,
-                    ),
+                      const SizedBox(height: 5),
+                      Text(label,
+                          style: const TextStyle(fontSize: 9, color: Colors.black54),
+                          textAlign: TextAlign.center,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis),
+                    ],
                   ),
-                  const SizedBox(height: 5),
-                  Text(label,
-                      style: const TextStyle(fontSize: 9, color: Colors.black54),
-                      textAlign: TextAlign.center,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis),
-                ],
+                ),
               ),
             );
           },

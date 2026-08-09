@@ -62,43 +62,54 @@ class FontSelector extends StatelessWidget {
             final selectedBg = const Color(0xFF3D5A99);
             final idleBg = const Color(0xFFEFEADF);
 
-            return GestureDetector(
-              onTap: () => bloc.add(UpdateFontEvent(font)),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: isSelected ? selectedBg : idleBg,
+            return Semantics(
+              label: 'Font $label',
+              button: true,
+              selected: isSelected,
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () => bloc.add(UpdateFontEvent(font)),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: isSelected ? selectedBg : Colors.black12,
-                    width: isSelected ? 2.5 : 1,
-                  ),
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      'Aa',
-                      style: applyDyslexiaFont(
-                        font: font,
-                        baseStyle: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                          color: isSelected ? Colors.white : Colors.black87,
+                  child: ExcludeSemantics(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: isSelected ? selectedBg : idleBg,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: isSelected ? selectedBg : Colors.black12,
+                          width: isSelected ? 2.5 : 1,
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      label,
-                      style: TextStyle(
-                        fontSize: 9,
-                        color: isSelected ? Colors.white70 : Colors.black54,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Aa',
+                            style: applyDyslexiaFont(
+                              font: font,
+                              baseStyle: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w600,
+                                color: isSelected ? Colors.white : Colors.black87,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            label,
+                            style: TextStyle(
+                              fontSize: 9,
+                              color: isSelected ? Colors.white70 : Colors.black54,
+                            ),
+                            textAlign: TextAlign.center,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
                       ),
-                      textAlign: TextAlign.center,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
                     ),
-                  ],
+                  ),
                 ),
               ),
             );

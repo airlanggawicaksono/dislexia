@@ -22,6 +22,7 @@ import '../../features/professionalize/presentation/bloc/professionalize_bloc.da
 import '../../features/professionalize/presentation/pages/professionalize_page.dart';
 import '../../features/screening/presentation/bloc/screening_bloc.dart';
 import '../../features/screening/presentation/pages/screening_page.dart';
+import '../themes/feature_accent.dart';
 import 'display_settings_panel.dart';
 import '../../features/sidebar/presentation/bloc/sidebar/sidebar_bloc.dart';
 import '../../features/sidebar/presentation/bloc/sidebar/sidebar_event.dart';
@@ -342,7 +343,6 @@ class _BottomNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final accent = const Color(0xFF3D5A99);
     final muted = theme.colorScheme.onSurface.withValues(alpha: 0.6);
     return Container(
       height: 56,
@@ -354,21 +354,61 @@ class _BottomNavBar extends StatelessWidget {
         children: [
           ...SidebarSection.values.map((section) {
             final selected = !showSettings && currentSection == section;
-            final fg = selected ? accent : muted;
+            // Each feature gets its own accent so tabs are distinguishable
+            // by colour in addition to icon + label (never colour alone).
+            final fg = selected ? featureAccent(section).strong : muted;
             return Expanded(
+              child: Semantics(
+                label: '${section.label} feature',
+                button: true,
+                selected: selected,
+                child: InkWell(
+                  onTap: () => onSectionSelected(section),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(section.materialIcon, size: 20, color: fg),
+                      const SizedBox(height: 2),
+                      Text(
+                        section.label,
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                          color: fg,
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }),
+          Expanded(
+            child: Semantics(
+              label: 'Settings',
+              button: true,
+              selected: showSettings,
+              toggled: showSettings,
               child: InkWell(
-                onTap: () => onSectionSelected(section),
+                onTap: onToggleSettings,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(section.materialIcon, size: 20, color: fg),
+                    Icon(
+                      showSettings ? Icons.tune : Icons.tune_outlined,
+                      size: 20,
+                      color: showSettings ? const Color(0xFF3D5A99) : muted,
+                    ),
                     const SizedBox(height: 2),
                     Text(
-                      section.label,
+                      'Settings',
                       style: TextStyle(
                         fontSize: 9,
-                        fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                        color: fg,
+                        fontWeight: showSettings ? FontWeight.w600 : FontWeight.w500,
+                        color: showSettings ? const Color(0xFF3D5A99) : muted,
                       ),
                       textAlign: TextAlign.center,
                       maxLines: 1,
@@ -376,33 +416,6 @@ class _BottomNavBar extends StatelessWidget {
                     ),
                   ],
                 ),
-              ),
-            );
-          }),
-          Expanded(
-            child: InkWell(
-              onTap: onToggleSettings,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    showSettings ? Icons.tune : Icons.tune_outlined,
-                    size: 20,
-                    color: showSettings ? accent : muted,
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    'Settings',
-                    style: TextStyle(
-                      fontSize: 9,
-                      fontWeight: showSettings ? FontWeight.w600 : FontWeight.w500,
-                      color: showSettings ? accent : muted,
-                    ),
-                    textAlign: TextAlign.center,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
               ),
             ),
           ),

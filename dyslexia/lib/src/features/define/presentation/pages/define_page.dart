@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/widgets/feature_page.dart';
+import '../../../sidebar/domain/entities/sidebar_section.dart';
 import '../../domain/entities/define_level.dart';
 import '../bloc/define_bloc.dart';
 import '../bloc/define_event.dart';
@@ -50,6 +51,7 @@ class _DefinePageState extends State<DefinePage> {
             title: 'Define',
             resultTitle: 'Definition',
             heroTag: 'define',
+            feature: SidebarSection.define,
             levelLabels: _levelPct,
             initialLevel: _levels.indexOf(_level),
             onLevelChanged: (index) {

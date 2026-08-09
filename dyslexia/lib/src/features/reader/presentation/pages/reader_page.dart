@@ -157,6 +157,7 @@ class _ReaderPageState extends State<ReaderPage> {
                 ? FloatingActionButton.small(
                     heroTag: 'reader',
                     backgroundColor: const Color(0xFF3D5A99),
+                    tooltip: 'Add text from clipboard or PDF',
                     onPressed: () => _showQuickActions(context),
                     child: const Icon(Icons.add_rounded, color: Colors.white),
                   )
@@ -192,15 +193,38 @@ class _ReaderPageState extends State<ReaderPage> {
                       ),
                     ),
                     const Spacer(),
+                    // Explicit copy control: standard Ctrl/Cmd+C isn't
+                    // reliable on the canvas, so expose a visible button.
+                    IconButton(
+                      icon: Icon(Icons.copy_rounded,
+                          color: theme.colorScheme.onSurface),
+                      tooltip: 'Copy text',
+                      onPressed: () {
+                        Clipboard.setData(
+                            ClipboardData(text: widget.text));
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Text copied to clipboard'),
+                              duration: Duration(seconds: 2),
+                            ),
+                          );
+                        }
+                      },
+                    ),
                   ],
                 ),
               ),
             ),
-            body: ReaderTextDisplay(
-              text: widget.text,
-              settings: s,
-              fgColor: fg,
-              bgColor: bg,
+            body: Semantics(
+              container: true,
+              label: 'Reader output',
+              child: ReaderTextDisplay(
+                text: widget.text,
+                settings: s,
+                fgColor: fg,
+                bgColor: bg,
+              ),
             ),
           );
         },

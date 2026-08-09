@@ -69,12 +69,17 @@ class _ReaderTextDisplayState extends State<ReaderTextDisplay> {
                   onHover: s.rulerEnabled
                       ? (e) => setState(() => _rulerY = e.localPosition.dy)
                       : null,
-                  child: widget.scrollable
-                      ? SingleChildScrollView(
-                          padding: const EdgeInsets.symmetric(vertical: 28),
-                          child: _content(contentWidth, paragraphs, fg, s),
-                        )
-                      : _content(contentWidth, paragraphs, fg, s),
+                  child: Semantics(
+                    // Group the rendered text so screen readers can traverse
+                    // it as one scrollable region of readable text.
+                    container: true,
+                    child: widget.scrollable
+                        ? SingleChildScrollView(
+                            padding: const EdgeInsets.symmetric(vertical: 28),
+                            child: _content(contentWidth, paragraphs, fg, s),
+                          )
+                        : _content(contentWidth, paragraphs, fg, s),
+                  ),
                 ),
                 // Desktop: follow the cursor (hover). Touch: show it
                 // persistently so it can be dragged — there is no hover.

@@ -384,6 +384,7 @@ class _ScreeningPageState extends State<ScreeningPage> {
           if (!isDesktop) ...[
             IconButton(
               icon: const Icon(Icons.arrow_back, color: Colors.black),
+              tooltip: 'Back',
               onPressed: () => Navigator.of(context).pop(),
               style: IconButton.styleFrom(
                 backgroundColor: Colors.white,
@@ -411,6 +412,7 @@ class _ScreeningPageState extends State<ScreeningPage> {
           // Tombol Refresh (tetap ada di kedua versi, tapi dengan elevation di desktop agar terlihat di background putih)
           IconButton(
             icon: const Icon(Icons.refresh_rounded, color: Colors.black),
+            tooltip: 'Refresh',
             onPressed: _reset,
             style: IconButton.styleFrom(
               backgroundColor: Colors.white,
@@ -685,17 +687,23 @@ class _UserBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Align(
-      alignment: Alignment.centerRight,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
-        decoration: BoxDecoration(
-          color: _purplePrimary, 
-          borderRadius: BorderRadius.circular(18).copyWith(bottomRight: Radius.zero),
+    // Role-only label: the message text itself is read from the child
+    // widgets, so embedding it here too would announce it twice.
+    return Semantics(
+      label: 'Your message',
+      container: true,
+      child: Align(
+        alignment: Alignment.centerRight,
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
+          decoration: BoxDecoration(
+            color: _purplePrimary, 
+            borderRadius: BorderRadius.circular(18).copyWith(bottomRight: Radius.zero),
+          ),
+          child: Text(text, style: dyslexiaTextStyle(settings, Colors.white)),
         ),
-        child: Text(text, style: dyslexiaTextStyle(settings, Colors.white)),
       ),
     );
   }
@@ -712,39 +720,46 @@ class _AssistantCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(18).copyWith(bottomLeft: Radius.zero),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              if (isSummary) ...[
-                Icon(Icons.check_circle, size: 18, color: Colors.green.shade400),
-                const SizedBox(width: 6),
-                Text('Screening Complete', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.green.shade400)),
-              ],
-              const Spacer(),
-              InkWell(
-                onTap: () {
-                  Clipboard.setData(ClipboardData(text: text));
-                  showAdaptiveFeedback(context, 'Copied to clipboard');
-                },
-                borderRadius: BorderRadius.circular(6),
-                child: Padding(
+    // Role-only label: the message text is read from the child widgets,
+    // so embedding it here too would announce it twice.
+    return Semantics(
+      label: isSummary ? 'Assistant, screening complete' : 'Assistant message',
+      container: true,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(18).copyWith(bottomLeft: Radius.zero),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                if (isSummary) ...[
+                  Icon(Icons.check_circle, size: 18, color: Colors.green.shade400),
+                  const SizedBox(width: 6),
+                  Text('Screening Complete', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.green.shade400)),
+                ],
+                const Spacer(),
+                IconButton(
+                  tooltip: 'Copy message',
+                  visualDensity: VisualDensity.compact,
+                  iconSize: 16,
                   padding: const EdgeInsets.all(4),
-                  child: Icon(Icons.copy_rounded, size: 16, color: fg.withValues(alpha: 0.6)),
+                  constraints: const BoxConstraints(),
+                  icon: Icon(Icons.copy_rounded, color: fg.withValues(alpha: 0.6)),
+                  onPressed: () {
+                    Clipboard.setData(ClipboardData(text: text));
+                    showAdaptiveFeedback(context, 'Copied to clipboard');
+                  },
                 ),
-              ),
-            ],
-          ),
-          ReaderTextDisplay(text: text, settings: settings, fgColor: fg, bgColor: bg, scrollable: false),
-        ],
+              ],
+            ),
+            ReaderTextDisplay(text: text, settings: settings, fgColor: fg, bgColor: bg, scrollable: false),
+          ],
+        ),
       ),
     );
   }
@@ -804,6 +819,7 @@ class _InputBar extends StatelessWidget {
                 Icons.send_rounded,
                 color: enabled ? _purplePrimary : fg.withValues(alpha: 0.3), 
               ),
+              tooltip: 'Send message',
               onPressed: enabled ? onSend : null,
             ),
           ],

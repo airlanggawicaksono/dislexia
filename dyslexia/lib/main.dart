@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show SemanticsBinding;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
@@ -32,6 +33,14 @@ import 'src/core/utils/font_utils.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // The web app renders via Flutter's canvas (CanvasKit). Force the
+  // semantics tree to be built up-front so screen readers and assistive
+  // tech can interact with the app instead of hitting an inert canvas.
+  if (kIsWeb) {
+    SemanticsBinding.instance.ensureSemantics();
+  }
+
   await EasyLocalization.ensureInitialized();
 
   GoogleFonts.config.allowRuntimeFetching = true;
