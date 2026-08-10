@@ -5,7 +5,6 @@ import React, { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import ComponentCard from "@/components/common/ComponentCard";
 import PageBreadCrumb from "@/components/common/PageBreadCrumb";
-import LineChartOne from "@/components/charts/line/LineChartOne";
 
 // Type definitions
 interface User {
@@ -37,7 +36,7 @@ interface DashboardStats {
 interface UserActivity {
   user: string;
   action: string;
-  time: string;
+  dateTime: string;
   feature: string;
 }
 
@@ -46,6 +45,16 @@ interface FeatureUsage {
   usageCount: number;
   trend: "up" | "down";
   trendPercent: number;
+}
+
+interface DailyUsage {
+  date: string;
+  dateSort: string; // ISO date for sorting
+  summarize: number;
+  professionalize: number;
+  define: number;
+  screen: number;
+  total: number;
 }
 
 export default function DyslexiaDashboard() {
@@ -63,6 +72,7 @@ export default function DyslexiaDashboard() {
   const [recentActivity, setRecentActivity] = useState<UserActivity[]>([]);
   const [featureUsage, setFeatureUsage] = useState<FeatureUsage[]>([]);
   const [users, setUsers] = useState<User[]>([]);
+  const [dailyUsage, setDailyUsage] = useState<DailyUsage[]>([]);
 
   const fetchDashboardData = useCallback(async () => {
     try {
@@ -113,9 +123,12 @@ export default function DyslexiaDashboard() {
         return lastLogin >= today;
       }).length;
 
-      const screeningsCompleted = historyList.filter(
-        (item) => item.feature === "screen"
-      ).length;
+      // ✅ Count unique sessions for screening, not individual responses
+      const screeningSessions = new Set(
+        historyList
+          .filter((item) => item.feature === "screen")
+          .map((item) => item.session_id)
+      ).size;
 
       const textsProcessed = historyList.filter(
         (item) =>
@@ -125,19 +138,23 @@ export default function DyslexiaDashboard() {
       setStats({
         totalUsers: usersData.total || usersList.length,
         activeToday,
-        screeningsCompleted,
+        screeningsCompleted: screeningSessions,
         textsProcessed,
       });
 
+      // ✅ Recent activity with FULL date (month, day, year) AND time
       const activity: UserActivity[] = historyList
         .slice(0, 10)
         .map((item) => {
           const user = usersList.find((u) => u.user_id === item.user_id);
-          const time = new Date(item.created_at);
+          const dateTime = new Date(item.created_at);
           return {
             user: user?.display_name || "Unknown User",
             action: formatFeatureName(item.feature),
-            time: time.toLocaleTimeString("en-US", {
+            dateTime: dateTime.toLocaleString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
               hour: "2-digit",
               minute: "2-digit",
             }),
@@ -170,6 +187,42 @@ export default function DyslexiaDashboard() {
       
       features.sort((a, b) => b.usageCount - a.usageCount);
       setFeatureUsage(features);
+
+      // ✅ Aggregate daily usage with FULL date (including year)
+      const usageByDate: Record<string, DailyUsage> = {};
+      
+      historyList.forEach((item) => {
+        const dateObj = new Date(item.created_at);
+        // Use ISO date (YYYY-MM-DD) as key for proper sorting
+        const dateKey = dateObj.toISOString().split('T')[0];
+        // Display format with year
+        const dateDisplay = dateObj.toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        });
+        
+        if (!usageByDate[dateKey]) {
+          usageByDate[dateKey] = {
+            date: dateDisplay,
+            dateSort: dateKey,
+            summarize: 0,
+            professionalize: 0,
+            define: 0,
+            screen: 0,
+            total: 0,
+          };
+        }
+        
+        usageByDate[dateKey][item.feature]++;
+        usageByDate[dateKey].total++;
+      });
+
+      const dailyUsageArray = Object.values(usageByDate)
+        .sort((a, b) => a.dateSort.localeCompare(b.dateSort))
+        .slice(-7); // Last 7 days
+      
+      setDailyUsage(dailyUsageArray);
     } catch (err: any) {
       console.error("Error fetching dashboard data:", err);
       setError(err.message || "Failed to load dashboard data");
@@ -194,7 +247,6 @@ export default function DyslexiaDashboard() {
     return names[feature] || feature;
   };
 
-  // ✅ FIXED: Return type string, dengan default value
   const getFeatureIcon = (feature: string): string => {
     const icons: Record<string, string> = {
       "Summarize": "📝",
@@ -279,14 +331,14 @@ export default function DyslexiaDashboard() {
           <p className="text-xs text-gray-500 mt-1">Users logged in today</p>
         </ComponentCard>
 
-        <ComponentCard title="Screenings Completed" className="text-center">
+        <ComponentCard title="Screening Sessions" className="text-center">
           <div className="flex items-center justify-center mb-2">
             <svg className="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
             </svg>
           </div>
           <p className="text-3xl font-bold text-orange-600">{stats.screeningsCompleted.toLocaleString()}</p>
-          <p className="text-xs text-gray-500 mt-1">Total screening sessions</p>
+          <p className="text-xs text-gray-500 mt-1">Unique screening sessions</p>
         </ComponentCard>
 
         <ComponentCard title="Texts Processed" className="text-center">
@@ -300,9 +352,43 @@ export default function DyslexiaDashboard() {
         </ComponentCard>
       </div>
 
-      <ComponentCard title="Usage Over Time" className="mb-6">
-        <div className="h-[350px]">
-          {mounted && <LineChartOne />}
+      {/* ✅ Usage chart with FULL date (including year) */}
+      <ComponentCard title="Usage Over Time (Last 7 Days)" className="mb-6">
+        <div className="h-[350px] overflow-x-auto">
+          {dailyUsage.length === 0 ? (
+            <div className="h-full flex items-center justify-center text-gray-500">
+              <p>No usage data available</p>
+            </div>
+          ) : (
+            <div className="h-full flex items-end justify-between gap-2 px-4 pb-16 pt-8">
+              {dailyUsage.map((day, index) => {
+                const maxTotal = Math.max(...dailyUsage.map(d => d.total));
+                const heightPercent = maxTotal > 0 ? (day.total / maxTotal) * 100 : 0;
+                
+                return (
+                  <div key={index} className="flex-1 flex flex-col items-center gap-2 min-w-[90px]">
+                    <div className="text-xs font-bold text-gray-700 mb-1">{day.total}</div>
+                    <div 
+                      className="w-full bg-gradient-to-t from-blue-500 to-blue-400 rounded-t-lg transition-all hover:from-blue-600 hover:to-blue-500 relative group cursor-pointer"
+                      style={{ height: `${Math.max(heightPercent, 5)}%`, minHeight: '20px' }}
+                    >
+                      <div className="absolute -top-24 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-xs rounded py-2 px-3 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10 shadow-lg">
+                        <div className="font-bold mb-1 border-b border-gray-700 pb-1">{day.date}</div>
+                        <div className="text-left">📝 Summarize: {day.summarize}</div>
+                        <div className="text-left">💼 Professionalize: {day.professionalize}</div>
+                        <div className="text-left">📖 Define: {day.define}</div>
+                        <div className="text-left">🔍 Screening: {day.screen}</div>
+                        <div className="text-left font-semibold mt-1 border-t border-gray-700 pt-1">Total: {day.total}</div>
+                      </div>
+                    </div>
+                    <div className="text-xs text-gray-600 font-medium text-center leading-tight">
+                      {day.date}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </ComponentCard>
 
@@ -322,7 +408,7 @@ export default function DyslexiaDashboard() {
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date & Time</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -337,7 +423,7 @@ export default function DyslexiaDashboard() {
                           <span className="text-sm text-gray-700">{activity.action}</span>
                         </div>
                       </td>
-                      <td className="px-6 py-3 text-sm text-gray-500">{activity.time}</td>
+                      <td className="px-6 py-3 text-sm text-gray-500 whitespace-nowrap">{activity.dateTime}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -417,11 +503,19 @@ export default function DyslexiaDashboard() {
                       </code>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500">
-                      {new Date(user.created_at).toLocaleDateString()}
+                      {new Date(user.created_at).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500">
                       {user.last_login 
-                        ? new Date(user.last_login).toLocaleDateString() 
+                        ? new Date(user.last_login).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })
                         : "Never"}
                     </td>
                     <td className="px-6 py-4">
