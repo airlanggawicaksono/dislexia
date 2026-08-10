@@ -105,7 +105,7 @@ class _ReadingRulerState extends State<ReadingRuler> {
                 Center(
                   child: ExcludeSemantics(
                     child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
+                      behavior: HitTestBehavior.translucent,
                       onVerticalDragStart: (d) => widget.onPositionChanged(
                           widget.rulerY + d.localPosition.dy - widget.height / 2),
                       onVerticalDragUpdate: (d) =>
