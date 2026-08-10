@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
 from typing import Optional, List
 from uuid import UUID
-
+from app.dto.feature.process.enums import OutputLanguage
 
 class HistoryItemDTO(BaseModel):
     """Single history item for feature usage"""
@@ -38,6 +38,13 @@ class FeatureRequestDTO(BaseModel):
 
     text: str = Field(..., description="Input text to process")
     session_id: Optional[UUID] = Field(None, description="Existing session to continue. Omit to start new session.")
+    output_language: OutputLanguage = Field(
+        OutputLanguage.EN,
+        description=(
+            "Language the output is written in ('English' or 'Indonesian'). "
+            "Defaults to English for backward compatibility."
+        ),
+    )
 
 
 class FeatureResponseDTO(BaseModel):

@@ -1,14 +1,19 @@
 from typing import Optional, Self
 from uuid import UUID
 
-from pydantic import BaseModel, Field, ConfigDict, model_validator
+from pydantic import Field, ConfigDict, model_validator
 
 from app.policies import MIN_INPUT_CHARS, MAX_INPUT_CHARS
 from app.dto.feature.process.enums import SummaryLevel, DefineLevel
+from app.dto.feature.process.base import FeatureRequestDTO as BaseFeatureRequestDTO  # sesuaikan path
 
 
-class FeatureRequestDTO(BaseModel):
-    """Shared request for /process endpoints (summarize, professionalize, define)."""
+class FeatureRequestDTO(BaseFeatureRequestDTO):
+    """Shared request for /process endpoints (summarize, professionalize, define).
+
+    Inherits `text`, `session_id`, and `output_language` from the base DTO;
+    tightens `text` with min/max character policies.
+    """
 
     model_config = ConfigDict(populate_by_name=True, str_strip_whitespace=True)
 
@@ -18,7 +23,6 @@ class FeatureRequestDTO(BaseModel):
         max_length=MAX_INPUT_CHARS,
         description="Input text to process",
     )
-    session_id: Optional[UUID] = Field(None, description="Existing session to continue. Omit to start new session.")
 
 
 class SummarizeRequestDTO(FeatureRequestDTO):
@@ -42,6 +46,7 @@ class SummarizeRequestDTO(FeatureRequestDTO):
                     "text": "Long article body...",
                     "level": "10pct",
                     "session_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                    "output_language": "Indonesian",
                 },
             ]
         },
@@ -61,8 +66,8 @@ class DefineRequestDTO(FeatureRequestDTO):
     """Request for /define/process.
 
     Adds `level` — how many explanation layers to include. Content is layered
-    (core → example → usage → related words → nuance), so lower levels drop
-    the deepest layers first. Not a length dial; a depth dial.
+    (core → example → usage → related words → word origin), so lower levels
+    drop the deepest layers first. Not a length dial; a depth dial.
     """
 
     level: DefineLevel = Field(
@@ -70,7 +75,7 @@ class DefineRequestDTO(FeatureRequestDTO):
         description=(
             "Definition depth (cumulative explanation layers): "
             "10pct (core meaning only), 30pct (+example), 50pct (+usage, default), "
-            "70pct (+related words), 90pct (+nuance/etymology)."
+            "70pct (+related words), 90pct (+word origin & common confusions)."
         ),
     )
 

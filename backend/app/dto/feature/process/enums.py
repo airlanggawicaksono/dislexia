@@ -28,3 +28,9 @@ class DefineLevel(str, Enum):
     PCT_50 = "50pct"  # + usage/context (default)
     PCT_70 = "70pct"  # + related words / distinctions
     PCT_90 = "90pct"  # + nuance / etymology
+
+class OutputLanguage(str, Enum):
+    """Supported output languages for all feature responses."""
+
+    EN = "English"
+    ID = "Indonesian"
