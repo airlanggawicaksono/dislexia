@@ -103,25 +103,29 @@ class _ReadingRulerState extends State<ReadingRuler> {
                   ),
                 ),
                 Center(
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onVerticalDragStart: (d) => widget.onPositionChanged(
-                        widget.rulerY + d.localPosition.dy - widget.height / 2),
-                    onVerticalDragUpdate: (d) =>
-                        widget.onPositionChanged(widget.rulerY + d.delta.dy),
-                    child: SizedBox(
-                      height: widget.height,
-                      width: 120,
-                      // Visible grip so the ruler is discoverable + draggable on
-                      // touch (no hover to reveal it).
-                      child: Center(
-                        child: Container(
-                          width: 48,
-                          height: 5,
-                          decoration: BoxDecoration(
-                            color: borderColor.withValues(
-                                alpha: focused ? 1.0 : 0.7),
-                            borderRadius: BorderRadius.circular(3),
+                  child: ExcludeSemantics(
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onVerticalDragStart: (d) => widget.onPositionChanged(
+                          widget.rulerY + d.localPosition.dy - widget.height / 2),
+                      onVerticalDragUpdate: (d) =>
+                          widget.onPositionChanged(widget.rulerY + d.delta.dy),
+                      child: SizedBox(
+                        height: widget.height,
+                        width: 48,
+                        // Visible grip so the ruler is discoverable + draggable on
+                        // touch (no hover to reveal it). Narrow hit area (48px =
+                        // the grip itself) so it doesn't block hover/selection
+                        // on the words underneath.
+                        child: Center(
+                          child: Container(
+                            width: 48,
+                            height: 5,
+                            decoration: BoxDecoration(
+                              color: borderColor.withValues(
+                                  alpha: focused ? 1.0 : 0.7),
+                              borderRadius: BorderRadius.circular(3),
+                            ),
                           ),
                         ),
                       ),
