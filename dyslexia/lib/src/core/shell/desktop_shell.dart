@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 
 import '../../configs/injector/injector_conf.dart';
 import '../blocs/theme/theme_bloc.dart';
-import '../themes/app_theme.dart';
 import '../../core/api/api_helper.dart';
 import '../../features/display_settings/presentation/bloc/display_settings/display_settings_bloc.dart';
 import '../../features/reader/presentation/bloc/reader/reader_bloc.dart';
@@ -83,32 +82,36 @@ class _DesktopShellState extends State<DesktopShell> {
                 // ==========================================
                 // BACKGROUND 2 LAPIS UNGU (SAMPAI TENGAH)
                 // ==========================================
-                Positioned(
-                  top: 0, left: 0, right: 0,
-                  child: Container(
-                    height: screenHeight * 0.55,
-                    decoration: const BoxDecoration(
-                      color: _headerBottomLayer,
-                      borderRadius: BorderRadius.only(
-                        bottomLeft: Radius.circular(48),
-                        bottomRight: Radius.circular(48),
+                ExcludeSemantics(
+                  child: Positioned(
+                    top: 0, left: 0, right: 0,
+                    child: Container(
+                      height: screenHeight * 0.55,
+                      decoration: const BoxDecoration(
+                        color: _headerBottomLayer,
+                        borderRadius: BorderRadius.only(
+                          bottomLeft: Radius.circular(48),
+                          bottomRight: Radius.circular(48),
+                        ),
                       ),
                     ),
                   ),
                 ),
-                Positioned(
-                  top: 0, left: 0, right: 0,
-                  child: Container(
-                    height: screenHeight * 0.50,
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [_headerColorStart, _headerColorEnd],
-                      ),
-                      borderRadius: BorderRadius.only(
-                        bottomLeft: Radius.circular(32),
-                        bottomRight: Radius.circular(32),
+                ExcludeSemantics(
+                  child: Positioned(
+                    top: 0, left: 0, right: 0,
+                    child: Container(
+                      height: screenHeight * 0.50,
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [_headerColorStart, _headerColorEnd],
+                        ),
+                        borderRadius: BorderRadius.only(
+                          bottomLeft: Radius.circular(32),
+                          bottomRight: Radius.circular(32),
+                        ),
                       ),
                     ),
                   ),
