@@ -33,8 +33,12 @@ dependencies:
   # Networking (kept for future use)
   dio: ^5.7.0
   # SSE streaming: Dio's web adapter buffers the whole body (XHR
-  # arraybuffer), so live chunks use package:http (fetch) instead.
+  # arraybuffer), and package:http's web default (BrowserClient) is also
+  # XHR-based and buffers. So live chunks use fetch_client on web (the
+  # browser fetch API ReadableStream delivers incrementally) and
+  # package:http's dart:io client on native.
   http: ^1.6.0
+  fetch_client: ^1.2.1
 
   # Localization
   easy_localization: ^3.0.7

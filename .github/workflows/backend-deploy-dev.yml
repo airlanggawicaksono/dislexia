@@ -36,6 +36,7 @@ jobs:
           SWAGGER_USERNAME: ${{ secrets.SWAGGER_USERNAME }}
           SWAGGER_PASSWORD: ${{ secrets.SWAGGER_PASSWORD }}
           TOGETHER_API_KEY: ${{ secrets.TOGETHER_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           {
             echo "POSTGRES_IMAGE=postgres:16-alpine"
@@ -58,7 +59,7 @@ jobs:
             echo "TOGETHER_MODEL=deepseek-ai/DeepSeek-V4-Pro"
             echo "OPENAI_MODEL=gpt-4o-mini"
             echo "ANTHROPIC_MODEL=claude-haiku-4-5-20251001"
-            echo "OPENAI_API_KEY="
+            echo "OPENAI_API_KEY=$OPENAI_API_KEY"
             echo "ANTHROPIC_API_KEY="
             echo "CORS_ALLOW_ORIGINS=https://reader.dyslexic.app,https://admin.dyslexic.app,https://app.dyslexic.app,http://localhost:8083,http://localhost:8084"
             echo "CORS_ALLOW_CREDENTIALS=true"
@@ -80,6 +81,7 @@ jobs:
             printf "SWAGGER_USERNAME=%s\n"    "$(esc "$SWAGGER_USERNAME")"
             printf "SWAGGER_PASSWORD=%s\n"    "$(esc "$SWAGGER_PASSWORD")"
             printf "TOGETHER_API_KEY=%s\n"    "$(esc "$TOGETHER_API_KEY")"
+            printf "OPENAI_API_KEY=%s\n"     "$(esc "$OPENAI_API_KEY")"
           } > /tmp/dev.env
 
       - name: Save artifacts

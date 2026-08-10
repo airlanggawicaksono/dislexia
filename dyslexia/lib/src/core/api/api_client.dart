@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:fetch_client/fetch_client.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 
 import '../../features/auth/presentation/bloc/token_holder.dart';
@@ -160,11 +162,14 @@ class ApiClient {
   /// Each event's content is emitted in order — callers append to build
   /// the full result live.
   ///
-  /// Uses `package:http` (fetch under the hood) instead of Dio because
-  /// Dio's web adapter buffers the whole response (XHR `arraybuffer`)
-  /// and would only deliver everything once the server closes the
-  /// stream. `package:http` reads the response body progressively on
-  /// web and native.
+  /// Uses a fetch-based client on web instead of Dio or XHR because both
+  /// buffer the whole response body: Dio's web adapter (XHR
+  /// `arraybuffer`) and `package:http`'s web default `BrowserClient`
+  /// (XMLHttpRequest) only deliver everything once the server closes the
+  /// stream, so the UI would show one big jump at the end instead of
+  /// live chunks. The browser fetch API exposes a `ReadableStream`, so
+  /// [FetchClient] emits each SSE event as it arrives; native keeps
+  /// `package:http`'s dart:io client, which streams fine.
   ///
   /// Throws the same [ApiException]s as [post] for non-2xx statuses;
   /// mid-stream failures surface as a stream error.
@@ -191,7 +196,10 @@ class ApiClient {
     }
     if (body != null) request.body = jsonEncode(body);
 
-    final client = http.Client();
+    // On web, package:http's default BrowserClient is XMLHttpRequest-based
+    // and buffers the entire body until the stream closes; the browser
+    // fetch API (via FetchClient) delivers chunks incrementally.
+    final client = kIsWeb ? FetchClient() : http.Client();
     http.StreamedResponse response;
     // Header-receipt bound mirrors the Dio client's 20s connect timeout so
     // a dead/slow server errors out instead of leaving the UI loading
