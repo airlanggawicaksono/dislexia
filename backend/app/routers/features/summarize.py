@@ -43,10 +43,6 @@ _LEVEL_LAYERS: dict[SummaryLevel, str] = {
 # Floors/ceilings to keep tiny inputs usable and giant inputs sane.
 _MIN_TARGET_CHARS = 240  # floor so short inputs still get a usable summary
 _CHARS_PER_TOKEN = 4  # rough english heuristic
-# Token budget is HEADROOM, not the length dial. It must be generous so the
-# model finishes cleanly on a full sentence — length is steered by the prompt
-# target, never by truncating the output mid-thought (that was the "too short"
-# bug). ~3x the target's token estimate, with a comfortable floor.
 _MAX_TOKENS_HEADROOM = 3.0
 _MIN_MAX_TOKENS = 512
 _MAX_TOKENS_HARD_CAP = 4096
@@ -83,6 +79,9 @@ def _build_prompt_and_config(
         "2. DEPENDENCIES — the facts, claims, or context the CORE idea rests on.\n"
         "3. DETAILS — supporting examples, numbers, and nuance.\n\n"
         f"For THIS summary include {layers}.\n\n"
+        "CRITICAL INSTRUCTIONS:\n"
+        "- This is a completely new request. IGNORE any previous summaries or outputs in the conversation history.\n"
+        "- Do NOT repeat the old output. Generate a fresh summary based STRICTLY on the original text and the NEW target parameters below.\n\n"
         f"Length (aim for the target — do not stop far short of it):\n"
         f"- Original text is {src_chars} characters (whitespace-normalized).\n"
         f"- Write approximately {target_chars} characters (roughly {max(1, target_chars // 90)} short sentences).\n"
@@ -97,37 +96,8 @@ def _build_prompt_and_config(
     return prompt, LLMGenerationConfigDTO(max_tokens=max_tokens), metadata
 
 
-@router.post(
-    "/process",
-    response_model=FeatureResponseDTO,
-    status_code=status.HTTP_200_OK,
-    summary="Summarize text",
-    responses=LLM_RESPONSES,
-)
-async def process(
-    request: SummarizeRequestDTO,
-    db: AsyncSession = Depends(get_db),
-    user: UserResponseDTO = Depends(get_current_user),
-):
-    """
-    Summarize the provided text into accessible prose.
-
-    Use `level` to control how much of the source is preserved (by character percentage):
-    - `10pct` — core idea only
-    - `30pct` — core + supporting facts
-    - `50pct` — core + facts + key details (default)
-    - `70pct` — most detail retained
-    - `90pct` — near-verbatim in tightened prose
-
-    Content is always ordered by importance so shorter tiers remain coherent.
-
-    Pass `session_id` to continue a prior conversation; omit to start fresh.
-    """
-    prompt, config, metadata = _build_prompt_and_config(request.level, request.text)
-    return await FeatureService.process(
-        FeatureType.SUMMARIZE, prompt, request.text, user.user_id, db, request.session_id, config, metadata
-    )
-
+# Endpoint /process (non-streaming) telah dihapus sesuai permintaan.
+# Frontend sekarang wajib memanggil /process-stream.
 
 @router.post(
     "/process-stream",
@@ -140,10 +110,9 @@ async def process_stream(
     user: UserResponseDTO = Depends(get_current_user),
 ):
     """
-    Streaming variant of `/process`. Returns Server-Sent Events.
-
-    Each event payload is a JSON-encoded `LLMChunkDTO`. The full response is
-    persisted to history after the stream completes.
+    Streaming endpoint for summarization. Returns Server-Sent Events.
+    Use this for all summarization requests to ensure real-time UI updates 
+    and avoid context/caching bugs from the synchronous variant.
     """
     prompt, config, metadata = _build_prompt_and_config(request.level, request.text)
 
