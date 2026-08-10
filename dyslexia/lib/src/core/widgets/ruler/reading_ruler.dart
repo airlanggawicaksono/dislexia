@@ -78,61 +78,60 @@ class _ReadingRulerState extends State<ReadingRuler> {
           focusNode: _focusNode,
           onKeyEvent: (node, event) =>
               _handleKey(event) ? KeyEventResult.handled : KeyEventResult.ignored,
-          child: SizedBox(
-            height: widget.height,
-            child: Stack(
-              children: [
-                IgnorePointer(
-                  child: Container(
-                    width: double.infinity,
-                    height: widget.height,
-                    decoration: BoxDecoration(
-                      // Match React web: yellow/amber ruler color
-                      color: const Color(0xFFFDD200).withValues(alpha: 0.13),
-                      border: Border(
-                        top: BorderSide(
-                            color: borderColor.withValues(
-                                alpha: focused ? 1.0 : 0.25),
-                            width: focused ? 2 : 1),
-                        bottom: BorderSide(
-                            color: borderColor.withValues(
-                                alpha: focused ? 1.0 : 0.25),
-                            width: focused ? 2 : 1),
+          child: GestureDetector(
+            // Full-width drag surface. Translucent so hover keeps reaching
+            // the words underneath: the word highlight must not blink when
+            // the cursor crosses the ruler. The band and grip visuals below
+            // are IgnorePointer'd, so nothing about the ruler swallows hover.
+            behavior: HitTestBehavior.translucent,
+            onVerticalDragStart: (d) => widget.onPositionChanged(
+                widget.rulerY + d.localPosition.dy - widget.height / 2),
+            onVerticalDragUpdate: (d) =>
+                widget.onPositionChanged(widget.rulerY + d.delta.dy),
+            child: SizedBox(
+              height: widget.height,
+              child: Stack(
+                children: [
+                  IgnorePointer(
+                    child: Container(
+                      width: double.infinity,
+                      height: widget.height,
+                      decoration: BoxDecoration(
+                        // Match React web: yellow/amber ruler color
+                        color: const Color(0xFFFDD200).withValues(alpha: 0.13),
+                        border: Border(
+                          top: BorderSide(
+                              color: borderColor.withValues(
+                                  alpha: focused ? 1.0 : 0.25),
+                              width: focused ? 2 : 1),
+                          bottom: BorderSide(
+                              color: borderColor.withValues(
+                                  alpha: focused ? 1.0 : 0.25),
+                              width: focused ? 2 : 1),
+                        ),
                       ),
                     ),
                   ),
-                ),
-                Center(
-                  child: ExcludeSemantics(
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.translucent,
-                      onVerticalDragStart: (d) => widget.onPositionChanged(
-                          widget.rulerY + d.localPosition.dy - widget.height / 2),
-                      onVerticalDragUpdate: (d) =>
-                          widget.onPositionChanged(widget.rulerY + d.delta.dy),
-                      child: SizedBox(
-                        height: widget.height,
-                        width: 48,
-                        // Visible grip so the ruler is discoverable + draggable on
-                        // touch (no hover to reveal it). Narrow hit area (48px =
-                        // the grip itself) so it doesn't block hover/selection
-                        // on the words underneath.
-                        child: Center(
-                          child: Container(
-                            width: 48,
-                            height: 5,
-                            decoration: BoxDecoration(
-                              color: borderColor.withValues(
-                                  alpha: focused ? 1.0 : 0.7),
-                              borderRadius: BorderRadius.circular(3),
-                            ),
+                  // Grip: purely visual. IgnorePointer'd so the cursor over it
+                  // never steals hover from the word highlight beneath; drag
+                  // anywhere on the ruler via the GestureDetector above.
+                  Center(
+                    child: ExcludeSemantics(
+                      child: IgnorePointer(
+                        child: Container(
+                          width: 48,
+                          height: 5,
+                          decoration: BoxDecoration(
+                            color: borderColor.withValues(
+                                alpha: focused ? 1.0 : 0.7),
+                            borderRadius: BorderRadius.circular(3),
                           ),
                         ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
