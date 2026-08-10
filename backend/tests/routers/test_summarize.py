@@ -8,6 +8,18 @@ from tests.fixtures.payloads import FEATURE_PROCESS_INVALID, AUTH_HEADER_INVALID
 _BASE = "/api/v1/me/summarize"
 
 
+def test_process_endpoint_registered():
+    """Regression (c41be30): the non-streaming /process endpoint must not
+    disappear — the Flutter frontend calls it and gets a 404 without it.
+    DB-free: checks route registration only."""
+    from app.main import app
+    paths = {getattr(r, "path", "") for r in app.routes}
+    assert "/api/v1/me/summarize/process" in paths, (
+        "POST /summarize/process missing — frontend calls it (prod 404). "
+        "Keep both /process and /process-stream, like define/professionalize."
+    )
+
+
 def test_process_requires_auth(client: TestClient):
     res = client.post(f"{_BASE}/process", json={"text": "hi"})
     assert res.status_code in (401, 403)

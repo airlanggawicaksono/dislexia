@@ -96,8 +96,37 @@ def _build_prompt_and_config(
     return prompt, LLMGenerationConfigDTO(max_tokens=max_tokens), metadata
 
 
-# Endpoint /process (non-streaming) telah dihapus sesuai permintaan.
-# Frontend sekarang wajib memanggil /process-stream.
+@router.post(
+    "/process",
+    response_model=FeatureResponseDTO,
+    status_code=status.HTTP_200_OK,
+    summary="Summarize text",
+    responses=LLM_RESPONSES,
+)
+async def process(
+    request: SummarizeRequestDTO,
+    db: AsyncSession = Depends(get_db),
+    user: UserResponseDTO = Depends(get_current_user),
+):
+    """
+    Summarize the provided text into accessible prose.
+
+    Use `level` to control how much of the source is preserved (by character percentage):
+    - `10pct` — core idea only
+    - `30pct` — core + supporting facts
+    - `50pct` — core + facts + key details (default)
+    - `70pct` — most detail retained
+    - `90pct` — near-verbatim in tightened prose
+
+    Content is always ordered by importance so shorter tiers remain coherent.
+
+    Pass `session_id` to continue a prior conversation; omit to start fresh.
+    """
+    prompt, config, metadata = _build_prompt_and_config(request.level, request.text)
+    return await FeatureService.process(
+        FeatureType.SUMMARIZE, prompt, request.text, user.user_id, db, request.session_id, config, metadata
+    )
+
 
 @router.post(
     "/process-stream",
