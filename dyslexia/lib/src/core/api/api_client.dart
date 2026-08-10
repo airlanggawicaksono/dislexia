@@ -198,8 +198,11 @@ class ApiClient {
 
     // On web, package:http's default BrowserClient is XMLHttpRequest-based
     // and buffers the entire body until the stream closes; the browser
-    // fetch API (via FetchClient) delivers chunks incrementally.
-    final client = kIsWeb ? FetchClient() : http.Client();
+    // fetch API (via FetchClient) delivers chunks incrementally. FetchClient
+    // defaults to `mode: noCors`, which makes a cross-origin response
+    // opaque (status 0, unreadable body) and strips the Authorization
+    // header — `cors` is required to read the SSE stream.
+    final client = kIsWeb ? FetchClient(mode: RequestMode.cors) : http.Client();
     http.StreamedResponse response;
     // Header-receipt bound mirrors the Dio client's 20s connect timeout so
     // a dead/slow server errors out instead of leaving the UI loading
