@@ -70,7 +70,12 @@ class _DesktopShellState extends State<DesktopShell> {
             BlocProvider.value(value: getIt<ProfessionalizeBloc>()),
             BlocProvider.value(value: getIt<ScreeningBloc>()),
             BlocProvider.value(value: getIt<ReaderBloc>()),
-            BlocProvider(create: (_) => SidebarBloc()),
+            // NOTE: NO shell-scoped SidebarBloc here — the shell must bind to
+            // the ROOT SidebarBloc provided by main.dart. The landing page
+            // dispatches SidebarSectionSelected to that same root instance
+            // before navigating here; a fresh per-shell SidebarBloc would
+            // reset the section to the reader default and ignore the card the
+            // user tapped.
             BlocProvider(create: (_) => ReaderShellBloc()),
             Provider.value(value: getIt<ApiHelper>()),
           ],
@@ -82,9 +87,16 @@ class _DesktopShellState extends State<DesktopShell> {
                 // ==========================================
                 // BACKGROUND 2 LAPIS UNGU (SAMPAI TENGAH)
                 // ==========================================
-                ExcludeSemantics(
-                  child: Positioned(
-                    top: 0, left: 0, right: 0,
+                // Decorative background layers: Positioned is a
+                // ParentDataWidget and MUST be a direct child of the Stack.
+                // ExcludeSemantics wraps the painted Container inside it, so
+                // the purple wash stays invisible to screen readers without
+                // breaking the Stack parent-data contract (a Positioned
+                // nested under ExcludeSemantics throws "Incorrect use of
+                // ParentDataWidget" and blanks the whole shell).
+                Positioned(
+                  top: 0, left: 0, right: 0,
+                  child: ExcludeSemantics(
                     child: Container(
                       height: screenHeight * 0.55,
                       decoration: const BoxDecoration(
@@ -97,9 +109,9 @@ class _DesktopShellState extends State<DesktopShell> {
                     ),
                   ),
                 ),
-                ExcludeSemantics(
-                  child: Positioned(
-                    top: 0, left: 0, right: 0,
+                Positioned(
+                  top: 0, left: 0, right: 0,
+                  child: ExcludeSemantics(
                     child: Container(
                       height: screenHeight * 0.50,
                       decoration: const BoxDecoration(
