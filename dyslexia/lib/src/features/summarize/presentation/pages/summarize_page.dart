@@ -42,81 +42,63 @@ class _SummarizePageState extends State<SummarizePage> {
 
   @override
   Widget build(BuildContext context) {
-    // ✅ 1. BlocListener untuk menangkap hasil dan memaksa update text box
-    return BlocListener<SummarizeBloc, SummarizeState>(
-      listener: (ctx, state) {
-        if (state is SummarizeResultState) {
-          // 🔍 DEBUG: Cek di console apakah hasil benar-benar sampai
-          debugPrint('🚀 SUMMARIZE RESULT RECEIVED: ${state.result}');
-          
-          if (state.result.isNotEmpty) {
-            // ✅ 2. addPostFrameCallback memaksa update setelah frame selesai, 
-            // mencegah Flutter mengabaikan perubahan controller
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              _controller.text = state.result;
-              _controller.selection = TextSelection.fromPosition(
-                TextPosition(offset: _controller.text.length),
-              );
-              debugPrint('✅ TEXT CONTROLLER BERHASIL DI-UPDATE');
-            });
-          }
-        }
-      },
-      child: BlocBuilder<SummarizeBloc, SummarizeState>(
-        builder: (ctx, state) {
-          final hasResult = state is SummarizeResultState;
-          final isLoading = state is SummarizeLoading;
+    return BlocBuilder<SummarizeBloc, SummarizeState>(
+      builder: (ctx, state) {
+        final hasResult = state is SummarizeResultState;
+        final isLoading = state is SummarizeLoading;
+        // True while SSE chunks are still arriving; the controller is only
+        // synced once the stream completes (FeaturePage didUpdateWidget).
+        final isStreaming = hasResult && !isLoading && !state.streamComplete;
 
-          return FeaturePage(
-            controller: _controller,
-            title: 'Summarize',
-            resultTitle: 'Summary',
-            heroTag: 'summarize',
-            feature: SidebarSection.summarize,
-            levelLabels: _levelPct,
-            initialLevel: _levels.indexOf(_level),
-            onLevelChanged: (index) {
-              setState(() {
-                _level = _levels[index];
-              });
-            },
-            resultText: hasResult ? state.result : '',
-            viewResultText: _viewResultText,
-            viewResultTitle: _viewResultTitle,
-            hasResult: hasResult || isLoading || _viewResultText != null,
-            isLoading: isLoading,
-            inputExpanded: _inputExpanded,
-            onToggleInput: (v) => setState(() => _inputExpanded = v),
-            onSubmit: () {
-              setState(() {
-                _viewResultText = null;
-                _viewResultTitle = null;
-              });
-              final t = _controller.text.trim();
-              if (t.isNotEmpty) {
-                debugPrint('📤 MENGIRIM EVENT SUMMARIZE UNTUK: $t');
-                ctx.read<SummarizeBloc>().add(SummarizeTextEvent(t, level: _level));
-              }
-            },
-            onReset: () {
-              _controller.clear();
-              setState(() {
-                _viewResultText = null;
-                _viewResultTitle = null;
-              });
-              ctx.read<SummarizeBloc>().add(ClearSummarizeEvent());
-            },
-            onViewResult: (text, result) => setState(() {
-              // Saat pilih dari history, masukkan HASIL ke text box
-              _controller.text = result;
+        return FeaturePage(
+          controller: _controller,
+          title: 'Summarize',
+          resultTitle: 'Summary',
+          heroTag: 'summarize',
+          feature: SidebarSection.summarize,
+          levelLabels: _levelPct,
+          initialLevel: _levels.indexOf(_level),
+          onLevelChanged: (index) {
+            setState(() {
+              _level = _levels[index];
+            });
+          },
+          resultText: hasResult ? state.result : '',
+          viewResultText: _viewResultText,
+          viewResultTitle: _viewResultTitle,
+          hasResult: hasResult || isLoading || _viewResultText != null,
+          isLoading: isLoading,
+          isStreaming: isStreaming,
+          inputExpanded: _inputExpanded,
+          onToggleInput: (v) => setState(() => _inputExpanded = v),
+          onSubmit: () {
+            setState(() {
               _viewResultText = null;
               _viewResultTitle = null;
-            }),
-            // ✅ 3. WAJIB: Mencegah FeatureResultCard muncul
-            replaceInputWithResult: true, 
-          );
+            });
+            final t = _controller.text.trim();
+            if (t.isNotEmpty) {
+              ctx.read<SummarizeBloc>().add(SummarizeTextEvent(t, level: _level));
+            }
+          },
+          onReset: () {
+            _controller.clear();
+            setState(() {
+              _viewResultText = null;
+              _viewResultTitle = null;
+            });
+            ctx.read<SummarizeBloc>().add(ClearSummarizeEvent());
+          },
+          onViewResult: (text, result) => setState(() {
+            // Saat pilih dari history, masukkan HASIL ke text box
+            _controller.text = result;
+            _viewResultText = null;
+            _viewResultTitle = null;
+          }),
+          // WAJIB: Mencegah FeatureResultCard muncul (input diganti hasil)
+          replaceInputWithResult: true,
+        );
         },
-      ),
-    );
+      );
   }
 }

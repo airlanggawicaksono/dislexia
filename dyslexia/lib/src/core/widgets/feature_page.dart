@@ -50,6 +50,13 @@ class FeaturePage extends StatefulWidget {
   // ✅ PARAMETER BARU: Untuk mengganti isi text box langsung tanpa result card
   final bool replaceInputWithResult;
 
+  /// True while an SSE stream is still delivering result chunks. During
+  /// streaming the input controller must NOT be touched on every chunk
+  /// (writing it per chunk fires listeners -> rebuilds -> didUpdateWidget
+  /// -> write -> infinite loop / stack overflow). The controller is synced
+  /// exactly once, when the stream finishes (isStreaming flips back to false).
+  final bool isStreaming;
+
   const FeaturePage({
     super.key,
     required this.title,
@@ -73,6 +80,7 @@ class FeaturePage extends StatefulWidget {
     this.initialLevel = 2,
     this.onLevelChanged,
     this.replaceInputWithResult = false,
+    this.isStreaming = false,
   });
 
   @override
@@ -83,8 +91,14 @@ class _FeaturePageState extends State<FeaturePage> {
   @override
   void didUpdateWidget(covariant FeaturePage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // ✅ Saat hasil selesai diproses, langsung replace isi text box
-    if (widget.replaceInputWithResult && widget.hasResult && !widget.isLoading) {
+    // ✅ Saat hasil selesai diproses, langsung replace isi text box.
+    // Hanya sinkronkan controller saat stream SELESAI (isStreaming false),
+    // bukan per chunk: menulis controller per chunk memicu listener ->
+    // rebuild -> didUpdateWidget -> tulis lagi (stack overflow).
+    if (widget.replaceInputWithResult &&
+        widget.hasResult &&
+        !widget.isLoading &&
+        !widget.isStreaming) {
       if (widget.resultText.isNotEmpty && widget.controller.text != widget.resultText) {
         widget.controller.text = widget.resultText;
         // Pindahkan kursor ke akhir teks agar user bisa langsung melanjutkan edit

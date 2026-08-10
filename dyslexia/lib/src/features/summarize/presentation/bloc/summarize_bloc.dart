@@ -40,6 +40,9 @@ class SummarizeBloc extends Bloc<SummarizeEvent, SummarizeState> {
       emit(SummarizeResultState(
         inputText: event.text,
         result: buffer.toString(),
+        // Stream is complete: this is the one emission the page should sync
+        // its input controller from.
+        streamComplete: true,
       ));
     }
   }

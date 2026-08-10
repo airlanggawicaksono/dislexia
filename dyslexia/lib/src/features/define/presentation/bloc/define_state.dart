@@ -14,10 +14,20 @@ class DefineResultState extends DefineState {
   final String inputText;
   final String result;
 
-  const DefineResultState({required this.inputText, required this.result});
+  /// True only on the FINAL emission of a completed stream. While SSE chunks
+  /// are still arriving it is false, so the page knows to keep the input
+  /// controller untouched until the whole result is ready (per-chunk writes
+  /// caused a controller->rebuild->write loop / stack overflow).
+  final bool streamComplete;
+
+  const DefineResultState({
+    required this.inputText,
+    required this.result,
+    this.streamComplete = false,
+  });
 
   @override
-  List<Object?> get props => [inputText, result];
+  List<Object?> get props => [inputText, result, streamComplete];
 }
 
 class DefineErrorState extends DefineState {

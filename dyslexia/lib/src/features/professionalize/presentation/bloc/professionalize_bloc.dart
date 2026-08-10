@@ -45,6 +45,9 @@ class ProfessionalizeBloc
       emit(ProfessionalizeResultState(
         inputText: event.text,
         result: buffer.toString(),
+        // Stream is complete: this is the one emission the page should sync
+        // its input controller from.
+        streamComplete: true,
       ));
     }
   }

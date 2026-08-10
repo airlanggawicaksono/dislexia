@@ -48,7 +48,10 @@ class _ProfessionalizePageState extends State<ProfessionalizePage> {
         builder: (ctx, state) {
           final hasResult = state is ProfessionalizeResultState;
           final isLoading = state is ProfessionalizeLoading;
-          
+          // True while SSE chunks are still arriving; the controller is only
+          // synced once the stream completes.
+          final isStreaming = hasResult && !isLoading && !state.streamComplete;
+
           return FeaturePage(
             controller: _controller,
             title: 'Professionalize',
@@ -67,6 +70,7 @@ class _ProfessionalizePageState extends State<ProfessionalizePage> {
             viewResultTitle: _viewResultTitle,
             hasResult: hasResult || isLoading || _viewResultText != null,
             isLoading: isLoading,
+            isStreaming: isStreaming,
             inputExpanded: _inputExpanded,
             onToggleInput: (v) => setState(() => _inputExpanded = v),
             onSubmit: () {

@@ -120,6 +120,10 @@ class _DefinePageState extends State<DefinePage> {
       builder: (ctx, state) {
         final hasResult = state is DefineResultState;
         final isLoading = state is DefineLoading;
+        // True while SSE chunks are still arriving (result present but the
+        // stream is not finished yet). The controller is only synced once the
+        // stream completes.
+        final isStreaming = hasResult && !isLoading && !state.streamComplete;
         final resultText = hasResult ? state.result : '';
 
         // ✅ Full screen layout dengan Stack
@@ -144,6 +148,7 @@ class _DefinePageState extends State<DefinePage> {
               viewResultTitle: _viewResultTitle,
               hasResult: hasResult || isLoading || _viewResultText != null,
               isLoading: isLoading,
+              isStreaming: isStreaming,
               inputExpanded: _inputExpanded,
               onToggleInput: (v) => setState(() => _inputExpanded = v),
               onSubmit: () {
