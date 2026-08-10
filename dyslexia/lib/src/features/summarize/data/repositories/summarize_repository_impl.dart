@@ -4,7 +4,6 @@ import '../../../../core/errors/failures.dart';
 import '../../../../core/api/api_exception.dart';
 import '../datasources/summarize_remote_datasource.dart';
 import '../models/summarize_model.dart';
-import '../../domain/entities/summarize_result.dart';
 import '../../domain/entities/summary_level.dart';
 import '../../domain/repositories/summarize_repository.dart';
 
@@ -13,19 +12,20 @@ class SummarizeRepositoryImpl implements SummarizeRepository {
   const SummarizeRepositoryImpl(this._remote);
 
   @override
-  Future<Either<Failure, SummarizeResult>> summarize(
+  Stream<Either<Failure, String>> summarizeStream(
     String text, {
     SummaryLevel? level,
-  }) async {
+  }) async* {
     try {
-      final res = await _remote.summarize(
+      await for (final chunk in _remote.summarizeStream(
         SummarizeRequestModel(text: text, level: level),
-      );
-      return right(SummarizeResult(text: res.result, sessionId: res.sessionId));
+      )) {
+        yield right(chunk);
+      }
     } on ApiException catch (e) {
-      return left(ServerFailureWithMessage(e.message));
+      yield left(ServerFailureWithMessage(e.message));
     } catch (_) {
-      return left(const ServerFailure());
+      yield left(const ServerFailure());
     }
   }
 }

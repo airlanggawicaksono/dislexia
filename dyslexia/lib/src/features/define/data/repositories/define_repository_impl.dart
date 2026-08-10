@@ -5,7 +5,6 @@ import '../../../../core/api/api_exception.dart';
 import '../datasources/define_remote_datasource.dart';
 import '../models/define_model.dart';
 import '../../domain/entities/define_level.dart';
-import '../../domain/entities/define_result.dart';
 import '../../domain/repositories/define_repository.dart';
 
 class DefineRepositoryImpl implements DefineRepository {
@@ -13,16 +12,20 @@ class DefineRepositoryImpl implements DefineRepository {
   const DefineRepositoryImpl(this._remote);
 
   @override
-  Future<Either<Failure, DefineResult>> define(String text, {DefineLevel? level}) async {
+  Stream<Either<Failure, String>> defineStream(
+    String text, {
+    DefineLevel? level,
+  }) async* {
     try {
-      final res = await _remote.define(
+      await for (final chunk in _remote.defineStream(
         DefineRequestModel(text: text, level: level),
-      );
-      return right(DefineResult(text: res.result, sessionId: res.sessionId));
+      )) {
+        yield right(chunk);
+      }
     } on ApiException catch (e) {
-      return left(ServerFailureWithMessage(e.message));
+      yield left(ServerFailureWithMessage(e.message));
     } catch (_) {
-      return left(const ServerFailure());
+      yield left(const ServerFailure());
     }
   }
 }

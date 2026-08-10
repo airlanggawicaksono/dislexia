@@ -1,6 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../domain/entities/define_result.dart';
 import '../../domain/usecases/define_usecase.dart';
 import 'define_event.dart';
 import 'define_state.dart';
@@ -17,11 +16,31 @@ class DefineBloc extends Bloc<DefineEvent, DefineState> {
   Future<void> _onDefine(
       DefineTextEvent event, Emitter<DefineState> emit) async {
     emit(DefineLoading());
-    final result = await _define(event.text, level: event.level);
-    result.fold(
-      (failure) => emit(DefineErrorState(failure.props.toString())),
-      (DefineResult success) =>
-          emit(DefineResultState(inputText: event.text, result: success.text)),
-    );
+    // Streaming: append each chunk to the result and emit progressively so
+    // the UI text grows live. History is saved backend-side on completion.
+    final buffer = StringBuffer();
+    var failed = false;
+    await for (final chunk in _define(event.text, level: event.level)) {
+      if (failed) break;
+      chunk.fold(
+        (failure) {
+          failed = true;
+          emit(DefineErrorState(failure.props.toString()));
+        },
+        (text) {
+          buffer.write(text);
+          emit(DefineResultState(
+            inputText: event.text,
+            result: buffer.toString(),
+          ));
+        },
+      );
+    }
+    if (!failed) {
+      emit(DefineResultState(
+        inputText: event.text,
+        result: buffer.toString(),
+      ));
+    }
   }
 }

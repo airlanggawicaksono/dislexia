@@ -32,6 +32,9 @@ dependencies:
 
   # Networking (kept for future use)
   dio: ^5.7.0
+  # SSE streaming: Dio's web adapter buffers the whole body (XHR
+  # arraybuffer), so live chunks use package:http (fetch) instead.
+  http: ^1.6.0
 
   # Localization
   easy_localization: ^3.0.7

@@ -2,7 +2,10 @@ import '../../../../core/api/api_client.dart';
 import '../models/professionalize_model.dart';
 
 abstract class ProfessionalizeRemoteDatasource {
-  Future<ProfessionalizeResponseModel> professionalize(ProfessionalizeRequestModel request);
+  /// Stream the rewritten text as it is generated (SSE over
+  /// `/process-stream`). Emits each chunk's text content; errors surface as
+  /// a stream error.
+  Stream<String> professionalizeStream(ProfessionalizeRequestModel request);
 }
 
 class ProfessionalizeRemoteDatasourceImpl implements ProfessionalizeRemoteDatasource {
@@ -10,11 +13,7 @@ class ProfessionalizeRemoteDatasourceImpl implements ProfessionalizeRemoteDataso
   const ProfessionalizeRemoteDatasourceImpl(this._api);
 
   @override
-  Future<ProfessionalizeResponseModel> professionalize(ProfessionalizeRequestModel request) {
-    return _api.postObject(
-      '/me/professionalize/process',
-      body: request.toJson(),
-      parse: ProfessionalizeResponseModel.fromJson,
-    );
-  }
+  Stream<String> professionalizeStream(ProfessionalizeRequestModel request) =>
+      _api.postStream(
+          '/me/professionalize/process-stream', body: request.toJson());
 }

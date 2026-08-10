@@ -4,7 +4,6 @@ import '../../../../core/errors/failures.dart';
 import '../../../../core/api/api_exception.dart';
 import '../datasources/professionalize_remote_datasource.dart';
 import '../models/professionalize_model.dart';
-import '../../domain/entities/professionalize_result.dart';
 import '../../domain/repositories/professionalize_repository.dart';
 
 class ProfessionalizeRepositoryImpl implements ProfessionalizeRepository {
@@ -12,24 +11,25 @@ class ProfessionalizeRepositoryImpl implements ProfessionalizeRepository {
   const ProfessionalizeRepositoryImpl(this._remote);
 
   @override
-  Future<Either<Failure, ProfessionalizeResult>> professionalize(
+  Stream<Either<Failure, String>> professionalizeStream(
     String text, {
     String? recipientName,
     String? senderName,
-  }) async {
+  }) async* {
     try {
-      final res = await _remote.professionalize(
+      await for (final chunk in _remote.professionalizeStream(
         ProfessionalizeRequestModel(
           text: text,
           recipientName: recipientName,
           senderName: senderName,
         ),
-      );
-      return right(ProfessionalizeResult(text: res.result, sessionId: res.sessionId));
+      )) {
+        yield right(chunk);
+      }
     } on ApiException catch (e) {
-      return left(ServerFailureWithMessage(e.message));
+      yield left(ServerFailureWithMessage(e.message));
     } catch (_) {
-      return left(const ServerFailure());
+      yield left(const ServerFailure());
     }
   }
 }

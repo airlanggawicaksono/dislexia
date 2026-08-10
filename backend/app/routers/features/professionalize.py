@@ -8,7 +8,7 @@ from app.services.feature_service import FeatureService
 from app.services.prompts import DYSLEXIA_OUTPUT_RULES
 from app.dto.feature.chat.enums import FeatureType
 from app.dto.feature.chat.base import FeatureHistoryListDTO
-from app.dto.feature.process import ProfessionalizeRequestDTO, FeatureResponseDTO
+from app.dto.feature.process import ProfessionalizeRequestDTO
 from app.dto.auth.userdata import UserResponseDTO
 from app.openapi import LLM_RESPONSES, SSE_RESPONSE
 from app.utils.lenient_json_route import LenientJSONRoute
@@ -51,33 +51,6 @@ def _build_prompt(request: ProfessionalizeRequestDTO) -> str:
             recipient_name=request.recipient_name,
         )
     return _PLAIN_PROMPT
-
-
-@router.post(
-    "/process",
-    response_model=FeatureResponseDTO,
-    status_code=status.HTTP_200_OK,
-    summary="Rewrite text in professional tone",
-    responses=LLM_RESPONSES,
-)
-async def process(
-    request: ProfessionalizeRequestDTO,
-    db: AsyncSession = Depends(get_db),
-    user: UserResponseDTO = Depends(get_current_user),
-):
-    """
-    Rewrite the provided text in a formal, professional tone.
-
-    **Plain text mode** (default): omit `recipient_name` and `sender_name`.
-
-    **Email mode**: provide BOTH `recipient_name` and `sender_name`.
-    The output will be a complete formal email with greeting and closing.
-
-    Pass `session_id` to continue a prior conversation; omit to start fresh.
-    """
-    return await FeatureService.process(
-        FeatureType.PROFESSIONALIZE, _build_prompt(request), request.text, user.user_id, db, request.session_id
-    )
 
 
 @router.post(

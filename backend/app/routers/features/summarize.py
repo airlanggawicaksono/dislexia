@@ -8,7 +8,7 @@ from app.services.feature_service import FeatureService
 from app.services.prompts import DYSLEXIA_OUTPUT_RULES
 from app.dto.feature.chat.enums import FeatureType
 from app.dto.feature.chat.base import FeatureHistoryListDTO
-from app.dto.feature.process import SummarizeRequestDTO, FeatureResponseDTO, SummaryLevel
+from app.dto.feature.process import SummarizeRequestDTO, SummaryLevel
 from app.dto.feature.llm import LLMGenerationConfigDTO
 from app.dto.auth.userdata import UserResponseDTO
 from app.openapi import LLM_RESPONSES, SSE_RESPONSE
@@ -94,38 +94,6 @@ def _build_prompt_and_config(
         f"{DYSLEXIA_OUTPUT_RULES}"
     )
     return prompt, LLMGenerationConfigDTO(max_tokens=max_tokens), metadata
-
-
-@router.post(
-    "/process",
-    response_model=FeatureResponseDTO,
-    status_code=status.HTTP_200_OK,
-    summary="Summarize text",
-    responses=LLM_RESPONSES,
-)
-async def process(
-    request: SummarizeRequestDTO,
-    db: AsyncSession = Depends(get_db),
-    user: UserResponseDTO = Depends(get_current_user),
-):
-    """
-    Summarize the provided text into accessible prose.
-
-    Use `level` to control how much of the source is preserved (by character percentage):
-    - `10pct` — core idea only
-    - `30pct` — core + supporting facts
-    - `50pct` — core + facts + key details (default)
-    - `70pct` — most detail retained
-    - `90pct` — near-verbatim in tightened prose
-
-    Content is always ordered by importance so shorter tiers remain coherent.
-
-    Pass `session_id` to continue a prior conversation; omit to start fresh.
-    """
-    prompt, config, metadata = _build_prompt_and_config(request.level, request.text)
-    return await FeatureService.process(
-        FeatureType.SUMMARIZE, prompt, request.text, user.user_id, db, request.session_id, config, metadata
-    )
 
 
 @router.post(

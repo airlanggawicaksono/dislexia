@@ -1,19 +1,18 @@
 import 'package:fpdart/fpdart.dart';
 
 import '../../../../core/errors/failures.dart';
-import '../entities/professionalize_result.dart';
 import '../repositories/professionalize_repository.dart';
 
 class ProfessionalizeUseCase {
   final ProfessionalizeRepository _repository;
   const ProfessionalizeUseCase(this._repository);
 
-  Future<Either<Failure, ProfessionalizeResult>> call(
+  Stream<Either<Failure, String>> call(
     String text, {
     String? recipientName,
     String? senderName,
   }) =>
-      _repository.professionalize(
+      _repository.professionalizeStream(
         text,
         recipientName: recipientName,
         senderName: senderName,

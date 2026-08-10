@@ -1,11 +1,11 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../domain/entities/professionalize_result.dart';
 import '../../domain/usecases/professionalize_usecase.dart';
 import 'professionalize_event.dart';
 import 'professionalize_state.dart';
 
-class ProfessionalizeBloc extends Bloc<ProfessionalizeEvent, ProfessionalizeState> {
+class ProfessionalizeBloc
+    extends Bloc<ProfessionalizeEvent, ProfessionalizeState> {
   final ProfessionalizeUseCase _professionalize;
   ProfessionalizeBloc({required ProfessionalizeUseCase professionalize})
       : _professionalize = professionalize,
@@ -17,15 +17,35 @@ class ProfessionalizeBloc extends Bloc<ProfessionalizeEvent, ProfessionalizeStat
   Future<void> _onProfessionalize(
       ProfessionalizeTextEvent event, Emitter<ProfessionalizeState> emit) async {
     emit(ProfessionalizeLoading());
-    final result = await _professionalize(
+    // Streaming: append each chunk to the result and emit progressively so
+    // the UI text grows live. History is saved backend-side on completion.
+    final buffer = StringBuffer();
+    var failed = false;
+    await for (final chunk in _professionalize(
       event.text,
       recipientName: event.recipientName,
       senderName: event.senderName,
-    );
-    result.fold(
-      (failure) => emit(ProfessionalizeErrorState(failure.props.toString())),
-      (ProfessionalizeResult success) =>
-          emit(ProfessionalizeResultState(inputText: event.text, result: success.text)),
-    );
+    )) {
+      if (failed) break;
+      chunk.fold(
+        (failure) {
+          failed = true;
+          emit(ProfessionalizeErrorState(failure.props.toString()));
+        },
+        (text) {
+          buffer.write(text);
+          emit(ProfessionalizeResultState(
+            inputText: event.text,
+            result: buffer.toString(),
+          ));
+        },
+      );
+    }
+    if (!failed) {
+      emit(ProfessionalizeResultState(
+        inputText: event.text,
+        result: buffer.toString(),
+      ));
+    }
   }
 }

@@ -8,7 +8,7 @@ from app.services.feature_service import FeatureService
 from app.services.prompts import DYSLEXIA_OUTPUT_RULES
 from app.dto.feature.chat.enums import FeatureType
 from app.dto.feature.chat.base import FeatureHistoryListDTO
-from app.dto.feature.process import DefineRequestDTO, FeatureResponseDTO, DefineLevel
+from app.dto.feature.process import DefineRequestDTO, DefineLevel
 from app.dto.auth.userdata import UserResponseDTO
 from app.openapi import LLM_RESPONSES, SSE_RESPONSE
 from app.utils.lenient_json_route import LenientJSONRoute
@@ -52,36 +52,6 @@ def _build_prompt(level: DefineLevel, output_language: str) -> str:
         "(e.g., ap-ple or in-for-ma-tion) to demonstrate pronunciation.\n\n"
         f"For THIS definition include {layers} Stop immediately after the last included layer.\n\n"
         f"{DYSLEXIA_OUTPUT_RULES}"
-    )
-
-
-@router.post(
-    "/process",
-    response_model=FeatureResponseDTO,
-    status_code=status.HTTP_200_OK,
-    summary="Define a word or concept",
-    responses=LLM_RESPONSES,
-)
-async def process(
-    request: DefineRequestDTO,
-    db: AsyncSession = Depends(get_db),
-    user: UserResponseDTO = Depends(get_current_user),
-):
-    """
-    Return a clear, simple definition of the given word or concept.
-    """
-    # Fallback to "English" jika DTO belum diupdate
-    output_lang = getattr(request, "output_language", "English")
-    metadata = {"level": request.level.value, "language": output_lang}
-    
-    return await FeatureService.process(
-        FeatureType.DEFINE, 
-        _build_prompt(request.level, output_lang), 
-        request.text, 
-        user.user_id, 
-        db, 
-        request.session_id, 
-        metadata=metadata
     )
 
 

@@ -2,7 +2,9 @@ import '../../../../core/api/api_client.dart';
 import '../models/define_model.dart';
 
 abstract class DefineRemoteDatasource {
-  Future<DefineResponseModel> define(DefineRequestModel request);
+  /// Stream the definition as it is generated (SSE over `/process-stream`).
+  /// Emits each chunk's text content; errors surface as a stream error.
+  Stream<String> defineStream(DefineRequestModel request);
 }
 
 class DefineRemoteDatasourceImpl implements DefineRemoteDatasource {
@@ -10,11 +12,6 @@ class DefineRemoteDatasourceImpl implements DefineRemoteDatasource {
   const DefineRemoteDatasourceImpl(this._api);
 
   @override
-  Future<DefineResponseModel> define(DefineRequestModel request) {
-    return _api.postObject(
-      '/me/define/process',
-      body: request.toJson(),
-      parse: DefineResponseModel.fromJson,
-    );
-  }
+  Stream<String> defineStream(DefineRequestModel request) =>
+      _api.postStream('/me/define/process-stream', body: request.toJson());
 }
