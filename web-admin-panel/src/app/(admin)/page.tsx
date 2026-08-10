@@ -49,7 +49,7 @@ interface FeatureUsage {
 
 interface DailyUsage {
   date: string;
-  dateSort: string; // ISO date for sorting
+  dateSort: string;
   summarize: number;
   professionalize: number;
   define: number;
@@ -57,12 +57,20 @@ interface DailyUsage {
   total: number;
 }
 
+// ✅ Tooltip state type
+interface TooltipState {
+  visible: boolean;
+  x: number;
+  y: number;
+  data: DailyUsage | null;
+}
+
 export default function DyslexiaDashboard() {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   const [stats, setStats] = useState<DashboardStats>({
     totalUsers: 0,
     activeToday: 0,
@@ -74,11 +82,19 @@ export default function DyslexiaDashboard() {
   const [users, setUsers] = useState<User[]>([]);
   const [dailyUsage, setDailyUsage] = useState<DailyUsage[]>([]);
 
+  // ✅ State untuk tooltip fixed positioning
+  const [tooltip, setTooltip] = useState<TooltipState>({
+    visible: false,
+    x: 0,
+    y: 0,
+    data: null,
+  });
+
   const fetchDashboardData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const token = localStorage.getItem("admin_token");
       if (!token) {
         router.push("/signin");
@@ -116,14 +132,13 @@ export default function DyslexiaDashboard() {
 
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      
+
       const activeToday = usersList.filter((user) => {
         if (!user.last_login) return false;
         const lastLogin = new Date(user.last_login);
         return lastLogin >= today;
       }).length;
 
-      // ✅ Count unique sessions for screening, not individual responses
       const screeningSessions = new Set(
         historyList
           .filter((item) => item.feature === "screen")
@@ -142,7 +157,6 @@ export default function DyslexiaDashboard() {
         textsProcessed,
       });
 
-      // ✅ Recent activity with FULL date (month, day, year) AND time
       const activity: UserActivity[] = historyList
         .slice(0, 10)
         .map((item) => {
@@ -169,7 +183,7 @@ export default function DyslexiaDashboard() {
         define: 0,
         screen: 0,
       };
-      
+
       historyList.forEach((item) => {
         if (featureCounts.hasOwnProperty(item.feature)) {
           featureCounts[item.feature]++;
@@ -184,24 +198,21 @@ export default function DyslexiaDashboard() {
           trendPercent: 12,
         })
       );
-      
+
       features.sort((a, b) => b.usageCount - a.usageCount);
       setFeatureUsage(features);
 
-      // ✅ Aggregate daily usage with FULL date (including year)
       const usageByDate: Record<string, DailyUsage> = {};
-      
+
       historyList.forEach((item) => {
         const dateObj = new Date(item.created_at);
-        // Use ISO date (YYYY-MM-DD) as key for proper sorting
         const dateKey = dateObj.toISOString().split('T')[0];
-        // Display format with year
         const dateDisplay = dateObj.toLocaleDateString("en-US", {
           month: "short",
           day: "numeric",
           year: "numeric",
         });
-        
+
         if (!usageByDate[dateKey]) {
           usageByDate[dateKey] = {
             date: dateDisplay,
@@ -213,15 +224,15 @@ export default function DyslexiaDashboard() {
             total: 0,
           };
         }
-        
+
         usageByDate[dateKey][item.feature]++;
         usageByDate[dateKey].total++;
       });
 
       const dailyUsageArray = Object.values(usageByDate)
         .sort((a, b) => a.dateSort.localeCompare(b.dateSort))
-        .slice(-7); // Last 7 days
-      
+        .slice(-7);
+
       setDailyUsage(dailyUsageArray);
     } catch (err: any) {
       console.error("Error fetching dashboard data:", err);
@@ -271,6 +282,50 @@ export default function DyslexiaDashboard() {
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
       </svg>
     );
+  };
+
+  // ✅ Handler untuk tooltip dengan smart positioning
+  const handleBarMouseEnter = (e: React.MouseEvent<HTMLDivElement>, day: DailyUsage) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const tooltipWidth = 200; // perkiraan lebar tooltip
+    const tooltipHeight = 140; // perkiraan tinggi tooltip
+    const offset = 12; // jarak dari bar
+
+    // Hitung posisi X (tengah bar)
+    let x = rect.left + rect.width / 2;
+
+    // Hitung posisi Y (di atas bar)
+    let y = rect.top - offset;
+
+    // ✅ Smart positioning: cegah tooltip keluar viewport
+    // Jika terlalu dekat dengan tepi kiri
+    if (x - tooltipWidth / 2 < 10) {
+      x = tooltipWidth / 2 + 10;
+    }
+    // Jika terlalu dekat dengan tepi kanan
+    if (x + tooltipWidth / 2 > window.innerWidth - 10) {
+      x = window.innerWidth - tooltipWidth / 2 - 10;
+    }
+    // Jika terlalu dekat dengan tepi atas (bar tinggi) → tampilkan di bawah
+    let showBelow = false;
+    if (y - tooltipHeight < 10) {
+      y = rect.bottom + offset;
+      showBelow = true;
+    }
+
+    setTooltip({
+      visible: true,
+      x,
+      y,
+      data: day,
+    });
+
+    // Simpan info posisi untuk transform
+    (e.currentTarget as any).dataset.showBelow = showBelow ? "true" : "false";
+  };
+
+  const handleBarMouseLeave = () => {
+    setTooltip((prev) => ({ ...prev, visible: false, data: null }));
   };
 
   if (loading) {
@@ -352,45 +407,86 @@ export default function DyslexiaDashboard() {
         </ComponentCard>
       </div>
 
-      {/* ✅ Usage chart with FULL date (including year) */}
+      {/* ✅ Usage chart with FIXED POSITIONED TOOLTIP */}
       <ComponentCard title="Usage Over Time (Last 7 Days)" className="mb-6">
-        <div className="h-[350px] overflow-x-auto">
+        <div className="h-[350px]">
           {dailyUsage.length === 0 ? (
             <div className="h-full flex items-center justify-center text-gray-500">
               <p>No usage data available</p>
             </div>
           ) : (
-            <div className="h-full flex items-end justify-between gap-2 px-4 pb-16 pt-8">
-              {dailyUsage.map((day, index) => {
-                const maxTotal = Math.max(...dailyUsage.map(d => d.total));
-                const heightPercent = maxTotal > 0 ? (day.total / maxTotal) * 100 : 0;
-                
-                return (
-                  <div key={index} className="flex-1 flex flex-col items-center gap-2 min-w-[90px]">
-                    <div className="text-xs font-bold text-gray-700 mb-1">{day.total}</div>
-                    <div 
-                      className="w-full bg-gradient-to-t from-blue-500 to-blue-400 rounded-t-lg transition-all hover:from-blue-600 hover:to-blue-500 relative group cursor-pointer"
-                      style={{ height: `${Math.max(heightPercent, 5)}%`, minHeight: '20px' }}
-                    >
-                      <div className="absolute -top-24 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-xs rounded py-2 px-3 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10 shadow-lg">
-                        <div className="font-bold mb-1 border-b border-gray-700 pb-1">{day.date}</div>
-                        <div className="text-left">📝 Summarize: {day.summarize}</div>
-                        <div className="text-left">💼 Professionalize: {day.professionalize}</div>
-                        <div className="text-left">📖 Define: {day.define}</div>
-                        <div className="text-left">🔍 Screening: {day.screen}</div>
-                        <div className="text-left font-semibold mt-1 border-t border-gray-700 pt-1">Total: {day.total}</div>
+            (() => {
+              const maxTotal = Math.max(...dailyUsage.map(d => d.total), 1);
+              const BAR_MAX_HEIGHT = 220;
+
+              return (
+                <div className="h-full flex items-end justify-between gap-2 px-4 pb-16 pt-8">
+                  {dailyUsage.map((day, index) => {
+                    const barHeight = Math.max((day.total / maxTotal) * BAR_MAX_HEIGHT, 8);
+
+                    return (
+                      <div key={index} className="flex-1 flex flex-col items-center gap-2 min-w-[90px]">
+                        <div className="text-xs font-bold text-gray-700 mb-1">{day.total}</div>
+                        <div
+                          className="w-full bg-gradient-to-t from-blue-500 to-blue-400 rounded-t-lg transition-all hover:from-blue-600 hover:to-blue-500 cursor-pointer"
+                          style={{ height: `${barHeight}px` }}
+                          onMouseEnter={(e) => handleBarMouseEnter(e, day)}
+                          onMouseLeave={handleBarMouseLeave}
+                        />
+                        <div className="text-xs text-gray-600 font-medium text-center leading-tight">
+                          {day.date}
+                        </div>
                       </div>
-                    </div>
-                    <div className="text-xs text-gray-600 font-medium text-center leading-tight">
-                      {day.date}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                    );
+                  })}
+                </div>
+              );
+            })()
           )}
         </div>
       </ComponentCard>
+
+      {/* ✅ FIXED TOOLTIP - dirender di root, tidak akan pernah terpotong */}
+      {tooltip.visible && tooltip.data && (
+        <div
+          className="fixed z-50 bg-gray-900 text-white text-xs rounded-lg py-2.5 px-3 pointer-events-none shadow-2xl border border-gray-700"
+          style={{
+            left: tooltip.x,
+            top: tooltip.y,
+            // Smart transform: di atas bar atau di bawah bar
+            transform: (tooltip.y < 160)
+              ? 'translate(-50%, 0)'    // Bar terlalu tinggi → tooltip di bawah cursor
+              : 'translate(-50%, -100%)', // Normal → tooltip di atas cursor
+            minWidth: '180px',
+          }}
+        >
+          <div className="font-bold mb-1.5 border-b border-gray-700 pb-1.5 text-sm">
+            {tooltip.data.date}
+          </div>
+          <div className="space-y-0.5">
+            <div className="flex justify-between gap-4">
+              <span>📝 Summarize:</span>
+              <span className="font-semibold">{tooltip.data.summarize}</span>
+            </div>
+            <div className="flex justify-between gap-4">
+              <span>💼 Professionalize:</span>
+              <span className="font-semibold">{tooltip.data.professionalize}</span>
+            </div>
+            <div className="flex justify-between gap-4">
+              <span>📖 Define:</span>
+              <span className="font-semibold">{tooltip.data.define}</span>
+            </div>
+            <div className="flex justify-between gap-4">
+              <span>🔍 Screening:</span>
+              <span className="font-semibold">{tooltip.data.screen}</span>
+            </div>
+          </div>
+          <div className="font-bold mt-1.5 pt-1.5 border-t border-gray-700 flex justify-between gap-4">
+            <span>Total:</span>
+            <span>{tooltip.data.total}</span>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
         <ComponentCard title="Recent User Activity">
@@ -510,7 +606,7 @@ export default function DyslexiaDashboard() {
                       })}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500">
-                      {user.last_login 
+                      {user.last_login
                         ? new Date(user.last_login).toLocaleDateString("en-US", {
                             month: "short",
                             day: "numeric",
