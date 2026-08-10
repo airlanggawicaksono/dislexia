@@ -67,8 +67,8 @@ class ColorSelector extends StatelessWidget {
           itemCount: entries.length,
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 3,
-            mainAxisSpacing: 12,
-            crossAxisSpacing: 12,
+            mainAxisSpacing: 6,
+            crossAxisSpacing: 6,
             childAspectRatio: 0.85,
           ),
           itemBuilder: (_, i) {

@@ -174,7 +174,7 @@ class _DisplaySettingsPanelState extends State<DisplaySettingsPanel> {
                           _CollapsibleSection(
                             title: 'FONT',
                             initiallyExpanded: true,
-                            child: const FontSelector(),
+                            child: FontSelector(compact: !fullWidth),
                           ),
                           const SizedBox(height: 12),
                           _CollapsibleSection(

@@ -6,7 +6,8 @@ import '../../../features/display_settings/presentation/bloc/display_settings/di
 import '../../utils/font_utils.dart';
 
 class FontSelector extends StatelessWidget {
-  const FontSelector({super.key});
+  final bool compact;
+  const FontSelector({super.key, this.compact = false});
 
   static const _fonts = <DyslexiaFont>[
     DyslexiaFont.openDyslexic,
@@ -45,14 +46,81 @@ class FontSelector extends StatelessWidget {
         final bloc = context.read<DisplaySettingsBloc>();
         final selected = state.settings.font;
 
+        if (compact) {
+          const selectedBg = Color(0xFF3D5A99);
+          const idleBg = Color(0xFFEFEADF);
+          return Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: _fonts.map((font) {
+              final label = _labels[font] ?? '';
+              final isSelected = selected == font;
+              // Outer Semantics keeps the label/state; the InkWell
+              // below keeps its tap action (mirrors ColorSelector's
+              // compact chips).
+              return Semantics(
+                label: 'Font $label',
+                button: true,
+                selected: isSelected,
+                child: InkWell(
+                  onTap: () => bloc.add(UpdateFontEvent(font)),
+                  borderRadius: BorderRadius.circular(8),
+                  child: ExcludeSemantics(
+                    child: Container(
+                      width: 64,
+                      height: 44,
+                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: isSelected ? selectedBg : idleBg,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: isSelected ? selectedBg : Colors.black12,
+                          width: isSelected ? 2 : 1,
+                        ),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Aa',
+                            style: applyDyslexiaFont(
+                              font: font,
+                              baseStyle: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: isSelected ? Colors.white : Colors.black87,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            label,
+                            style: TextStyle(
+                              fontSize: 8,
+                              color: isSelected ? Colors.white70 : Colors.black54,
+                            ),
+                            textAlign: TextAlign.center,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          );
+        }
+
         return GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           itemCount: _fonts.length,
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 3,
-            mainAxisSpacing: 8,
-            crossAxisSpacing: 8,
+            mainAxisSpacing: 6,
+            crossAxisSpacing: 6,
             childAspectRatio: 0.85,
           ),
           itemBuilder: (_, i) {
