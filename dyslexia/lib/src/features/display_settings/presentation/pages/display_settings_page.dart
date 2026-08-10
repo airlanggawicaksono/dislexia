@@ -107,11 +107,15 @@ class DisplaySettingsPage extends StatelessWidget {
                         const SizedBox(height: 24),
 
                         _buildSectionLabel('FONT'),
-                        _buildSettingCard(const FontSelector()),
+                        // Compact chips: this full-page card is wide, so the
+                        // 3-column grid cells balloon past 100px tall. The
+                        // compact Wrap flows small chips (shell-panel density)
+                        // to fill the available width instead.
+                        _buildSettingCard(const FontSelector(compact: true)),
                         const SizedBox(height: 24),
 
                         _buildSectionLabel('BACKGROUND COLOR'),
-                        _buildSettingCard(const ColorSelector()),
+                        _buildSettingCard(const ColorSelector(compact: true)),
                         const SizedBox(height: 24),
 
                         _buildSectionLabel('TYPOGRAPHY'),
