@@ -60,7 +60,7 @@ jobs:
             echo "ANTHROPIC_MODEL=claude-haiku-4-5-20251001"
             echo "OPENAI_API_KEY="
             echo "ANTHROPIC_API_KEY="
-            echo "CORS_ALLOW_ORIGINS=https://reader.dyslexic.app,http://localhost:8083"
+            echo "CORS_ALLOW_ORIGINS=https://reader.dyslexic.app,https://admin.dyslexic.app,https://app.dyslexic.app,http://localhost:8083,http://localhost:8084"
             echo "CORS_ALLOW_CREDENTIALS=true"
             echo "CORS_ALLOW_METHODS=*"
             echo "CORS_ALLOW_HEADERS=*"
