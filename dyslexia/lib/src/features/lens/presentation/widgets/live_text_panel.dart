@@ -17,7 +17,6 @@ class LiveTextPanel extends StatelessWidget {
     AppColorTheme.lavender: (Color(0xFFEDE7F6), Color(0xFF1A1A1A)),
     AppColorTheme.skyBlue: (Color(0xFFE3F2FD), Color(0xFF1A1A1A)),
     AppColorTheme.peach: (Color(0xFFFFE8D6), Color(0xFF1A1A1A)),
-    AppColorTheme.dark: (Color(0xFF1E1E1E), Color(0xFFE8E8E8)),
   };
 
   Color get _bg =>

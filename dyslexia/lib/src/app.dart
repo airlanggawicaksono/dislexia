@@ -12,9 +12,6 @@ import 'core/themes/app_theme.dart';
 import 'features/auth/presentation/bloc/auth/auth_bloc.dart';
 import 'features/auth/presentation/bloc/logout_bus.dart';
 
-// ✅ TAMBAHKAN IMPORT INI agar AppColorTheme dan DyslexiaFont dikenali
-import 'features/display_settings/domain/entities/display_settings_entity.dart';
-
 import 'features/display_settings/presentation/bloc/display_settings/display_settings_bloc.dart';
 import 'features/display_settings/presentation/theme/display_colors.dart';
 import 'routes/app_route_conf.dart';
@@ -82,7 +79,7 @@ class _MyAppState extends State<MyApp> {
                     baseTheme = AppTheme.fromColors(
                       background: bgColor(ct),
                       foreground: fgColor(ct),
-                      isDark: ct == AppColorTheme.dark,
+                      isDark: false,
                     );
                   } else {
                     baseTheme = AppTheme.fromColors(

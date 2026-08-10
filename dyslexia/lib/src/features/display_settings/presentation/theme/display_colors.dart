@@ -10,7 +10,6 @@ const _appColors = {
   AppColorTheme.lavender: (Color(0xFFDED8E4), Color(0xFF1A1A1A), 'Lavender'),
   AppColorTheme.skyBlue: (Color(0xFFE3F2FD), Color(0xFF1A1A1A), 'Sky Blue'),
   AppColorTheme.peach: (Color(0xFFFFE8D6), Color(0xFF1A1A1A), 'Peach'),
-  AppColorTheme.dark: (Color(0xFF1E1E1E), Color(0xFFE8E8E8), 'Dark Mode'),
   AppColorTheme.lightBlue: (Color(0xFFB3D9FF), Color(0xFF1A1A1A), 'Light Blue'),
   AppColorTheme.grey: (Color(0xFFE0E0E0), Color(0xFF1A1A1A), 'Grey'),
 };

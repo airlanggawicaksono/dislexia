@@ -104,8 +104,8 @@ void main() {
     });
 
     test('updates colorTheme', () {
-      final result = defaults.copyWith(colorTheme: AppColorTheme.dark);
-      expect(result.colorTheme, AppColorTheme.dark);
+      final result = defaults.copyWith(colorTheme: AppColorTheme.peach);
+      expect(result.colorTheme, AppColorTheme.peach);
     });
 
     test('updates preset', () {

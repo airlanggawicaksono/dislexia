@@ -33,7 +33,7 @@ void main() {
         letterSpacing: 1.0,
         wordSpacing: 6.0,
         font: DyslexiaFont.arial,
-        colorTheme: AppColorTheme.dark,
+        colorTheme: AppColorTheme.lightBlue,
         preset: DisplayPreset.highContrast,
         rulerEnabled: false,
         syllablesEnabled: false,
@@ -84,6 +84,41 @@ void main() {
       final model = DisplaySettingsModel.defaults().copyWith(fontSize: 20.0);
       expect(model, isA<DisplaySettingsModel>());
       expect(model.fontSize, 20.0);
+    });
+  });
+
+  group('migration of removed dark theme', () {
+    test('old colorTheme index 7 (AppColorTheme.dark) falls back to white', () {
+      final restored = DisplaySettingsModel.fromMap({'colorTheme': 7});
+      expect(restored.colorTheme, AppColorTheme.white);
+    });
+
+    test('old preset index 3 (DisplayPreset.nightMode) falls back to default',
+        () {
+      final restored = DisplaySettingsModel.fromMap({'preset': 3});
+      expect(restored.preset, DisplayPreset.defaultPreset);
+    });
+
+    test('unknown color name falls back to white', () {
+      final restored = DisplaySettingsModel.fromMap({'colorTheme': 'dark'});
+      expect(restored.colorTheme, AppColorTheme.white);
+    });
+
+    test('indices after the removed values shift down', () {
+      // Old index 8 was lightBlue -> now 7; old index 9 was grey -> now 8.
+      expect(
+        DisplaySettingsModel.fromMap({'colorTheme': 8}).colorTheme,
+        AppColorTheme.lightBlue,
+      );
+      expect(
+        DisplaySettingsModel.fromMap({'colorTheme': 9}).colorTheme,
+        AppColorTheme.grey,
+      );
+      // Old preset index 4 was lightBlueTheme -> now 3.
+      expect(
+        DisplaySettingsModel.fromMap({'preset': 4}).preset,
+        DisplayPreset.lightBlueTheme,
+      );
     });
   });
 }

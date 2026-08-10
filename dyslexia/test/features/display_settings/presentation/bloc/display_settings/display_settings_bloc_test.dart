@@ -109,10 +109,10 @@ void main() {
     test('emits new state with updated colorTheme and saves', () async {
       await _tick();
 
-      bloc.add(UpdateColorThemeEvent(AppColorTheme.dark));
+      bloc.add(UpdateColorThemeEvent(AppColorTheme.lavender));
       await _flush();
 
-      expect(bloc.state.settings.colorTheme, AppColorTheme.dark);
+      expect(bloc.state.settings.colorTheme, AppColorTheme.lavender);
       verify(() => mockRepository.save(any())).called(1);
     });
   });
@@ -126,7 +126,7 @@ void main() {
 
       expect(bloc.state.settings.fontSize, 22.0);
       expect(bloc.state.settings.font, DyslexiaFont.plusJakartaSans);
-      expect(bloc.state.settings.colorTheme, AppColorTheme.dark);
+      expect(bloc.state.settings.colorTheme, AppColorTheme.white);
       verify(() => mockRepository.save(any())).called(1);
     });
 
@@ -139,7 +139,7 @@ void main() {
       await _tick();
 
       // Apply a preset
-      bloc.add(ApplyPresetEvent(DisplayPreset.nightMode));
+      bloc.add(ApplyPresetEvent(DisplayPreset.lightBlueTheme));
       await _tick();
 
       expect(bloc.state.settings.rulerEnabled, false);

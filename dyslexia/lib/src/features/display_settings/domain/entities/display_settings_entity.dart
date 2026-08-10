@@ -23,7 +23,6 @@ enum AppColorTheme {
   lavender,
   skyBlue,
   peach,
-  dark,
   lightBlue,
   grey,
 }
@@ -32,7 +31,6 @@ enum DisplayPreset {
   defaultPreset,
   dyslexiaFriendly,
   highContrast,
-  nightMode,
   lightBlueTheme,
   greyTheme,
   lavenderTheme,

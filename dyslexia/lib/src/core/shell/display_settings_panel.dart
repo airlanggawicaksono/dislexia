@@ -94,7 +94,6 @@ class _DisplaySettingsPanelState extends State<DisplaySettingsPanel> {
     DisplayPreset.defaultPreset: 'Default',
     DisplayPreset.dyslexiaFriendly: 'Dyslexia Friendly',
     DisplayPreset.highContrast: 'High Contrast',
-    DisplayPreset.nightMode: 'Night Mode',
     DisplayPreset.lightBlueTheme: 'Light Blue',
     DisplayPreset.greyTheme: 'Grey',
     DisplayPreset.lavenderTheme: 'Lavender',
@@ -107,8 +106,7 @@ class _DisplaySettingsPanelState extends State<DisplaySettingsPanel> {
   static const _presetSubtitles = {
     DisplayPreset.defaultPreset: 'OpenDyslexic - Cream - 18pt',
     DisplayPreset.dyslexiaFriendly: 'OpenDyslexic - Cream - 20pt - 2.0x',
-    DisplayPreset.highContrast: 'Plus Jakarta Sans - Dark - 22pt',
-    DisplayPreset.nightMode: 'Plus Jakarta Sans - Dark - 18pt',
+    DisplayPreset.highContrast: 'Plus Jakarta Sans - White - 22pt',
     DisplayPreset.lightBlueTheme: 'Sassoon Primary - Light Blue - 18pt',
     DisplayPreset.greyTheme: 'Tahoma - Grey - 18pt',
     DisplayPreset.lavenderTheme: 'Sassoon Primary - Lavender - 18pt',
