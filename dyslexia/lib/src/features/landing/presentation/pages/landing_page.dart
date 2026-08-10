@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/themes/feature_accent.dart';
 import '../../../../core/widgets/adaptive/adaptive.dart';
 import '../../../../routes/app_route_path.dart';
 
@@ -14,8 +13,43 @@ class LandingPage extends StatelessWidget {
   static const _headerColorStart = Color(0xFFC9B8F0); 
   static const _headerColorEnd = Color(0xFFB596E5); 
   static const _headerBottomLayer = Color(0xFFD7C8FC);
-  static const _textColor = Colors.white;
-  static const _iconColor = Color(0xFFA29BFE); 
+
+  // ============================================================
+  // 🎨 FEATURE PALETTE (Sinkron dengan FeaturePage)
+  // ============================================================
+  static const Map<String, _FeaturePalette> _palettes = {
+    'summarize': _FeaturePalette(
+      tint: Color(0xFFFFE9D1),
+      strong: Color(0xFFFFD4A0),
+      onTint: Color(0xFF6B4423),
+    ),
+    'professionalize': _FeaturePalette(
+      tint: Color(0xFFCAE8FF),
+      strong: Color(0xFF6CB6FF),
+      onTint: Color(0xFF1E3A5F),
+    ),
+    'define': _FeaturePalette(
+      tint: Color(0xFFFBE5E0),
+      strong: Color(0xFFEC8E7D),
+      onTint: Color(0xFF5F2A1F),
+    ),
+    'reader': _FeaturePalette(
+      tint: Color(0xFFC9B8F0),
+      strong: Color(0xFFB596E5),
+      onTint: Color(0xFF4A2E7A),
+    ),
+    // Fallback default untuk fitur yang belum didefinisikan
+    'default': _FeaturePalette(
+      tint: Color(0xFFE8E6FF),
+      strong: Color(0xFFA29BFE),
+      onTint: Color(0xFF3E3A7A),
+    ),
+  };
+
+  _FeaturePalette _getPaletteForLabel(String label) {
+    final key = label.toLowerCase();
+    return _palettes[key] ?? _palettes['default']!;
+  }
 
   Future<void> _pasteFromClipboard(BuildContext context) async {
     final data = await Clipboard.getData(Clipboard.kTextPlain);
@@ -31,8 +65,8 @@ class LandingPage extends StatelessWidget {
     );
   }
 
-  Widget _getIconForAction(String label) {
-    const double iconSize = 35; 
+  Widget _getIconForAction(String label, Color iconColor) {
+    const double iconSize = 35.0;
 
     switch (label) {
       case 'Summarize':
@@ -43,7 +77,7 @@ class LandingPage extends StatelessWidget {
         return Image.asset('assets/images/profesionalize.png', width: iconSize, height: iconSize);
       case 'Lens':
         return Image.asset('assets/images/lens.png', width: iconSize, height: iconSize);
-      case 'Scan with Camera': 
+      case 'Camera': 
         return Image.asset('assets/images/scanner.png', width: iconSize, height: iconSize);
       case 'Reader': 
         return Image.asset('assets/images/reader.png', width: iconSize, height: iconSize);
@@ -51,10 +85,10 @@ class LandingPage extends StatelessWidget {
         return Icon(
           _isCupertino ? CupertinoIcons.checkmark_seal : Icons.fact_check_rounded,
           size: iconSize,
-          color: _iconColor,
+          color: iconColor,
         );
       default:
-        return const Icon(Icons.help_outline, size: iconSize, color: _iconColor);
+        return Icon(Icons.help_outline, size: iconSize, color: iconColor);
     }
   }
 
@@ -62,9 +96,8 @@ class LandingPage extends StatelessWidget {
     required String label,
     required VoidCallback onTap,
   }) {
-    // Colour-code each card with its feature accent (if it has one), always
-    // paired with the icon + text label — never colour alone.
-    final accent = featureAccentByLabel(label);
+    final palette = _getPaletteForLabel(label);
+    
     return Semantics(
       label: label,
       button: true,
@@ -74,7 +107,7 @@ class LandingPage extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05), // Shadow lebih halus untuk desktop
+              color: Colors.black.withOpacity(0.05),
               blurRadius: 12,
               offset: const Offset(0, 6),
             ),
@@ -89,17 +122,16 @@ class LandingPage extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
+                  // ✅ Icon container dengan background sesuai palette
                   Container(
                     width: 43,
                     height: 43,
-                    decoration: accent != null
-                        ? BoxDecoration(
-                            color: accent.tint,
-                            borderRadius: BorderRadius.circular(12),
-                          )
-                        : null,
+                    decoration: BoxDecoration(
+                      color: palette.tint,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     child: Center(
-                      child: _getIconForAction(label),
+                      child: _getIconForAction(label, palette.strong),
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -129,7 +161,6 @@ class LandingPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // <-- PERUBAHAN 1: Deteksi ukuran layar
     final screenWidth = MediaQuery.of(context).size.width;
     final isDesktop = screenWidth >= 800;
 
@@ -148,10 +179,9 @@ class LandingPage extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-            // <-- PERUBAHAN 2: Header kondisional (Ungu di Mobile, Putih Bersih di Desktop)
             if (!isDesktop) ...[
               // HEADER MOBILE (Ungu)
-              Container(
+              SizedBox(
                 width: double.infinity,
                 child: Stack(
                   children: [
@@ -205,16 +235,16 @@ class LandingPage extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: 12),
-Expanded(
+                          Expanded(
                             child: Center(
                               child: Image.asset(
                                 'assets/images/logo_owl.png',
-                                height: 75, // Disesuaikan agar proporsional dengan header
+                                height: 75,
                                 fit: BoxFit.contain,
                               ),
                             ),
                           ),
-                          const SizedBox(width: 56), // Spacer untuk menyeimbangkan tombol settings
+                          const SizedBox(width: 56),
                         ],
                       ),
                     ),
@@ -222,7 +252,7 @@ Expanded(
                 ),
               ),
             ] else ...[
-              // HEADER DESKTOP (Putih Bersih & Minimalis)
+              // HEADER DESKTOP (Putih Bersih)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                 child: Row(
@@ -249,11 +279,10 @@ Expanded(
             ],
           
             Expanded(
-              // <-- PERUBAHAN 3: Center dan batasi maxWidth agar rapi di layar desktop
               child: Center(
                 child: ConstrainedBox(
                   constraints: BoxConstraints(
-                    maxWidth: isDesktop ? 600 : double.infinity, // Maksimal 600px di desktop
+                    maxWidth: isDesktop ? 600 : double.infinity,
                   ),
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.all(24),
@@ -263,7 +292,7 @@ Expanded(
                         Text(
                           'Explore our tools:',
                           style: TextStyle(
-                            fontSize: isDesktop ? 20 : 16, // Sedikit lebih besar di desktop
+                            fontSize: isDesktop ? 20 : 16,
                             fontWeight: FontWeight.w600,
                             color: Colors.black87,
                           ),
@@ -287,6 +316,18 @@ Expanded(
       ),
     );
   }
+}
+
+class _FeaturePalette {
+  final Color tint;
+  final Color strong;
+  final Color onTint;
+
+  const _FeaturePalette({
+    required this.tint,
+    required this.strong,
+    required this.onTint,
+  });
 }
 
 bool get _isCupertino =>

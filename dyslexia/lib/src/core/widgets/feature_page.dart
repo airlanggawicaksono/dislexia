@@ -10,7 +10,6 @@ import '../../features/reader/presentation/bloc/reader_shell/reader_shell_bloc.d
 import '../../features/reader/presentation/bloc/reader_shell/reader_shell_event.dart';
 
 import '../widgets/level_slider.dart';
-import '../themes/feature_accent.dart';
 
 import '../../configs/injector/injector_conf.dart';
 import '../../features/display_settings/domain/entities/display_settings_entity.dart';
@@ -46,8 +45,8 @@ class FeaturePage extends StatefulWidget {
   final List<String>? levelLabels;
   final int initialLevel;
   final ValueChanged<int>? onLevelChanged;
-  
-  // ✅ PARAMETER BARU: Untuk mengganti isi text box langsung tanpa result card
+
+  /// Untuk mengganti isi text box langsung tanpa result card
   final bool replaceInputWithResult;
 
   /// True while an SSE stream is still delivering result chunks. During
@@ -88,10 +87,55 @@ class FeaturePage extends StatefulWidget {
 }
 
 class _FeaturePageState extends State<FeaturePage> {
+  // ============================================================
+  // 🎨 Helper: Dapatkan palette warna berdasarkan judul fitur
+  // ============================================================
+  _FeaturePalette _getPalette() {
+    switch (widget.title.toLowerCase()) {
+      case 'summarize':
+        return const _FeaturePalette(
+          tint: Color(0xFFFFE9D1),
+          strong: Color(0xFFFFD4A0),
+          onTint: Color(0xFF6B4423),
+          gradientStart: Color(0xFFFFE9D1),
+          gradientEnd: Color(0xFFFFD4A0),
+          backgroundTint: Color(0xFFFFF2E3),
+        );
+      case 'professionalize':
+        return const _FeaturePalette(
+          tint: Color(0xFFCAE8FF),
+          strong: Color(0xFF6CB6FF),
+          onTint: Color(0xFF1E3A5F),
+          gradientStart: Color(0xFFCAE8FF),
+          gradientEnd: Color(0xFF6CB6FF),
+          backgroundTint: Color(0xFFE3F1FF),
+        );
+      case 'define':
+        return const _FeaturePalette(
+          tint: Color(0xFFFBE5E0),
+          strong: Color(0xFFEC8E7D),
+          onTint: Color(0xFF5F2A1F),
+          gradientStart: Color(0xFFFBE5E0),
+          gradientEnd: Color(0xFFEC8E7D),
+          backgroundTint: Color(0xFFFFEEE9),
+        );
+      case 'reader':
+      default:
+        return const _FeaturePalette(
+          tint: Color(0xFFC9B8F0),
+          strong: Color(0xFFB596E5),
+          onTint: Color(0xFF4A2E7A),
+          gradientStart: Color(0xFFC9B8F0),
+          gradientEnd: Color(0xFFB596E5),
+          backgroundTint: Color(0xFFD7C8FC),
+        );
+    }
+  }
+
   @override
   void didUpdateWidget(covariant FeaturePage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // ✅ Saat hasil selesai diproses, langsung replace isi text box.
+    // Saat hasil selesai diproses, langsung replace isi text box.
     // Hanya sinkronkan controller saat stream SELESAI (isStreaming false),
     // bukan per chunk: menulis controller per chunk memicu listener ->
     // rebuild -> didUpdateWidget -> tulis lagi (stack overflow).
@@ -182,24 +226,28 @@ class _FeaturePageState extends State<FeaturePage> {
     final theme = Theme.of(context);
     final settings = context.watch<DisplaySettingsBloc>().state.settings;
     final screenWidth = MediaQuery.of(context).size.width;
-    final isMobile = screenWidth < 800; 
+    final isMobile = screenWidth < 800;
     final screenHeight = MediaQuery.of(context).size.height;
+    final palette = _getPalette();
 
-    // ✅ Jika replaceInputWithResult aktif, paksa tetap di input view
+    // Jika replaceInputWithResult aktif, paksa tetap di input view
     final showResultView = widget.hasResult && !widget.replaceInputWithResult;
 
     return Scaffold(
-      backgroundColor: Colors.white, 
+      backgroundColor: Colors.white,
       body: Stack(
         children: [
+          // ============================================================
+          // 🎨 Background Gradient (Mobile only) - DINAMIS per fitur
+          // ============================================================
           if (isMobile) ...[
             Positioned(
               top: 0, left: 0, right: 0,
               child: Container(
                 height: screenHeight * 0.55,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFD7C8FC),
-                  borderRadius: BorderRadius.only(
+                decoration: BoxDecoration(
+                  color: palette.backgroundTint,
+                  borderRadius: const BorderRadius.only(
                     bottomLeft: Radius.circular(48),
                     bottomRight: Radius.circular(48),
                   ),
@@ -210,13 +258,13 @@ class _FeaturePageState extends State<FeaturePage> {
               top: 0, left: 0, right: 0,
               child: Container(
                 height: screenHeight * 0.50,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [Color(0xFFC9B8F0), Color(0xFFB596E5)],
+                    colors: [palette.gradientStart, palette.gradientEnd],
                   ),
-                  borderRadius: BorderRadius.only(
+                  borderRadius: const BorderRadius.only(
                     bottomLeft: Radius.circular(32),
                     bottomRight: Radius.circular(32),
                   ),
@@ -224,10 +272,10 @@ class _FeaturePageState extends State<FeaturePage> {
               ),
             ),
           ],
-          
+
           Column(
             children: [
-              _buildHeader(context, isMobile),
+              _buildHeader(context, isMobile, palette),
               Expanded(
                 child: showResultView
                     ? _buildResultView(context, theme, settings, isMobile)
@@ -236,30 +284,33 @@ class _FeaturePageState extends State<FeaturePage> {
             ],
           ),
 
+          // ============================================================
+          // ⏳ Loading Overlay (warna dinamis)
+          // ============================================================
           if (widget.isLoading)
             Container(
               color: Colors.black.withOpacity(0.3),
-              child: const Center(
+              child: Center(
                 child: Card(
                   color: Colors.white,
                   elevation: 8,
-                  shape: RoundedRectangleBorder(
+                  shape: const RoundedRectangleBorder(
                     borderRadius: BorderRadius.all(Radius.circular(16)),
                   ),
                   child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         SizedBox(
                           width: 40, height: 40,
                           child: CircularProgressIndicator(
-                            color: Color(0xFFB596E5),
+                            color: palette.strong,
                             strokeWidth: 3,
                           ),
                         ),
                         const SizedBox(height: 16),
-                        Text(
+                        const Text(
                           'Processing...',
                           style: TextStyle(
                             fontSize: 16,
@@ -278,13 +329,13 @@ class _FeaturePageState extends State<FeaturePage> {
     );
   }
 
-  Widget _buildHeader(BuildContext context, bool isMobile) {
+  Widget _buildHeader(BuildContext context, bool isMobile, _FeaturePalette palette) {
     return Container(
       padding: EdgeInsets.only(
-        left: 24, 
-        right: 24, 
-        top: isMobile ? 48 : 16, 
-        bottom: 24
+        left: 24,
+        right: 24,
+        top: isMobile ? 48 : 16,
+        bottom: 24,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -299,25 +350,25 @@ class _FeaturePageState extends State<FeaturePage> {
                   style: IconButton.styleFrom(
                     backgroundColor: Colors.white,
                     fixedSize: const Size(40, 40),
-                    elevation: 0, 
+                    elevation: 0,
                   ),
                 ),
                 const SizedBox(width: 12),
               ],
               if (widget.feature != null) ...[
                 _FeatureBadge(
-                  accent: featureAccent(widget.feature!),
+                  palette: palette,
                   icon: widget.feature!.materialIcon,
                   label: widget.title,
                 ),
                 const SizedBox(width: 12),
               ],
-              
+
               Expanded(
                 child: Text(
                   widget.title,
-                  textAlign: isMobile ? TextAlign.start : TextAlign.center, 
-                  style: TextStyle( // Dihapus const agar bisa inherit font global
+                  textAlign: isMobile ? TextAlign.start : TextAlign.center,
+                  style: const TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
                     color: Colors.black,
@@ -325,7 +376,7 @@ class _FeaturePageState extends State<FeaturePage> {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              
+
               const SizedBox(width: 12),
               if (widget.onReset != null)
                 IconButton(
@@ -356,9 +407,7 @@ class _FeaturePageState extends State<FeaturePage> {
             const SizedBox(height: 16),
             LevelSlider(
               label: widget.title == 'Summarize' ? 'Summary Length' : 'Detail Level',
-              accentColor: widget.feature != null
-                  ? featureAccent(widget.feature!).strong
-                  : const Color(0xFFB596E5),
+              accentColor: palette.strong,
               valueLabels: widget.levelLabels!,
               initialIndex: widget.initialLevel,
               onChanged: (index) {
@@ -381,10 +430,6 @@ class _FeaturePageState extends State<FeaturePage> {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (widget.controls != null && (widget.controlsInline || !isMobile)) ...[
-            // The control region is plain widget.controls: the email-mode
-            // switch and its TextFields are already fully semantic. Merging
-            // them (MergeSemantics) would collapse the fields into a single
-            // non-editable node, so we deliberately don't merge here.
             widget.controls!,
             const SizedBox(height: 16),
           ],
@@ -402,14 +447,12 @@ class _FeaturePageState extends State<FeaturePage> {
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min, 
+        mainAxisSize: MainAxisSize.min,
         children: [
           if (widget.inputExpanded) ...[
             _buildTextInputCard(context, theme, settings),
             const SizedBox(height: 16),
           ],
-          // Group the output region so assistive tech can focus the result
-          // as a single scrollable block of text.
           Semantics(
             container: true,
             label: '${widget.title} output',
@@ -429,6 +472,7 @@ class _FeaturePageState extends State<FeaturePage> {
   }
 
   Widget _buildTextInputCard(BuildContext context, ThemeData theme, DisplaySettingsEntity settings) {
+    final palette = _getPalette();
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -465,7 +509,7 @@ class _FeaturePageState extends State<FeaturePage> {
                 ),
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.zero,
-                counterText: '', 
+                counterText: '',
               ),
             ),
           ),
@@ -486,15 +530,17 @@ class _FeaturePageState extends State<FeaturePage> {
                   );
                 },
               ),
+              // ✅ FAB mini dengan warna dinamis sesuai fitur
               FloatingActionButton(
                 mini: true,
+                heroTag: null, // hindari hero conflict jika multiple FAB di tree
                 tooltip: 'Add text from clipboard or PDF',
                 onPressed: () => _showAddSourceDialog(context),
-                backgroundColor: Colors.white,
+                backgroundColor: palette.tint,
                 elevation: 2,
-                child: const Icon(
+                child: Icon(
                   Icons.add,
-                  color: Colors.black87,
+                  color: palette.strong,
                   size: 24,
                 ),
               ),
@@ -505,22 +551,21 @@ class _FeaturePageState extends State<FeaturePage> {
     );
   }
 
-  // ✅ PERUBAHAN DI SINI: Layout tombol untuk Mobile dimaksimalkan
   Widget _buildActionButtons(BuildContext context, ThemeData theme, bool isMobile) {
+    final palette = _getPalette();
     return ValueListenableBuilder<TextEditingValue>(
       valueListenable: widget.controller,
       builder: (context, value, child) {
         final isSubmitDisabled = widget.isLoading || value.text.trim().isEmpty;
 
         if (!isMobile) {
-          // Desktop: Tetap di tengah dengan lebar maksimal yang rapi (300)
           return Center(
             child: SizedBox(
-              width: 300, 
+              width: 300,
               child: FilledButton(
                 onPressed: isSubmitDisabled ? null : widget.onSubmit,
                 style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFFB596E5),
+                  backgroundColor: palette.strong,
                   foregroundColor: Colors.white,
                   disabledBackgroundColor: Colors.grey.shade300,
                   disabledForegroundColor: Colors.white70,
@@ -529,7 +574,7 @@ class _FeaturePageState extends State<FeaturePage> {
                     borderRadius: BorderRadius.circular(28),
                   ),
                 ),
-                child: Text(
+                child: const Text(
                   'Submit',
                   style: TextStyle(
                     fontSize: 16,
@@ -541,14 +586,12 @@ class _FeaturePageState extends State<FeaturePage> {
           );
         }
 
-        // ✅ MOBILE: Hapus Copy & Share. Gunakan SizedBox width: double.infinity 
-        // agar tombol Submit memenuhi lebar area (yang sudah ada padding horizontal 24 dari parent)
         return SizedBox(
           width: double.infinity,
           child: FilledButton(
             onPressed: isSubmitDisabled ? null : widget.onSubmit,
             style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFFB596E5),
+              backgroundColor: palette.strong,
               foregroundColor: Colors.white,
               disabledBackgroundColor: Colors.grey.shade300,
               disabledForegroundColor: Colors.white70,
@@ -571,20 +614,46 @@ class _FeaturePageState extends State<FeaturePage> {
   }
 
   void _showAddSourceDialog(BuildContext context) {
+    final palette = _getPalette();
     showModalBottomSheet(
       context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (ctx) => Container(
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // Handle bar (mobile UX pattern)
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 16),
             Text(
               'Add Text From',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: palette.strong,
+              ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
             ListTile(
-              leading: const Icon(Icons.content_paste),
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: palette.tint,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(Icons.content_paste, color: palette.strong),
+              ),
               title: const Text('Paste from Clipboard'),
               onTap: () {
                 Navigator.pop(ctx);
@@ -592,13 +661,21 @@ class _FeaturePageState extends State<FeaturePage> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.upload_file),
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: palette.tint,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(Icons.upload_file, color: palette.strong),
+              ),
               title: const Text('Upload PDF'),
               onTap: () {
                 Navigator.pop(ctx);
                 _pickPdf(context);
               },
             ),
+            SizedBox(height: MediaQuery.of(context).padding.bottom + 8),
           ],
         ),
       ),
@@ -606,15 +683,36 @@ class _FeaturePageState extends State<FeaturePage> {
   }
 }
 
+// ============================================================
+// 🎨 Feature Palette - Warna per fitur
+// ============================================================
+class _FeaturePalette {
+  final Color tint;
+  final Color strong;
+  final Color onTint;
+  final Color gradientStart;
+  final Color gradientEnd;
+  final Color backgroundTint;
+
+  const _FeaturePalette({
+    required this.tint,
+    required this.strong,
+    required this.onTint,
+    required this.gradientStart,
+    required this.gradientEnd,
+    required this.backgroundTint,
+  });
+}
+
 /// Small icon + label chip that colour-codes a feature header. The icon and
 /// text carry the meaning; the tint is a secondary (never the only) signal.
 class _FeatureBadge extends StatelessWidget {
-  final FeatureAccent accent;
+  final _FeaturePalette palette;
   final IconData icon;
   final String label;
 
   const _FeatureBadge({
-    required this.accent,
+    required this.palette,
     required this.icon,
     required this.label,
   });
@@ -628,20 +726,20 @@ class _FeatureBadge extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: accent.tint,
+          color: palette.tint,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 16, color: accent.strong),
+            Icon(icon, size: 16, color: palette.strong),
             const SizedBox(width: 6),
             Text(
               label,
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
-                color: accent.onTint,
+                color: palette.onTint,
               ),
             ),
           ],
