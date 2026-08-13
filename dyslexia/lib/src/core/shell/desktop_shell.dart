@@ -148,13 +148,13 @@ class _DesktopShellState extends State<DesktopShell> {
                           
                           return BlocBuilder<SidebarBloc, SidebarState>(
                             builder: (context, sidebar) {
-                              final accentTint = featureAccent(sidebar.section).tint;
+                              final accent = featureAccent(sidebar.section);
                               if (bottomNav) {
                                 return Column(
                                   children: [
                                     Expanded(
                                       child: _bottomSettings
-                                          ? DisplaySettingsPanel(backgroundColor: accentTint)
+                                          ? DisplaySettingsPanel(backgroundColor: accent.tint)
                                           : switch (sidebar.section) {
                                               SidebarSection.reader => const MainColumn(),
                                               SidebarSection.summarize => const SummarizePage(),
@@ -178,14 +178,14 @@ class _DesktopShellState extends State<DesktopShell> {
                               if (_bottomSettings && hiddenSidebar) {
                                 return Row(
                                   children: [
-                                    Expanded(child: DisplaySettingsPanel(backgroundColor: accentTint)),
+                                    Expanded(child: DisplaySettingsPanel(backgroundColor: accent.tint)),
                                   ],
                                 );
                               }
                               return Row(
                                 children: [
                                   if (!hiddenSidebar)
-                                    SidebarShellPage(compact: compactSidebar, touchMode: touchMode, backgroundColor: accentTint),
+                                    SidebarShellPage(compact: compactSidebar, touchMode: touchMode, backgroundColor: accent.tint, foregroundColor: accent.onTint),
                                   Expanded(
                                     child: switch (sidebar.section) {
                                       SidebarSection.reader => const MainColumn(),
@@ -196,7 +196,7 @@ class _DesktopShellState extends State<DesktopShell> {
                                     },
                                   ),
                                   if (!hiddenSidebar && _settingsPanelOpen)
-                                    DisplaySettingsPanel(backgroundColor: accentTint),
+                                    DisplaySettingsPanel(backgroundColor: accent.tint),
                                 ],
                               );
                             },

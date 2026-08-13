@@ -17,7 +17,9 @@ class SidebarShellPage extends StatelessWidget {
   final bool touchMode;
   /// Optional background tint from the active feature accent.
   final Color? backgroundColor;
-  const SidebarShellPage({super.key, this.compact = false, this.touchMode = false, this.backgroundColor});
+  /// Dark foreground colour for idle icons/labels on a tinted background.
+  final Color? foregroundColor;
+  const SidebarShellPage({super.key, this.compact = false, this.touchMode = false, this.backgroundColor, this.foregroundColor});
 
   static const _fullWidth = 96.0;
   static const _compactWidth = 56.0;
@@ -48,6 +50,7 @@ class SidebarShellPage extends StatelessWidget {
                     compact: compact,
                     touchMode: touchMode,
                     selected: state.section == section,
+                    foregroundColor: foregroundColor,
                     onTap: () => context
                         .read<SidebarBloc>()
                         .add(SidebarSectionSelected(section)),
