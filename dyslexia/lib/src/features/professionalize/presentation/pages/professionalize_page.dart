@@ -182,8 +182,15 @@ class _EmailControlsState extends State<_EmailControls> {
             ),
             Switch(
               value: _on,
-              activeColor: Colors.white,
-              activeTrackColor: const Color(0xFF5C469C),
+              thumbColor: WidgetStateProperty.all(Colors.white),
+              trackColor: WidgetStateProperty.resolveWith<Color>(
+                (Set<WidgetState> states) {
+                  if (states.contains(WidgetState.selected)) {
+                    return const Color(0xFF5C469C);
+                  }
+                  return Colors.grey.shade400;
+                },
+              ),
               onChanged: (v) {
                 setState(() => _on = v);
                 widget.onModeChanged(v);
