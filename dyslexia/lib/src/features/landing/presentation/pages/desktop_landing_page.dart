@@ -221,7 +221,7 @@ class DesktopLandingPage extends StatelessWidget {
                     children: [
                       Text(section.label, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.black87)),
                       const SizedBox(height: 4),
-                      Text(descriptions[section] ?? '', style: TextStyle(fontSize: 14, color: Colors.grey.shade600, height: 1.3), maxLines: 2, overflow: TextOverflow.ellipsis),
+                      Text(descriptions[section] ?? '', style: TextStyle(fontSize: 14, color: Colors.grey.shade600, height: 1.3)),
                     ],
                   ),
                 ),

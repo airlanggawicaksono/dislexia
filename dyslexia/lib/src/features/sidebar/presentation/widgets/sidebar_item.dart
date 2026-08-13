@@ -1,5 +1,3 @@
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../core/themes/feature_accent.dart';
@@ -94,17 +92,38 @@ class SidebarItem extends StatelessWidget {
 
 
   Widget _buildCustomIcon(SidebarSection section, double size, Color color) {
-    // Use Material/Cupertino icons so the colour parameter is respected.
-    // PNG glyphs (white-on-colour) are only appropriate on the landing
-    // cards; on the tinted sidebar they wash out.
-    final isCupertino = _useCupertinoIcons();
-    final icon = isCupertino ? section.cupertinoIcon : section.materialIcon;
-    return Icon(icon, size: size, color: color);
+    // Render the feature PNG inside a small tinted square so the white
+    // glyph is always readable — matching the landing cards' look.
+    final containerSize = compact ? 32.0 : 36.0;
+    final iconSize = compact ? 18.0 : 20.0;
+    final tintBg = featureAccent(section).tint;
+    return Container(
+      width: containerSize,
+      height: containerSize,
+      decoration: BoxDecoration(
+        color: tintBg,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Center(
+        child: Image.asset(
+          _iconPathFor(section),
+          width: iconSize,
+          height: iconSize,
+          fit: BoxFit.contain,
+        ),
+      ),
+    );
   }
 
-  bool _useCupertinoIcons() {
-    if (kIsWeb) return false;
-    return defaultTargetPlatform == TargetPlatform.iOS ||
-        defaultTargetPlatform == TargetPlatform.macOS;
+  String _iconPathFor(SidebarSection section) {
+    return switch (section) {
+      SidebarSection.reader        => 'assets/images/reader.png',
+      SidebarSection.summarize     => 'assets/images/summarize.png',
+      SidebarSection.define        => 'assets/images/define.png',
+      SidebarSection.professionalize => 'assets/images/profesionalize.png',
+      SidebarSection.screening     => 'assets/images/screenings.png',
+    };
   }
+
+
 }

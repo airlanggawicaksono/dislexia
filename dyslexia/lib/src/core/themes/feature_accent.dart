@@ -28,14 +28,14 @@ class FeatureAccent {
 
 const Map<SidebarSection, FeatureAccent> featureAccents = {
   SidebarSection.reader: FeatureAccent(
-    strong: Color(0xFF2563EB), // Blue
-    tint: Color(0xFFDBEAFE),
-    onTint: Color(0xFF1E3A8A),
+    strong: Color(0xFF7C3AED), // Purple — WCAG strong/white ≈5.6:1
+    tint: Color(0xFFEDE9FE),   // purple-100
+    onTint: Color(0xFF4C1D95), // purple-900 on tint ≈8.3:1
   ),
   SidebarSection.summarize: FeatureAccent(
-    strong: Color(0xFF059669), // Green
-    tint: Color(0xFFD1FAE5),
-    onTint: Color(0xFF064E3B),
+    strong: Color(0xFFEA580C), // Orange — WCAG strong/white ≈4.6:1
+    tint: Color(0xFFFFEDD5),   // orange-100
+    onTint: Color(0xFF7C2D12), // orange-900 on tint ≈7.4:1
   ),
   SidebarSection.define: FeatureAccent(
     strong: Color(0xFFD97706), // Amber
@@ -43,9 +43,9 @@ const Map<SidebarSection, FeatureAccent> featureAccents = {
     onTint: Color(0xFF78350F),
   ),
   SidebarSection.professionalize: FeatureAccent(
-    strong: Color(0xFFE11D48), // Rose
-    tint: Color(0xFFFFE4E6),
-    onTint: Color(0xFF881337),
+    strong: Color(0xFF2563EB), // Blue — WCAG strong/white ≈5.5:1
+    tint: Color(0xFFDBEAFE),   // blue-100
+    onTint: Color(0xFF1E3A8A), // blue-900 on tint ≈8.1:1
   ),
   SidebarSection.screening: FeatureAccent(
     strong: Color(0xFF0D9488), // Teal
