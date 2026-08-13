@@ -113,32 +113,36 @@ class DesktopLandingPage extends StatelessWidget {
                     children: [
                       const Text('What do you want to do today?', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.black)),
                       const SizedBox(height: 24),
-                      ...SidebarSection.values.map((section) {
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 16),
-                          child: _buildFeatureCard(
-                            section: section,
-                            onTap: () {
-                              print('👆 CARD DITEKAN: ${section.label}');
-                              
-                              // 1. Update SidebarBloc agar DesktopShell tahu fitur mana yang harus ditampilkan
-                              context.read<SidebarBloc>().add(SidebarSectionSelected(section));
-                              
-                              // 2. Pindah ke DesktopShell (PATH HARUS SAMA PERSIS DENGAN APP_ROUTE_CONF)
-                              try {
-                                context.go('/desktop-shell');
-                              } catch (e) {
-                                print('❌ ERROR NAVIGASI: $e');
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text('Gagal membuka halaman: $e'), backgroundColor: Colors.red),
-                                  );
+                      Wrap(
+                        spacing: 16,
+                        runSpacing: 16,
+                        children: SidebarSection.values.map((section) {
+                          return SizedBox(
+                            width: (800 - 16) / 2,
+                            child: _buildFeatureCard(
+                              section: section,
+                              onTap: () {
+                                print('👆 CARD DITEKAN: ${section.label}');
+                                
+                                // 1. Update SidebarBloc agar DesktopShell tahu fitur mana yang harus ditampilkan
+                                context.read<SidebarBloc>().add(SidebarSectionSelected(section));
+                                
+                                // 2. Pindah ke DesktopShell (PATH HARUS SAMA PERSIS DENGAN APP_ROUTE_CONF)
+                                try {
+                                  context.go('/desktop-shell');
+                                } catch (e) {
+                                  print('❌ ERROR NAVIGASI: $e');
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Gagal membuka halaman: $e'), backgroundColor: Colors.red),
+                                    );
+                                  }
                                 }
-                              }
-                            },
-                          ),
-                        );
-                      }).toList(),
+                              },
+                            ),
+                          );
+                        }).toList(),
+                      ),
                     ],
                   ),
                 ),
@@ -198,29 +202,7 @@ class DesktopLandingPage extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          Text(section.label, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.black87)),
-                          const SizedBox(width: 10),
-                          // Small accent chip reinforces the feature colour
-                          // alongside the label text.
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: accent.tint,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Text(
-                              section.label,
-                              style: TextStyle(
-                                fontSize: 9,
-                                fontWeight: FontWeight.w700,
-                                color: accent.onTint,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+                      Text(section.label, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.black87)),
                       const SizedBox(height: 4),
                       Text(descriptions[section] ?? '', style: TextStyle(fontSize: 14, color: Colors.grey.shade600, height: 1.3), maxLines: 2, overflow: TextOverflow.ellipsis),
                     ],

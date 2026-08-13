@@ -29,8 +29,8 @@ enum SidebarSection {
   ),
   screening(
     label: 'Screening',
-    cupertinoIcon: CupertinoIcons.search,
-    materialIcon: Icons.fact_check_rounded,
+    cupertinoIcon: CupertinoIcons.play_rectangle,
+    materialIcon: Icons.smart_display_rounded,
   );
 
   const SidebarSection({
