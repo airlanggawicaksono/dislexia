@@ -103,7 +103,7 @@ class DesktopLandingPage extends StatelessWidget {
           Expanded(
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+              padding: const EdgeInsets.only(left: 32, right: 32, top: 8, bottom: 24),
               child: Center(
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 800),
@@ -154,6 +154,16 @@ class DesktopLandingPage extends StatelessWidget {
     );
   }
 
+  String _iconPathFor(SidebarSection section) {
+    return switch (section) {
+      SidebarSection.reader => 'assets/images/reader.png',
+      SidebarSection.summarize => 'assets/images/summarize.png',
+      SidebarSection.define => 'assets/images/define.png',
+      SidebarSection.professionalize => 'assets/images/profesionalize.png',
+      SidebarSection.screening => 'assets/images/screenings.png',
+    };
+  }
+
   Widget _buildFeatureCard({required SidebarSection section, required VoidCallback onTap}) {
     final descriptions = {
       SidebarSection.reader: 'Convert any text into your preferred reading format for a more comfortable experience.',
@@ -195,7 +205,13 @@ class DesktopLandingPage extends StatelessWidget {
                 Container(
                   width: 50, height: 50,
                   decoration: BoxDecoration(color: accent.tint, borderRadius: BorderRadius.circular(12)),
-                  child: Center(child: Icon(section.materialIcon, size: 28, color: accent.strong)),
+                  child: Center(
+                    child: Image.asset(
+                      _iconPathFor(section),
+                      width: 28, height: 28,
+                      fit: BoxFit.contain,
+                    ),
+                  ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
