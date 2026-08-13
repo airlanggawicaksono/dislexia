@@ -182,7 +182,8 @@ class _EmailControlsState extends State<_EmailControls> {
             ),
             Switch(
               value: _on,
-              activeColor: const Color.fromARGB(255, 255, 255, 255),
+              activeColor: Colors.white,
+              activeTrackColor: const Color(0xFF5C469C),
               onChanged: (v) {
                 setState(() => _on = v);
                 widget.onModeChanged(v);
