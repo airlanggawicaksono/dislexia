@@ -47,31 +47,55 @@ class DesktopLandingPage extends StatelessWidget {
                   height: 110,
                   decoration: const BoxDecoration(
                     color: _headerBottomLayer,
-                    borderRadius: BorderRadius.only(bottomLeft: Radius.circular(32), bottomRight: Radius.circular(32)),
+                    borderRadius: BorderRadius.only(
+                        bottomLeft: Radius.circular(32),
+                        bottomRight: Radius.circular(32)),
                   ),
                 ),
                 Container(
                   height: 100,
                   decoration: const BoxDecoration(
-                    gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [_headerColorStart, _headerColorEnd]),
-                    borderRadius: BorderRadius.only(bottomLeft: Radius.circular(24), bottomRight: Radius.circular(24)),
+                    gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [_headerColorStart, _headerColorEnd]),
+                    borderRadius: BorderRadius.only(
+                        bottomLeft: Radius.circular(24),
+                        bottomRight: Radius.circular(24)),
                   ),
                 ),
                 Container(
                   height: 100,
-                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                   child: Row(
                     children: [
-                      Image.asset('assets/images/logo_owl.png', height: 60, width: 60, fit: BoxFit.contain),
+                      Image.asset('assets/images/logo_owl.png',
+                          height: 60, width: 60, fit: BoxFit.contain),
                       const SizedBox(width: 16),
-                      const Text('Dyslexic.app', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: _textColor, letterSpacing: 0.5)),
+                      const Text('Dyslexic.app',
+                          style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: _textColor,
+                              letterSpacing: 0.5)),
                       const Spacer(),
                       Container(
                         padding: const EdgeInsets.all(8),
-                        decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle, boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))]),
+                        decoration: const BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                  color: Colors.black12,
+                                  blurRadius: 4,
+                                  offset: Offset(0, 2))
+                            ]),
                         child: IconButton(
-                          onPressed: () => context.pushNamed(AppRoute.displaySettings.name),
-                          icon: const Icon(Icons.settings_rounded, color: Colors.black87, size: 24),
+                          onPressed: () =>
+                              context.pushNamed(AppRoute.displaySettings.name),
+                          icon: const Icon(Icons.settings_rounded,
+                              color: Colors.black87, size: 24),
                           tooltip: 'Settings',
                           padding: EdgeInsets.zero,
                           constraints: const BoxConstraints(),
@@ -80,13 +104,22 @@ class DesktopLandingPage extends StatelessWidget {
                       const SizedBox(width: 12),
                       Container(
                         padding: const EdgeInsets.all(8),
-                        decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle, boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))]),
+                        decoration: const BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                  color: Colors.black12,
+                                  blurRadius: 4,
+                                  offset: Offset(0, 2))
+                            ]),
                         child: IconButton(
                           onPressed: () {
                             context.read<AuthBloc>().add(const LogoutEvent());
                             context.goNamed(AppRoute.auth.name);
                           },
-                          icon: const Icon(Icons.logout_rounded, color: Colors.black87, size: 24),
+                          icon: const Icon(Icons.logout_rounded,
+                              color: Colors.black87, size: 24),
                           tooltip: 'Logout',
                           padding: EdgeInsets.zero,
                           constraints: const BoxConstraints(),
@@ -103,57 +136,71 @@ class DesktopLandingPage extends StatelessWidget {
           Expanded(
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.only(left: 32, right: 32, top: 8, bottom: 24),
+              padding: const EdgeInsets.only(
+                  left: 32, right: 32, top: 8, bottom: 24),
               child: Center(
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 1100),
                   child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final available = constraints.maxWidth;
-                  const spacing = 16.0;
-                  final columns = available >= 1100 ? 3 : (available >= 720 ? 2 : 1);
-                  final cardWidth = (available - spacing * (columns - 1)) / columns;
+                    builder: (context, constraints) {
+                      final available = constraints.maxWidth;
+                      const spacing = 16.0;
+                      final columns =
+                          available >= 1100 ? 3 : (available >= 720 ? 2 : 1);
+                      final cardWidth =
+                          (available - spacing * (columns - 1)) / columns;
 
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text('What do you want to do today?', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.black)),
-                      const SizedBox(height: 24),
-                      Wrap(
-                        alignment: WrapAlignment.center,
-                        spacing: spacing,
-                        runSpacing: spacing,
-                        children: SidebarSection.values.map((section) {
-                          return SizedBox(
-                            width: cardWidth,
-                            child: _buildFeatureCard(
-                              section: section,
-                              onTap: () {
-                                print('👆 CARD DITEKAN: ${section.label}');
-                                
-                                // 1. Update SidebarBloc agar DesktopShell tahu fitur mana yang harus ditampilkan
-                                context.read<SidebarBloc>().add(SidebarSectionSelected(section));
-                                
-                                // 2. Pindah ke DesktopShell (PATH HARUS SAMA PERSIS DENGAN APP_ROUTE_CONF)
-                                try {
-                                  context.go('/desktop-shell');
-                                } catch (e) {
-                                  print('❌ ERROR NAVIGASI: $e');
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text('Gagal membuka halaman: $e'), backgroundColor: Colors.red),
-                                    );
-                                  }
-                                }
-                              },
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ],
-                  );
-                },
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text('What do you want to do today?',
+                              style: TextStyle(
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black)),
+                          const SizedBox(height: 24),
+                          Wrap(
+                            alignment: WrapAlignment.center,
+                            spacing: spacing,
+                            runSpacing: spacing,
+                            children: SidebarSection.values.map((section) {
+                              return SizedBox(
+                                width: cardWidth,
+                                child: _buildFeatureCard(
+                                  section: section,
+                                  onTap: () {
+                                    print('👆 CARD DITEKAN: ${section.label}');
+
+                                    // 1. Update SidebarBloc agar DesktopShell tahu fitur mana yang harus ditampilkan
+                                    context
+                                        .read<SidebarBloc>()
+                                        .add(SidebarSectionSelected(section));
+
+                                    // 2. Pindah ke DesktopShell (PATH HARUS SAMA PERSIS DENGAN APP_ROUTE_CONF)
+                                    try {
+                                      context.go('/desktop-shell');
+                                    } catch (e) {
+                                      print('❌ ERROR NAVIGASI: $e');
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          SnackBar(
+                                              content: Text(
+                                                  'Gagal membuka halaman: $e'),
+                                              backgroundColor: Colors.red),
+                                        );
+                                      }
+                                    }
+                                  },
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
                 ),
               ),
             ),
@@ -173,13 +220,19 @@ class DesktopLandingPage extends StatelessWidget {
     };
   }
 
-  Widget _buildFeatureCard({required SidebarSection section, required VoidCallback onTap}) {
+  Widget _buildFeatureCard(
+      {required SidebarSection section, required VoidCallback onTap}) {
     final descriptions = {
-      SidebarSection.reader: 'Convert any text into your preferred reading format for a more comfortable experience.',
-      SidebarSection.summarize: 'Turn long passages into short, easy-to-read summaries while keeping the key ideas.',
-      SidebarSection.define: 'Get clear definitions and explanations for complex terms within your text.',
-      SidebarSection.professionalize: 'Rewrite your text with a clear, polished, and professional tone.',
-      SidebarSection.screening: 'Analyze and pre-screen text for specific criteria, tone, or compliance.',
+      SidebarSection.reader:
+          'Convert any text into your preferred reading format for a more comfortable experience.',
+      SidebarSection.summarize:
+          'Turn long passages into short, easy-to-read summaries while keeping the key ideas.',
+      SidebarSection.define:
+          'Get clear definitions and explanations for complex terms within your text.',
+      SidebarSection.professionalize:
+          'Rewrite your text with a clear, polished, and professional tone.',
+      SidebarSection.screening:
+          'Analyze and pre-screen text for specific criteria, tone, or compliance.',
     };
 
     // Each feature card is colour-coded with its own accent, always paired
@@ -207,35 +260,52 @@ class DesktopLandingPage extends StatelessWidget {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: Colors.grey.shade200),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 12, offset: const Offset(0, 6))],
+                boxShadow: [
+                  BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 12,
+                      offset: const Offset(0, 6))
+                ],
               ),
               child: Row(
-              children: [
-                Container(
-                  width: 50, height: 50,
-                  decoration: BoxDecoration(color: accent.tint, borderRadius: BorderRadius.circular(12)),
-                  child: Center(
-                    child: Image.asset(
-                      _iconPathFor(section),
-                      width: 28, height: 28,
-                      fit: BoxFit.contain,
+                children: [
+                  Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                        color: accent.tint,
+                        borderRadius: BorderRadius.circular(12)),
+                    child: Center(
+                      child: Image.asset(
+                        _iconPathFor(section),
+                        width: 28,
+                        height: 28,
+                        fit: BoxFit.contain,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(section.label, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.black87)),
-                      const SizedBox(height: 4),
-                      Text(descriptions[section] ?? '', style: TextStyle(fontSize: 14, color: Colors.grey.shade600, height: 1.3)),
-                    ],
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(section.label,
+                            style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black87)),
+                        const SizedBox(height: 4),
+                        Text(descriptions[section] ?? '',
+                            style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey.shade600,
+                                height: 1.3)),
+                      ],
+                    ),
                   ),
-                ),
-                const Icon(Icons.chevron_right, color: Colors.grey, size: 24),
-              ],
-            ),
+                  const Icon(Icons.chevron_right, color: Colors.grey, size: 24),
+                ],
+              ),
             ),
           ),
         ),
