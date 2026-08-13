@@ -7,7 +7,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 
-import 'src/app.dart';
 import 'src/configs/adapter/adapter_conf.dart';
 import 'src/configs/injector/injector_conf.dart';
 import 'src/core/api/api_url.dart';
@@ -100,17 +99,21 @@ class _AppRouterWrapperState extends State<_AppRouterWrapper> {
   Widget build(BuildContext context) {
     return BlocBuilder<DisplaySettingsBloc, DisplaySettingsState>(
       builder: (context, displayState) {
-        final String currentFontFamily = getGlobalFontFamily(displayState.settings.font);
-        
-        print('🔄 MAIN.DART: Font berubah menjadi -> $currentFontFamily');
-
         return BlocBuilder<ThemeBloc, ThemeState>(
           builder: (context, themeState) {
             final baseTheme = AppTheme.data(themeState.isDarkMode);
             
+            // Use applyDyslexiaFontToTextTheme so google_fonts' async font
+            // loading + rebuild-on-load works on web.
             final ThemeData updatedTheme = baseTheme.copyWith(
-              textTheme: baseTheme.textTheme.apply(fontFamily: currentFontFamily),
-              primaryTextTheme: baseTheme.primaryTextTheme.apply(fontFamily: currentFontFamily),
+              textTheme: applyDyslexiaFontToTextTheme(
+                font: displayState.settings.font,
+                textTheme: baseTheme.textTheme,
+              ),
+              primaryTextTheme: applyDyslexiaFontToTextTheme(
+                font: displayState.settings.font,
+                textTheme: baseTheme.primaryTextTheme,
+              ),
             );
 
             return LogoutListener(
@@ -123,19 +126,13 @@ class _AppRouterWrapperState extends State<_AppRouterWrapper> {
                 
                 // ✅ PERBAIKAN: Buat ThemeData eksplisit dengan fontFamily
                 builder: (context, child) {
-                  final ThemeData explicitTheme = ThemeData(
-                    brightness: updatedTheme.brightness,
-                    colorScheme: updatedTheme.colorScheme,
-                    scaffoldBackgroundColor: updatedTheme.scaffoldBackgroundColor,
-                    fontFamily: currentFontFamily, // Eksplisit di sini
-                    textTheme: updatedTheme.textTheme,
-                    primaryTextTheme: updatedTheme.primaryTextTheme,
-                  );
-
                   return Theme(
-                    data: explicitTheme,
+                    data: updatedTheme,
                     child: DefaultTextStyle(
-                      style: TextStyle(fontFamily: currentFontFamily),
+                      style: applyDyslexiaFont(
+                        font: displayState.settings.font,
+                        baseStyle: const TextStyle(),
+                      ),
                       child: child!,
                     ),
                   );

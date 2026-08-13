@@ -89,13 +89,17 @@ class _MyAppState extends State<MyApp> {
                     );
                   }
 
-                  // ✅ Terapkan font global untuk Mobile
-                  final String currentFontFamily = getGlobalFontFamily(dsState.settings.font);
-                  
-                  // ✅ PERBAIKAN: Gunakan copyWith HANYA untuk textTheme agar bebas dari error analyzer
+                  // ✅ Terapkan font global — use applyDyslexiaFontToTextTheme so
+                  // google_fonts' async font loading + rebuild-on-load works on web.
                   final ThemeData updatedTheme = baseTheme.copyWith(
-                    textTheme: baseTheme.textTheme.apply(fontFamily: currentFontFamily),
-                    primaryTextTheme: baseTheme.primaryTextTheme.apply(fontFamily: currentFontFamily),
+                    textTheme: applyDyslexiaFontToTextTheme(
+                      font: dsState.settings.font,
+                      textTheme: baseTheme.textTheme,
+                    ),
+                    primaryTextTheme: applyDyslexiaFontToTextTheme(
+                      font: dsState.settings.font,
+                      textTheme: baseTheme.primaryTextTheme,
+                    ),
                   );
 
                   return MaterialApp.router(
@@ -110,7 +114,10 @@ class _MyAppState extends State<MyApp> {
                       return Theme(
                         data: updatedTheme,
                         child: DefaultTextStyle(
-                          style: TextStyle(fontFamily: currentFontFamily),
+                          style: applyDyslexiaFont(
+                            font: dsState.settings.font,
+                            baseStyle: const TextStyle(),
+                          ),
                           child: child!,
                         ),
                       );

@@ -54,3 +54,35 @@ TextStyle applyDyslexiaFont({
     DyslexiaFont.comicSansMS    => GoogleFonts.comicNeue(textStyle: baseStyle),
   };
 }
+
+/// Applies [applyDyslexiaFont] to every style in a [TextTheme].
+///
+/// On web, this routes through `GoogleFonts.<family>(textStyle:)` for
+/// Google-hosted fonts, which registers the async font load and triggers
+/// a rebuild when the webfont arrives — unlike a bare `fontFamily` string
+/// passed to `textTheme.apply(fontFamily:)` which does not.
+TextTheme applyDyslexiaFontToTextTheme({
+  required DyslexiaFont font,
+  required TextTheme textTheme,
+}) {
+  TextStyle applyTo(TextStyle? s) =>
+      s == null ? const TextStyle() : applyDyslexiaFont(font: font, baseStyle: s);
+
+  return TextTheme(
+    displayLarge:  applyTo(textTheme.displayLarge),
+    displayMedium: applyTo(textTheme.displayMedium),
+    displaySmall:  applyTo(textTheme.displaySmall),
+    headlineLarge:  applyTo(textTheme.headlineLarge),
+    headlineMedium: applyTo(textTheme.headlineMedium),
+    headlineSmall:  applyTo(textTheme.headlineSmall),
+    titleLarge:  applyTo(textTheme.titleLarge),
+    titleMedium: applyTo(textTheme.titleMedium),
+    titleSmall:  applyTo(textTheme.titleSmall),
+    bodyLarge:  applyTo(textTheme.bodyLarge),
+    bodyMedium: applyTo(textTheme.bodyMedium),
+    bodySmall:  applyTo(textTheme.bodySmall),
+    labelLarge:  applyTo(textTheme.labelLarge),
+    labelMedium: applyTo(textTheme.labelMedium),
+    labelSmall:  applyTo(textTheme.labelSmall),
+  );
+}

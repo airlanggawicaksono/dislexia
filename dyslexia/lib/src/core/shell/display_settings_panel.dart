@@ -11,7 +11,9 @@ import '../widgets/settings/live_preview.dart';
 import '../widgets/settings/typography_sliders.dart';
 
 class DisplaySettingsPanel extends StatefulWidget {
-  const DisplaySettingsPanel({super.key});
+  /// Optional background tint from the active feature accent.
+  final Color? backgroundColor;
+  const DisplaySettingsPanel({super.key, this.backgroundColor});
 
   @override
   State<DisplaySettingsPanel> createState() => _DisplaySettingsPanelState();
@@ -131,7 +133,7 @@ class _DisplaySettingsPanelState extends State<DisplaySettingsPanel> {
             return Container(
               width: fullWidth ? double.infinity : 248,
               decoration: BoxDecoration(
-                color: theme.colorScheme.surface,
+                color: widget.backgroundColor ?? theme.colorScheme.surface,
                 border: Border(right: BorderSide(color: theme.dividerColor.withValues(alpha: 0.5))),
               ),
               child: SafeArea(

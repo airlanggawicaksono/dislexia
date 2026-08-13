@@ -15,7 +15,9 @@ import '../widgets/sidebar_item.dart';
 class SidebarShellPage extends StatelessWidget {
   final bool compact;
   final bool touchMode;
-  const SidebarShellPage({super.key, this.compact = false, this.touchMode = false});
+  /// Optional background tint from the active feature accent.
+  final Color? backgroundColor;
+  const SidebarShellPage({super.key, this.compact = false, this.touchMode = false, this.backgroundColor});
 
   static const _fullWidth = 96.0;
   static const _compactWidth = 56.0;
@@ -31,7 +33,7 @@ class SidebarShellPage extends StatelessWidget {
     return Container(
       width: width,
       decoration: BoxDecoration(
-        color: surface,
+        color: backgroundColor ?? surface,
         border: Border(right: BorderSide(color: borderColor)),
       ),
       child: SafeArea(
