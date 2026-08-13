@@ -104,10 +104,14 @@ class DesktopLandingPage extends StatelessWidget {
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
               padding: const EdgeInsets.only(left: 32, right: 32, top: 8, bottom: 24),
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 800),
-                  child: Column(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final available = constraints.maxWidth;
+                  const spacing = 16.0;
+                  final columns = available >= 1100 ? 3 : (available >= 720 ? 2 : 1);
+                  final cardWidth = (available - spacing * (columns - 1)) / columns;
+
+                  return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -115,11 +119,11 @@ class DesktopLandingPage extends StatelessWidget {
                       const SizedBox(height: 24),
                       Wrap(
                         alignment: WrapAlignment.center,
-                        spacing: 16,
-                        runSpacing: 16,
+                        spacing: spacing,
+                        runSpacing: spacing,
                         children: SidebarSection.values.map((section) {
                           return SizedBox(
-                            width: (800 - 2 * 16) / 3,
+                            width: cardWidth,
                             child: _buildFeatureCard(
                               section: section,
                               onTap: () {
@@ -145,8 +149,8 @@ class DesktopLandingPage extends StatelessWidget {
                         }).toList(),
                       ),
                     ],
-                  ),
-                ),
+                  );
+                },
               ),
             ),
           ),

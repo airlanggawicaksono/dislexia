@@ -7,6 +7,8 @@ import '../../../../core/api/api_helper.dart';
 import '../../../../core/utils/font_utils.dart';
 import '../../../../core/widgets/adaptive/adaptive.dart';
 import '../../../../core/widgets/reader_text_display.dart';
+import '../../../../core/themes/feature_accent.dart';
+import '../../../sidebar/domain/entities/sidebar_section.dart';
 import '../../../display_settings/domain/entities/display_settings_entity.dart';
 import '../../../display_settings/presentation/bloc/display_settings/display_settings_bloc.dart';
 import '../../../display_settings/presentation/theme/display_colors.dart';
@@ -25,8 +27,9 @@ class ScreeningPage extends StatefulWidget {
 
 enum _PpPhase { processing, success, failed }
 
-const Color _purplePrimary = Color(0xFFB596E5);
-const Color _purpleLight = Color(0xFFE0D5F7);
+final FeatureAccent _screeningAccent = featureAccent(SidebarSection.screening);
+final Color _purplePrimary = _screeningAccent.strong;
+final Color _purpleLight = _screeningAccent.tint;
 
 class _ScreeningPageState extends State<ScreeningPage> {
   final _controller = TextEditingController();
@@ -221,7 +224,7 @@ class _ScreeningPageState extends State<ScreeningPage> {
               right: 0,
               child: Container(
                 height: 120,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   color: _purpleLight,
                   borderRadius: BorderRadius.only(
                     bottomLeft: Radius.circular(32),
@@ -237,7 +240,7 @@ class _ScreeningPageState extends State<ScreeningPage> {
               right: 0,
               child: Container(
                 height: 100,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
@@ -523,7 +526,7 @@ class _ContinueCard extends StatelessWidget {
             padding: const EdgeInsets.all(14),
             child: Row(
               children: [
-                const Icon(Icons.play_circle_fill_rounded, color: _purplePrimary),
+                Icon(Icons.play_circle_fill_rounded, color: _purplePrimary),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -631,7 +634,7 @@ class _PostProcessBanner extends StatelessWidget {
       _PpPhase.processing => (
           _purplePrimary, 
           Row(children: [
-            const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(_purplePrimary))),
+            SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(_purplePrimary))),
             const SizedBox(width: 12),
             Expanded(child: Text('Analyzing your responses…', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: fg))),
           ]),
@@ -807,7 +810,7 @@ class _InputBar extends StatelessWidget {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(24),
-                    borderSide: const BorderSide(color: _purplePrimary, width: 1.5), 
+                    borderSide: BorderSide(color: _purplePrimary, width: 1.5), 
                   ),
                 ),
                 onSubmitted: enabled ? (_) => onSend() : null,

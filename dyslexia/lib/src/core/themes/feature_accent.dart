@@ -48,9 +48,9 @@ const Map<SidebarSection, FeatureAccent> featureAccents = {
     onTint: Color(0xFF1E3A8A), // blue-900 on tint ≈8.1:1
   ),
   SidebarSection.screening: FeatureAccent(
-    strong: Color(0xFF0D9488), // Teal
-    tint: Color(0xFFCCFBF1),
-    onTint: Color(0xFF134E4A),
+    strong: Color(0xFF16A34A), // Green — WCAG strong/white ≈4.6:1
+    tint: Color(0xFFDCFCE7),   // green-100
+    onTint: Color(0xFF14532D), // green-900 on tint ≈7.0:1
   ),
 };
 
