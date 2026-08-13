@@ -104,7 +104,10 @@ class DesktopLandingPage extends StatelessWidget {
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
               padding: const EdgeInsets.only(left: 32, right: 32, top: 8, bottom: 24),
-              child: LayoutBuilder(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 1100),
+                  child: LayoutBuilder(
                 builder: (context, constraints) {
                   final available = constraints.maxWidth;
                   const spacing = 16.0;
@@ -151,6 +154,7 @@ class DesktopLandingPage extends StatelessWidget {
                     ],
                   );
                 },
+                ),
               ),
             ),
           ),

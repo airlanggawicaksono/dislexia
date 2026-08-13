@@ -30,7 +30,7 @@ class SidebarItem extends StatelessWidget {
     final idleFg = foregroundColor ?? theme.colorScheme.onSurface.withValues(alpha: 0.75);
     final selectedFg = accent;
     final idleBg = Colors.transparent;
-    final selectedBg = accent.withValues(alpha: 0.12);
+    final selectedBg = Colors.white;
     final fg = selected ? selectedFg : idleFg;
     final bg = selected ? selectedBg : idleBg;
     final itemSize = touchMode ? 56.0 : 72.0;
@@ -55,12 +55,22 @@ class SidebarItem extends StatelessWidget {
             height: itemSize,
             decoration: BoxDecoration(
               color: bg,
+              borderRadius: BorderRadius.circular(12),
               border: Border(
                 left: BorderSide(
                   color: selected ? accent : Colors.transparent,
                   width: 3,
                 ),
               ),
+              boxShadow: selected
+                  ? [
+                      BoxShadow(
+                        color: accent.withValues(alpha: 0.25),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ]
+                  : null,
             ),
             alignment: Alignment.center,
             child: Column(
