@@ -114,11 +114,12 @@ class DesktopLandingPage extends StatelessWidget {
                       const Text('What do you want to do today?', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.black)),
                       const SizedBox(height: 24),
                       Wrap(
+                        alignment: WrapAlignment.center,
                         spacing: 16,
                         runSpacing: 16,
                         children: SidebarSection.values.map((section) {
                           return SizedBox(
-                            width: (800 - 16) / 2,
+                            width: (800 - 2 * 16) / 3,
                             child: _buildFeatureCard(
                               section: section,
                               onTap: () {
