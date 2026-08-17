@@ -1,5 +1,6 @@
 import React from 'react'
 import { FONTS, COLORS } from '../constants'
+import { useI18n, LANGS } from '../i18n'
 import styles from './Sidebar.module.css'
 
 function Toggle({ on, onClick }) {
@@ -22,18 +23,20 @@ export default function Sidebar({
   ruler, setRuler,
   syllables, setSyllables,
 }) {
+  const { t, locale, setLocale } = useI18n()
+
   const sliders = [
-    { label: 'Size',           val: fontSize,      set: setFontSize,      min: 14,  max: 36,  step: 1,   unit: 'px' },
-    { label: 'Line Height',    val: lineHeight,     set: setLineHeight,    min: 1.2, max: 3.0, step: 0.1, unit: ''   },
-    { label: 'Letter Spacing', val: letterSpacing,  set: setLetterSpacing, min: 0,   max: 6,   step: 0.5, unit: 'px' },
-    { label: 'Word Spacing',   val: wordSpacing,    set: setWordSpacing,   min: 0,   max: 20,  step: 1,   unit: 'px' },
+    { key: 'ctrl.size',          val: fontSize,      set: setFontSize,      min: 14,  max: 36,  step: 1,   unit: 'px' },
+    { key: 'ctrl.lineHeight',    val: lineHeight,     set: setLineHeight,    min: 1.2, max: 3.0, step: 0.1, unit: ''   },
+    { key: 'ctrl.letterSpacing', val: letterSpacing,  set: setLetterSpacing, min: 0,   max: 6,   step: 0.5, unit: 'px' },
+    { key: 'ctrl.wordSpacing',   val: wordSpacing,    set: setWordSpacing,   min: 0,   max: 20,  step: 1,   unit: 'px' },
   ]
 
   return (
     <aside className={styles.sidebar}>
       {/* Font */}
       <div className={styles.section}>
-        <div className={styles.label}>Font</div>
+        <div className={styles.label}>{t('section.font')}</div>
         <div className={styles.fontList}>
           {FONTS.map((f) => (
             <div
@@ -50,11 +53,11 @@ export default function Sidebar({
 
       {/* Typography */}
       <div className={styles.section}>
-        <div className={styles.label}>Typography</div>
+        <div className={styles.label}>{t('section.typography')}</div>
         {sliders.map((ctrl) => (
-          <div className={styles.ctrl} key={ctrl.label}>
+          <div className={styles.ctrl} key={ctrl.key}>
             <div className={styles.ctrlRow}>
-              <strong>{ctrl.label}</strong>
+              <strong>{t(ctrl.key)}</strong>
               <span>{+ctrl.val.toFixed(1)}{ctrl.unit}</span>
             </div>
             <input
@@ -71,7 +74,7 @@ export default function Sidebar({
 
       {/* Background */}
       <div className={styles.section}>
-        <div className={styles.label}>Background</div>
+        <div className={styles.label}>{t('section.background')}</div>
         <div className={styles.colorGrid}>
           {COLORS.map((c) => (
             <div
@@ -87,14 +90,32 @@ export default function Sidebar({
 
       {/* Accessibility */}
       <div className={styles.section}>
-        <div className={styles.label}>Accessibility</div>
+        <div className={styles.label}>{t('section.accessibility')}</div>
         <div className={styles.togRow}>
-          <span>Reading Ruler</span>
+          <span>{t('a11y.ruler')}</span>
           <Toggle on={ruler} onClick={() => setRuler((v) => !v)} />
         </div>
         <div className={styles.togRow}>
-          <span>Syllable Dots</span>
+          <span>{t('a11y.syllables')}</span>
           <Toggle on={syllables} onClick={() => setSyllables((v) => !v)} />
+        </div>
+      </div>
+
+      {/* Language */}
+      <div className={styles.section}>
+        <div className={styles.label}>{t('section.language')}</div>
+        <div className={styles.fontList}>
+          {LANGS.map((l) => (
+            <div
+              key={l.code}
+              className={`${styles.fontItem} ${locale === l.code ? styles.fontSel : ''}`}
+              onClick={() => setLocale(l.code)}
+              role="button"
+              aria-pressed={locale === l.code}
+            >
+              {l.label}
+            </div>
+          ))}
         </div>
       </div>
     </aside>

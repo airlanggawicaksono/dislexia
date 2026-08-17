@@ -77,6 +77,31 @@
   cursor: default;
 }
 
+.selBtn {
+  background: rgba(255, 255, 255, 0.1);
+  color: #e4e4e7;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  padding: 7px 13px;
+  border-radius: 8px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.selBtn:hover {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.selBtn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
 .pdfBtn {
   background: rgba(255, 255, 255, 0.1);
   color: #e4e4e7;
