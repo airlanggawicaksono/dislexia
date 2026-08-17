@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config.database import get_db
 from app.dependencies import get_current_user
 from app.services.feature_service import FeatureService
-from app.services.prompts import DYSLEXIA_OUTPUT_RULES
+from app.services.prompts import DYSLEXIA_OUTPUT_RULES, language_directive
 from app.dto.feature.chat.enums import FeatureType
 from app.dto.feature.chat.base import FeatureHistoryListDTO
 from app.dto.feature.process import ProfessionalizeRequestDTO
@@ -45,12 +45,15 @@ _EMAIL_PROMPT_TEMPLATE = (
 
 
 def _build_prompt(request: ProfessionalizeRequestDTO) -> str:
+    directive = language_directive(request.output_language.value)
     if request.is_email_mode:
-        return _EMAIL_PROMPT_TEMPLATE.format(
+        body = _EMAIL_PROMPT_TEMPLATE.format(
             sender_name=request.sender_name,
             recipient_name=request.recipient_name,
         )
-    return _PLAIN_PROMPT
+    else:
+        body = _PLAIN_PROMPT
+    return f"{directive}\n\n{body}"
 
 
 @router.post(

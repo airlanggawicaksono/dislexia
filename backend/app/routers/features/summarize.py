@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config.database import get_db
 from app.dependencies import get_current_user
 from app.services.feature_service import FeatureService
-from app.services.prompts import DYSLEXIA_OUTPUT_RULES
+from app.services.prompts import DYSLEXIA_OUTPUT_RULES, language_directive
 from app.dto.feature.chat.enums import FeatureType
 from app.dto.feature.chat.base import FeatureHistoryListDTO
 from app.dto.feature.process import SummarizeRequestDTO, SummaryLevel
@@ -54,7 +54,7 @@ def _normalize_chars(text: str) -> int:
 
 
 def _build_prompt_and_config(
-    level: SummaryLevel, text: str
+    level: SummaryLevel, text: str, output_language: str
 ) -> tuple[str, LLMGenerationConfigDTO, dict]:
     src_chars = _normalize_chars(text)
     pct = _LEVEL_PCT[level]
@@ -70,9 +70,11 @@ def _build_prompt_and_config(
         "src_chars": src_chars,
         "target_chars": target_chars,
         "max_tokens": max_tokens,
+        "language": output_language,
     }
 
     prompt = (
+        f"{language_directive(output_language)}\n\n"
         "You are a reading assistant for people with dyslexia. Summarize the provided "
         "text using strict importance ordering:\n"
         "1. CORE — the single most critical idea. Always the first sentence.\n"
@@ -111,7 +113,9 @@ async def process_stream(
     Use this for all summarization requests to ensure real-time UI updates 
     and avoid context/caching bugs from the synchronous variant.
     """
-    prompt, config, metadata = _build_prompt_and_config(request.level, request.text)
+    prompt, config, metadata = _build_prompt_and_config(
+        request.level, request.text, request.output_language.value
+    )
 
     async def sse():
         async for chunk in FeatureService.process_stream(

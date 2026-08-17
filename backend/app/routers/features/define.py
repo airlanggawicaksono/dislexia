@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config.database import get_db
 from app.dependencies import get_current_user
 from app.services.feature_service import FeatureService
-from app.services.prompts import DYSLEXIA_OUTPUT_RULES
+from app.services.prompts import DYSLEXIA_OUTPUT_RULES, language_directive
 from app.dto.feature.chat.enums import FeatureType
 from app.dto.feature.chat.base import FeatureHistoryListDTO
 from app.dto.feature.process import DefineRequestDTO, DefineLevel
@@ -46,7 +46,7 @@ def _build_prompt(level: DefineLevel, output_language: str) -> str:
         "You are a dictionary assistant for people with dyslexia. "
         "Provide a clear, simple definition of the given word or concept using "
         "short sentences and plain vocabulary.\n\n"
-        f"OUTPUT LANGUAGE: Write the ENTIRE response in {output_language}. "
+        f"{language_directive(output_language)}\n"
         f"If the input word is a foreign word (not in {output_language}), provide its direct translation first.\n\n"
         "PRONUNCIATION: Always start your response by showing the word broken into syllables in parentheses "
         "(e.g., ap-ple or in-for-ma-tion) to demonstrate pronunciation.\n\n"
@@ -68,8 +68,7 @@ async def process_stream(
     """
     Streaming variant of `/process`. Returns Server-Sent Events of `LLMChunkDTO`.
     """
-    # Fallback to "English" jika DTO belum diupdate
-    output_lang = getattr(request, "output_language", "English")
+    output_lang = request.output_language.value
     prompt = _build_prompt(request.level, output_lang)
     metadata = {"level": request.level.value, "language": output_lang}
 
