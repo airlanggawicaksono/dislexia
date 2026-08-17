@@ -1,7 +1,10 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+
+import '../utils/feature_l10n.dart';
 
 import '../../features/sidebar/presentation/bloc/sidebar/sidebar_bloc.dart';
 import '../../features/sidebar/presentation/bloc/sidebar/sidebar_event.dart';
@@ -87,6 +90,32 @@ class FeaturePage extends StatefulWidget {
 }
 
 class _FeaturePageState extends State<FeaturePage> {
+  // Focus for the input field so "Select all" can highlight the text
+  // visibly (a selection only paints on the focused field).
+  final FocusNode _inputFocus = FocusNode();
+
+  @override
+  void dispose() {
+    _inputFocus.dispose();
+    super.dispose();
+  }
+
+  // Localized feature name for display. `widget.title` stays the English
+  // logic key (palette switch, level-label check); only the shown text is
+  // translated.
+  String _displayTitle() =>
+      widget.feature != null ? featureLabel(widget.feature!) : widget.title;
+
+  // Highlight the entire input so the user can copy/replace without
+  // dragging across a long passage.
+  void _selectAll() {
+    final len = widget.controller.text.length;
+    if (len == 0) return;
+    _inputFocus.requestFocus();
+    widget.controller.selection =
+        TextSelection(baseOffset: 0, extentOffset: len);
+  }
+
   // ============================================================
   // 🎨 Helper: Dapatkan palette warna berdasarkan judul fitur
   // ============================================================
@@ -158,7 +187,7 @@ class _FeaturePageState extends State<FeaturePage> {
     if (!context.mounted) return;
     final t = data?.text?.trim() ?? '';
     if (t.isEmpty) {
-      showAdaptiveFeedback(context, 'Nothing found in clipboard');
+      showAdaptiveFeedback(context, 'feedback.clipboardEmpty'.tr());
       return;
     }
     widget.controller.text = t;
@@ -173,14 +202,14 @@ class _FeaturePageState extends State<FeaturePage> {
       final bytes = file.bytes;
       if (bytes == null) {
         if (!context.mounted) return;
-        showAdaptiveFeedback(context, 'Could not read file data');
+        showAdaptiveFeedback(context, 'feedback.fileReadFail'.tr());
         return;
       }
       if (!context.mounted) return;
       final text = await getIt<PdfExtractorService>().extractText(bytes);
       if (!context.mounted) return;
       if (text.trim().isEmpty) {
-        showAdaptiveFeedback(context, 'PDF appears empty or contains only images');
+        showAdaptiveFeedback(context, 'feedback.pdfEmpty'.tr());
         return;
       }
       widget.controller.text = text;
@@ -310,9 +339,9 @@ class _FeaturePageState extends State<FeaturePage> {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        const Text(
-                          'Processing...',
-                          style: TextStyle(
+                        Text(
+                          'status.processing'.tr(),
+                          style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                             color: Colors.black87,
@@ -345,7 +374,7 @@ class _FeaturePageState extends State<FeaturePage> {
               if (isMobile) ...[
                 IconButton(
                   icon: const Icon(Icons.arrow_back, color: Colors.black),
-                  tooltip: 'Back',
+                  tooltip: 'action.back'.tr(),
                   onPressed: () => _handleBack(context),
                   style: IconButton.styleFrom(
                     backgroundColor: Colors.white,
@@ -359,14 +388,14 @@ class _FeaturePageState extends State<FeaturePage> {
                 _FeatureBadge(
                   palette: palette,
                   icon: widget.feature!.materialIcon,
-                  label: widget.title,
+                  label: _displayTitle(),
                 ),
                 const SizedBox(width: 12),
               ],
 
               Expanded(
                 child: Text(
-                  widget.title,
+                  _displayTitle(),
                   textAlign: isMobile ? TextAlign.start : TextAlign.center,
                   style: const TextStyle(
                     fontSize: 28,
@@ -381,7 +410,7 @@ class _FeaturePageState extends State<FeaturePage> {
               if (widget.onReset != null)
                 IconButton(
                   icon: const Icon(Icons.restart_alt, color: Colors.black),
-                  tooltip: 'Reset input',
+                  tooltip: 'action.resetInput'.tr(),
                   onPressed: widget.onReset,
                   style: IconButton.styleFrom(
                     backgroundColor: Colors.white,
@@ -393,7 +422,7 @@ class _FeaturePageState extends State<FeaturePage> {
               if (widget.onViewResult != null)
                 IconButton(
                   icon: const Icon(Icons.history_rounded, color: Colors.black),
-                  tooltip: 'History',
+                  tooltip: 'action.history'.tr(),
                   onPressed: () => _showHistory(context),
                   style: IconButton.styleFrom(
                     backgroundColor: Colors.white,
@@ -496,13 +525,14 @@ class _FeaturePageState extends State<FeaturePage> {
             ),
             child: TextField(
               controller: widget.controller,
+              focusNode: _inputFocus,
               minLines: 6,
               maxLines: null,
               textAlignVertical: TextAlignVertical.top,
               style: dyslexiaTextStyle(settings, Colors.black87),
-              decoration: const InputDecoration(
-                hintText: 'Type text here or insert from external source\nusing the "+" button.',
-                hintStyle: TextStyle(
+              decoration: InputDecoration(
+                hintText: 'input.hint'.tr(),
+                hintStyle: const TextStyle(
                   color: Colors.grey,
                   fontSize: 16,
                   height: 1.5,
@@ -520,13 +550,40 @@ class _FeaturePageState extends State<FeaturePage> {
               ValueListenableBuilder<TextEditingValue>(
                 valueListenable: widget.controller,
                 builder: (context, value, child) {
-                  return Text(
-                    '${value.text.length}/5000',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade600,
-                      fontWeight: FontWeight.w500,
-                    ),
+                  final palette = _getPalette();
+                  return Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '${value.text.length}/5000',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey.shade600,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      if (value.text.isNotEmpty) ...[
+                        const SizedBox(width: 12),
+                        TextButton.icon(
+                          onPressed: _selectAll,
+                          icon: Icon(Icons.select_all_rounded,
+                              size: 18, color: palette.strong),
+                          label: Text(
+                            'action.selectAll'.tr(),
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: palette.strong,
+                            ),
+                          ),
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            minimumSize: const Size(0, 32),
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                        ),
+                      ],
+                    ],
                   );
                 },
               ),
@@ -534,7 +591,7 @@ class _FeaturePageState extends State<FeaturePage> {
               FloatingActionButton(
                 mini: true,
                 heroTag: null, // hindari hero conflict jika multiple FAB di tree
-                tooltip: 'Add text from clipboard or PDF',
+                tooltip: 'addSource.tooltip'.tr(),
                 onPressed: () => _showAddSourceDialog(context),
                 backgroundColor: palette.tint,
                 elevation: 2,
@@ -574,9 +631,9 @@ class _FeaturePageState extends State<FeaturePage> {
                     borderRadius: BorderRadius.circular(28),
                   ),
                 ),
-                child: const Text(
-                  'Submit',
-                  style: TextStyle(
+                child: Text(
+                  'action.submit'.tr(),
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                   ),
@@ -637,7 +694,7 @@ class _FeaturePageState extends State<FeaturePage> {
             ),
             const SizedBox(height: 16),
             Text(
-              'Add Text From',
+              'addSource.title'.tr(),
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -654,7 +711,7 @@ class _FeaturePageState extends State<FeaturePage> {
                 ),
                 child: Icon(Icons.content_paste, color: palette.strong),
               ),
-              title: const Text('Paste from Clipboard'),
+              title: Text('addSource.paste'.tr()),
               onTap: () {
                 Navigator.pop(ctx);
                 _onPaste(context);
@@ -669,7 +726,7 @@ class _FeaturePageState extends State<FeaturePage> {
                 ),
                 child: Icon(Icons.upload_file, color: palette.strong),
               ),
-              title: const Text('Upload PDF'),
+              title: Text('addSource.uploadPdf'.tr()),
               onTap: () {
                 Navigator.pop(ctx);
                 _pickPdf(context);

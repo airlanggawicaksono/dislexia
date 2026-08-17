@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -66,7 +67,7 @@ class _HistoryPanelState extends State<HistoryPanel> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Row(
                 children: [
-                  const Text('History', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                  Text('action.history'.tr(), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                   const Spacer(),
                   IconButton(icon: const Icon(Icons.refresh_rounded, size: 20), onPressed: _load),
                 ],
@@ -77,7 +78,7 @@ class _HistoryPanelState extends State<HistoryPanel> {
               child: _loading
                   ? const Center(child: CircularProgressIndicator())
                   : _items == null || _items!.isEmpty
-                      ? const Center(child: Text('No history yet', style: TextStyle(color: Colors.black45)))
+                      ? Center(child: Text('history.empty'.tr(), style: const TextStyle(color: Colors.black45)))
                       : ListView.separated(
                           controller: scrollController,
                           padding: const EdgeInsets.all(12),

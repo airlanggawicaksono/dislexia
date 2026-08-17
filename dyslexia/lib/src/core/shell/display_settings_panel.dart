@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -159,38 +160,38 @@ class _DisplaySettingsPanelState extends State<DisplaySettingsPanel> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text('Settings',
+                              Text('nav.settings'.tr(),
                                   style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: theme.colorScheme.onSurface)),
                             ],
                           ),
                           if (fullWidth) ...[
                             const SizedBox(height: 12),
                             _CollapsibleSection(
-                              title: 'LIVE PREVIEW',
+                              title: 'settings.livePreview'.tr(),
                               initiallyExpanded: true,
                               child: const LivePreview(),
                             ),
                           ],
                           _CollapsibleSection(
-                            title: 'FONT',
+                            title: 'settings.font'.tr(),
                             initiallyExpanded: true,
                             child: FontSelector(compact: !fullWidth),
                           ),
                           const SizedBox(height: 12),
                           _CollapsibleSection(
-                            title: 'BACKGROUND COLOR',
+                            title: 'settings.backgroundColor'.tr(),
                             initiallyExpanded: true,
                             child: ColorSelector(compact: !fullWidth),
                           ),
                           const SizedBox(height: 12),
                           _CollapsibleSection(
-                            title: 'TYPOGRAPHY',
+                            title: 'settings.typography'.tr(),
                             initiallyExpanded: true,
                             child: TypographySliders(compact: !fullWidth),
                           ),
                           const SizedBox(height: 8),
                           _CollapsibleSection(
-                            title: 'ACCESSIBILITY',
+                            title: 'settings.accessibility'.tr(),
                             initiallyExpanded: true,
                             child: const AccessibilityToggles(),
                           ),
@@ -198,7 +199,7 @@ class _DisplaySettingsPanelState extends State<DisplaySettingsPanel> {
                           // Presets are collapsed by default so the panel
                           // doesn't force the user through a long scroll.
                           _CollapsibleSection(
-                            title: 'PRESETS',
+                            title: 'settings.presets'.tr(),
                             initiallyExpanded: false,
                             child: Column(
                               children: [

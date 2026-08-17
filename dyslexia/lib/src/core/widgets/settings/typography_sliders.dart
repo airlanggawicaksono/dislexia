@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -18,20 +19,20 @@ class TypographySliders extends StatelessWidget {
         if (compact) {
           return Column(
             children: [
-              _miniSlider('Size', s.fontSize, 12, 32, (v) => bloc.add(UpdateFontSizeEvent(v)), s.fontSize.toStringAsFixed(0)),
-              _miniSlider('Line', s.lineSpacing, 1.0, 3.0, (v) => bloc.add(UpdateLineSpacingEvent(v)), '${s.lineSpacing.toStringAsFixed(1)}x'),
-              _miniSlider('Letter', s.letterSpacing, 0.0, 2.0, (v) => bloc.add(UpdateLetterSpacingEvent(v)), s.letterSpacing.toStringAsFixed(1)),
-              _miniSlider('Word', s.wordSpacing, 0.0, 8.0, (v) => bloc.add(UpdateWordSpacingEvent(v)), s.wordSpacing.toStringAsFixed(1)),
+              _miniSlider('typo.size'.tr(), s.fontSize, 12, 32, (v) => bloc.add(UpdateFontSizeEvent(v)), s.fontSize.toStringAsFixed(0)),
+              _miniSlider('typo.line'.tr(), s.lineSpacing, 1.0, 3.0, (v) => bloc.add(UpdateLineSpacingEvent(v)), '${s.lineSpacing.toStringAsFixed(1)}x'),
+              _miniSlider('typo.letter'.tr(), s.letterSpacing, 0.0, 2.0, (v) => bloc.add(UpdateLetterSpacingEvent(v)), s.letterSpacing.toStringAsFixed(1)),
+              _miniSlider('typo.word'.tr(), s.wordSpacing, 0.0, 8.0, (v) => bloc.add(UpdateWordSpacingEvent(v)), s.wordSpacing.toStringAsFixed(1)),
             ],
           );
         }
 
         return Column(
           children: [
-            _labeledSlider('Size', '${s.fontSize.toStringAsFixed(0)}px', s.fontSize, 12, 32, (v) => bloc.add(UpdateFontSizeEvent(v))),
-            _labeledSlider('Line Height', s.lineSpacing.toStringAsFixed(1), s.lineSpacing, 1.0, 3.0, (v) => bloc.add(UpdateLineSpacingEvent(v))),
-            _labeledSlider('Letter Spacing', '${s.letterSpacing.toStringAsFixed(1)}px', s.letterSpacing, 0.0, 2.0, (v) => bloc.add(UpdateLetterSpacingEvent(v))),
-            _labeledSlider('Word Spacing', '${s.wordSpacing.toStringAsFixed(0)}px', s.wordSpacing, 0.0, 8.0, (v) => bloc.add(UpdateWordSpacingEvent(v))),
+            _labeledSlider('typo.size'.tr(), '${s.fontSize.toStringAsFixed(0)}px', s.fontSize, 12, 32, (v) => bloc.add(UpdateFontSizeEvent(v))),
+            _labeledSlider('typo.lineHeight'.tr(), s.lineSpacing.toStringAsFixed(1), s.lineSpacing, 1.0, 3.0, (v) => bloc.add(UpdateLineSpacingEvent(v))),
+            _labeledSlider('typo.letterSpacing'.tr(), '${s.letterSpacing.toStringAsFixed(1)}px', s.letterSpacing, 0.0, 2.0, (v) => bloc.add(UpdateLetterSpacingEvent(v))),
+            _labeledSlider('typo.wordSpacing'.tr(), '${s.wordSpacing.toStringAsFixed(0)}px', s.wordSpacing, 0.0, 8.0, (v) => bloc.add(UpdateWordSpacingEvent(v))),
           ],
         );
       },

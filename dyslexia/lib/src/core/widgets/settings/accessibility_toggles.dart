@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -16,9 +17,9 @@ class AccessibilityToggles extends StatelessWidget {
 
         return Column(
           children: [
-            _toggleRow('Reading Ruler', s.rulerEnabled, () => bloc.add(ToggleRulerEvent()), fg),
+            _toggleRow('a11y.readingRuler'.tr(), s.rulerEnabled, () => bloc.add(ToggleRulerEvent()), fg),
             const SizedBox(height: 4),
-            _toggleRow('Syllable Dots', s.syllablesEnabled, () => bloc.add(ToggleSyllablesEvent()), fg),
+            _toggleRow('a11y.syllableDots'.tr(), s.syllablesEnabled, () => bloc.add(ToggleSyllablesEvent()), fg),
           ],
         );
       },

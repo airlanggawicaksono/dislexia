@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -39,7 +40,7 @@ class _ReaderPageState extends State<ReaderPage> {
           children: [
             ListTile(
               leading: const Icon(Icons.content_paste_rounded),
-              title: const Text('Paste from clipboard'),
+              title: Text('reader.pasteClipboard'.tr()),
               onTap: () async {
                 Navigator.pop(ctx);
                 try {
@@ -48,8 +49,8 @@ class _ReaderPageState extends State<ReaderPage> {
                   final text = data?.text?.trim() ?? '';
                   if (text.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text('Nothing found in clipboard')),
+                      SnackBar(
+                          content: Text('feedback.clipboardEmpty'.tr())),
                     );
                     return;
                   }
@@ -59,15 +60,15 @@ class _ReaderPageState extends State<ReaderPage> {
                 } catch (_) {
                   if (!context.mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content: Text('Press Ctrl+V (or Cmd+V) to paste')),
+                    SnackBar(
+                        content: Text('feedback.pressPaste'.tr())),
                   );
                 }
               },
             ),
             ListTile(
               leading: const Icon(Icons.upload_file_rounded),
-              title: const Text('Upload PDF'),
+              title: Text('addSource.uploadPdf'.tr()),
               onTap: () {
                 Navigator.pop(ctx);
                 _pickPdf(context);
@@ -92,7 +93,7 @@ class _ReaderPageState extends State<ReaderPage> {
       if (bytes == null) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Could not read file data')),
+            SnackBar(content: Text('feedback.fileReadFail'.tr())),
           );
         }
         return;
@@ -113,9 +114,9 @@ class _ReaderPageState extends State<ReaderPage> {
       if (text.trim().isEmpty) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
+            SnackBar(
                 content:
-                    Text('PDF appears to be empty or contains only images')),
+                    Text('feedback.pdfEmpty'.tr())),
           );
           context
               .read<ReaderShellBloc>()
@@ -157,7 +158,7 @@ class _ReaderPageState extends State<ReaderPage> {
                 ? FloatingActionButton.small(
                     heroTag: 'reader',
                     backgroundColor: const Color(0xFF3D5A99),
-                    tooltip: 'Add text from clipboard or PDF',
+                    tooltip: 'addSource.tooltip'.tr(),
                     onPressed: () => _showQuickActions(context),
                     child: const Icon(Icons.add_rounded, color: Colors.white),
                   )
@@ -177,7 +178,7 @@ class _ReaderPageState extends State<ReaderPage> {
                     // Back button
                     IconButton(
                       icon: Icon(Icons.arrow_back, color: theme.colorScheme.onSurface),
-                      tooltip: 'Back',
+                      tooltip: 'action.back'.tr(),
                       onPressed: widget.onBack ??
                           () => Navigator.of(context).maybePop(),
                     ),
@@ -185,7 +186,7 @@ class _ReaderPageState extends State<ReaderPage> {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 4),
                       child: Text(
-                        widget.sourceName ?? 'Reader',
+                        widget.sourceName ?? 'feature.reader'.tr(),
                         style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
@@ -198,15 +199,15 @@ class _ReaderPageState extends State<ReaderPage> {
                     IconButton(
                       icon: Icon(Icons.copy_rounded,
                           color: theme.colorScheme.onSurface),
-                      tooltip: 'Copy text',
+                      tooltip: 'action.copyText'.tr(),
                       onPressed: () {
                         Clipboard.setData(
                             ClipboardData(text: widget.text));
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Text copied to clipboard'),
-                              duration: Duration(seconds: 2),
+                            SnackBar(
+                              content: Text('feedback.copied'.tr()),
+                              duration: const Duration(seconds: 2),
                             ),
                           );
                         }

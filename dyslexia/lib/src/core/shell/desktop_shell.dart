@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -328,7 +329,7 @@ class _ShellHeaderBar extends StatelessWidget {
         children: [
           if (showGear && screenW >= kSidebarHiddenBreakpoint)
             IconButton(
-              tooltip: 'Toggle display settings',
+              tooltip: 'shell.toggleSettings'.tr(),
               icon: Icon(
                 Icons.tune_outlined,
                 color: Colors.white.withValues(alpha: 0.9),
@@ -404,7 +405,7 @@ class _BottomNavBar extends StatelessWidget {
           }),
           Expanded(
             child: Semantics(
-              label: 'Settings',
+              label: 'nav.settings'.tr(),
               button: true,
               selected: showSettings,
               toggled: showSettings,
@@ -420,7 +421,7 @@ class _BottomNavBar extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Settings',
+                      'nav.settings'.tr(),
                       style: TextStyle(
                         fontSize: 9,
                         fontWeight: showSettings ? FontWeight.w600 : FontWeight.w500,

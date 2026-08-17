@@ -1,6 +1,8 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/constants/list_translation_locale.dart';
 import '../../../../core/widgets/settings/accessibility_toggles.dart';
 import '../../../../core/widgets/settings/color_selector.dart';
 import '../../../../core/widgets/settings/font_selector.dart';
@@ -100,11 +102,11 @@ class DisplaySettingsPage extends StatelessWidget {
                     return ListView(
                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
                       children: [
-                        _buildSectionLabel('LIVE PREVIEW'),
+                        _buildSectionLabel('settings.livePreview'.tr()),
                         _buildSettingCard(const LivePreview()),
                         const SizedBox(height: 24),
 
-                        _buildSectionLabel('FONT'),
+                        _buildSectionLabel('settings.font'.tr()),
                         // Compact chips: this full-page card is wide, so the
                         // 3-column grid cells balloon past 100px tall. The
                         // compact Wrap flows small chips (shell-panel density)
@@ -112,19 +114,23 @@ class DisplaySettingsPage extends StatelessWidget {
                         _buildSettingCard(const FontSelector(compact: true)),
                         const SizedBox(height: 24),
 
-                        _buildSectionLabel('BACKGROUND COLOR'),
+                        _buildSectionLabel('settings.backgroundColor'.tr()),
                         _buildSettingCard(const ColorSelector(compact: true)),
                         const SizedBox(height: 24),
 
-                        _buildSectionLabel('TYPOGRAPHY'),
+                        _buildSectionLabel('settings.typography'.tr()),
                         _buildSettingCard(const TypographySliders()),
                         const SizedBox(height: 24),
 
-                        _buildSectionLabel('ACCESSIBILITY'),
+                        _buildSectionLabel('settings.accessibility'.tr()),
                         _buildSettingCard(const AccessibilityToggles()),
                         const SizedBox(height: 24),
 
-                        _buildSectionLabel('QUICK PRESETS'),
+                        _buildSectionLabel('settings.language'.tr()),
+                        _buildSettingCard(const _LanguageSelector()),
+                        const SizedBox(height: 24),
+
+                        _buildSectionLabel('settings.quickPresets'.tr()),
                         ...DisplayPreset.values.map((p) => _PresetTile(
                               label: _presetLabels[p] ?? '',
                               subtitle: _presetSubtitles[p] ?? '',
@@ -133,7 +139,7 @@ class DisplaySettingsPage extends StatelessWidget {
                             )),
                         const SizedBox(height: 24),
 
-                        _buildSectionLabel('ACCOUNT'),
+                        _buildSectionLabel('settings.account'.tr()),
                         const _LogoutButton(),
                         const SizedBox(height: 32),
                       ],
@@ -162,10 +168,10 @@ class DisplaySettingsPage extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Text(
-              'Display Settings',
-              style: TextStyle(
+              'settings.title'.tr(),
+              style: const TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
                 color: Colors.black,
@@ -214,6 +220,84 @@ class DisplaySettingsPage extends StatelessWidget {
   }
 }
 
+/// Switches the whole app UI language. `easy_localization` persists the
+/// choice and rebuilds on `setLocale`, so no extra bloc/storage is needed.
+class _LanguageSelector extends StatelessWidget {
+  const _LanguageSelector();
+
+  static const _purplePrimary = Color(0xFFB596E5);
+  static const _purpleLight = Color(0xFFE0D5F7);
+
+  @override
+  Widget build(BuildContext context) {
+    // Compare on language code only — startLocale/country variants
+    // ('en'/'en-US') must still register as the same choice.
+    final current = context.locale.languageCode;
+    return Row(
+      children: [
+        Expanded(
+          child: _langTile(context, 'English', 'English', englishLocale,
+              current == englishLocale.languageCode),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _langTile(context, 'Bahasa Indonesia', 'Indonesia',
+              indonesiaLocale, current == indonesiaLocale.languageCode),
+        ),
+      ],
+    );
+  }
+
+  Widget _langTile(BuildContext context, String label, String short,
+      Locale locale, bool selected) {
+    return Semantics(
+      label: 'Language $label',
+      button: true,
+      selected: selected,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => context.setLocale(locale),
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+            decoration: BoxDecoration(
+              color: selected ? _purpleLight : Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: selected ? _purplePrimary : Colors.grey.shade200,
+                width: 1.5,
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (selected) ...[
+                  const Icon(Icons.check_circle_rounded,
+                      color: _purplePrimary, size: 18),
+                  const SizedBox(width: 6),
+                ],
+                Flexible(
+                  child: Text(
+                    label,
+                    textAlign: TextAlign.center,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: selected ? _purplePrimary : Colors.black87,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _LogoutButton extends StatelessWidget {
   const _LogoutButton();
 
@@ -222,12 +306,12 @@ class _LogoutButton extends StatelessWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Log out?'),
-        content: const Text('You will need to sign in again to continue.'),
+        title: Text('logout.confirmTitle'.tr()),
+        content: Text('logout.confirmBody'.tr()),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel', style: TextStyle(color: Colors.black54)),
+            child: Text('common.cancel'.tr(), style: const TextStyle(color: Colors.black54)),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
@@ -235,7 +319,7 @@ class _LogoutButton extends StatelessWidget {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Log out'),
+            child: Text('logout.button'.tr()),
           ),
         ],
       ),
@@ -248,7 +332,7 @@ class _LogoutButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      label: 'Log out',
+      label: 'logout.button'.tr(),
       button: true,
       child: Material(
         color: Colors.transparent,
@@ -271,13 +355,13 @@ class _LogoutButton extends StatelessWidget {
                   ),
                 ],
               ),
-              child: const Row(
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.logout_rounded, size: 20, color: Color(0xFFEF5350)),
-                  SizedBox(width: 12),
-                  Text('Log out',
-                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: Color(0xFFEF5350))),
+                  const Icon(Icons.logout_rounded, size: 20, color: Color(0xFFEF5350)),
+                  const SizedBox(width: 12),
+                  Text('logout.button'.tr(),
+                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: Color(0xFFEF5350))),
                 ],
               ),
             ),

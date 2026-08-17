@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/themes/feature_accent.dart';
+import '../../../../core/utils/feature_l10n.dart';
 import '../../domain/entities/sidebar_section.dart';
 
 class SidebarItem extends StatelessWidget {
@@ -35,15 +36,16 @@ class SidebarItem extends StatelessWidget {
     final bg = selected ? selectedBg : idleBg;
     final itemSize = touchMode ? 56.0 : 72.0;
     final iconSize = compact ? 24.0 : 22.0;
+    final label = featureLabel(section);
 
     return Tooltip(
-      message: section.label,
+      message: label,
       preferBelow: false,
       waitDuration: const Duration(milliseconds: 300),
       child: Semantics(
         // Screen readers get a labelled, selectable button; the selected
         // state is announced too so colour is never the only signal.
-        label: '${section.label} feature',
+        label: label,
         button: true,
         selected: selected,
         child: InkResponse(
@@ -81,7 +83,7 @@ class SidebarItem extends StatelessWidget {
                 if (!compact) ...[
                   const SizedBox(height: 4),
                   Text(
-                    section.label,
+                    label,
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
