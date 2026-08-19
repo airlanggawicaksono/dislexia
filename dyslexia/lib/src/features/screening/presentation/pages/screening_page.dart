@@ -768,7 +768,7 @@ class _AssistantCard extends StatelessWidget {
   }
 }
 
-class _InputBar extends StatelessWidget {
+class _InputBar extends StatefulWidget {
   final TextEditingController controller;
   final bool enabled;
   final ThemeData theme;
@@ -778,8 +778,42 @@ class _InputBar extends StatelessWidget {
   const _InputBar({required this.controller, required this.enabled, required this.theme, required this.textStyle, required this.onSend});
 
   @override
+  State<_InputBar> createState() => _InputBarState();
+}
+
+class _InputBarState extends State<_InputBar> {
+  final _focusNode = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    // Intercept bare Enter before the multiline TextField inserts a newline;
+    // Shift+Enter (isShiftPressed) falls through to the normal newline.
+    HardwareKeyboard.instance.addHandler(_handleKeyEvent);
+  }
+
+  bool _handleKeyEvent(KeyEvent event) {
+    if (event is KeyDownEvent &&
+        event.logicalKey == LogicalKeyboardKey.enter &&
+        !HardwareKeyboard.instance.isShiftPressed &&
+        _focusNode.hasFocus &&
+        widget.enabled) {
+      widget.onSend();
+      return true;
+    }
+    return false;
+  }
+
+  @override
+  void dispose() {
+    HardwareKeyboard.instance.removeHandler(_handleKeyEvent);
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final fg = theme.colorScheme.onSurface;
+    final fg = widget.theme.colorScheme.onSurface;
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 8, 8, 16),
       decoration: BoxDecoration(
@@ -792,12 +826,13 @@ class _InputBar extends StatelessWidget {
           children: [
             Expanded(
               child: TextField(
-                controller: controller,
-                enabled: enabled,
+                controller: widget.controller,
+                focusNode: _focusNode,
+                enabled: widget.enabled,
                 maxLines: 4,
                 minLines: 1,
                 textCapitalization: TextCapitalization.sentences,
-                style: textStyle,
+                style: widget.textStyle,
                 decoration: InputDecoration(
                   hintText: 'Type your answer…',
                   hintStyle: TextStyle(color: fg.withValues(alpha: 0.4)),
@@ -813,17 +848,18 @@ class _InputBar extends StatelessWidget {
                     borderSide: BorderSide(color: _purplePrimary, width: 1.5), 
                   ),
                 ),
-                onSubmitted: enabled ? (_) => onSend() : null,
+                onSubmitted: widget.enabled ? (_) => widget.onSend() : null,
+                onTapOutside: (_) => _focusNode.unfocus(),
               ),
             ),
             const SizedBox(width: 8),
             IconButton(
               icon: Icon(
                 Icons.send_rounded,
-                color: enabled ? _purplePrimary : fg.withValues(alpha: 0.3), 
+                color: widget.enabled ? _purplePrimary : fg.withValues(alpha: 0.3), 
               ),
               tooltip: 'Send message',
-              onPressed: enabled ? onSend : null,
+              onPressed: widget.enabled ? widget.onSend : null,
             ),
           ],
         ),
