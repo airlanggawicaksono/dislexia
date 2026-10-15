@@ -1,12 +1,8 @@
 {
   "ada_internet": "Koneksi internet tersambung.",
   "tidak_ada_internet": "Tidak ada koneksi internet.",
-
   "settings.title": "Pengaturan Tampilan",
   "settings.livePreview": "PRATINJAU LANGSUNG",
-  "settings.theme": "Tema",
-  "settings.darkMode": "Mode Gelap",
-  "settings.darkModeSubtitle": "Aktifkan latar belakang gelap untuk kenyamanan mata",
   "settings.font": "HURUF",
   "settings.backgroundColor": "WARNA LATAR",
   "settings.typography": "TIPOGRAFI",
@@ -14,76 +10,35 @@
   "settings.language": "BAHASA",
   "settings.quickPresets": "PRESET CEPAT",
   "settings.account": "AKUN",
-  "settings.presets": "PRESET",
-
   "logout.button": "Keluar",
   "logout.confirmTitle": "Keluar?",
   "logout.confirmBody": "Anda perlu masuk lagi untuk melanjutkan.",
   "common.cancel": "Batal",
-
   "feature.reader": "Pembaca",
   "feature.summarize": "Ringkas",
   "feature.define": "Definisi",
   "feature.professionalize": "Formalkan",
   "feature.screening": "Skrining",
-  "feature.lens": "Lensa",
-  "feature.camera": "Kamera",
-
-  "summarize.title": "Ringkas",
-  "summarize.result": "Ringkasan",
-  "summarize.length": "Panjang Ringkasan",
-  "define.level": "Tingkat Definisi",
-
-  "levelPct.simple": "Sederhana",
-  "levelPct.mid": "Sedang",
-  "levelPct.perhaps": "Detail",
-  "levelPct.pct10": "10%",
-  "levelPct.pct30": "30%",
-  "levelPct.pct50": "50%",
-  "levelPct.pct70": "70%",
-  "levelPct.pct90": "90%",
-
-  "landing.exploreTools": "Eksplorasi fitur kami:",
-
   "action.submit": "Kirim",
   "action.back": "Kembali",
   "action.resetInput": "Atur ulang",
   "action.history": "Riwayat",
   "action.selectAll": "Pilih semua",
   "action.copyText": "Salin teks",
-  "action.settings": "Pengaturan",
-  "action.refresh": "Segarkan",
-  "action.retry": "Coba Lagi",
-  "action.copyMessage": "Salin pesan",
-
   "status.processing": "Memproses...",
-  "status.extractingText": "Mengekstrak teks dari gambar...",
-
   "input.hint": "Ketik teks di sini atau masukkan dari sumber lain\nmenggunakan tombol \"+\".",
-
-  "addSource.title": "Tambahkan Sumber",
-  "addSource.camera": "Gunakan Kamera",
-  "addSource.cameraSubtitle": "Ambil foto dokumen atau teks",
-  "addSource.image": "Tambahkan Gambar",
-  "addSource.imageSubtitle": "Pilih dari galeri atau file",
+  "addSource.title": "Tambah Teks Dari",
   "addSource.paste": "Tempel dari Papan Klip",
   "addSource.uploadPdf": "Unggah PDF",
-  "addSource.tooltip": "Tambah teks dari papan klip, gambar, atau PDF",
-
+  "addSource.tooltip": "Tambah teks dari papan klip atau PDF",
   "reader.pasteClipboard": "Tempel dari papan klip",
-
   "feedback.clipboardEmpty": "Papan klip kosong",
   "feedback.copied": "Teks disalin ke papan klip",
   "feedback.pressPaste": "Tekan Ctrl+V (atau Cmd+V) untuk menempel",
   "feedback.fileReadFail": "Tidak dapat membaca data berkas",
   "feedback.pdfEmpty": "PDF tampak kosong atau hanya berisi gambar",
-  "feedback.noTextFoundInImage": "Tidak ada teks yang terdeteksi dalam gambar",
-  "feedback.imageProcessedSuccess": "Teks berhasil diekstrak dari gambar",
-  "feedback.imageProcessingFailed": "Gagal memproses gambar",
-
   "a11y.readingRuler": "Penggaris Baca",
   "a11y.syllableDots": "Titik Suku Kata",
-
   "typo.size": "Ukuran",
   "typo.line": "Baris",
   "typo.letter": "Huruf",
@@ -91,34 +46,8 @@
   "typo.lineHeight": "Tinggi Baris",
   "typo.letterSpacing": "Jarak Huruf",
   "typo.wordSpacing": "Jarak Kata",
-
   "nav.settings": "Pengaturan",
   "shell.toggleSettings": "Alihkan pengaturan tampilan",
-  "history.empty": "Belum ada riwayat",
-
-  "screening.title": "Pra-Skrining",
-  "screening.introDescription": "Serangkaian pertanyaan singkat tentang kebiasaan membaca Anda. Ini adalah pemeriksaan informal, bukan diagnosis.",
-  "screening.startButton": "Mulai pra-skrining",
-  "screening.continueHeading": "Lanjutkan dari terakhir kali",
-  "screening.inProgress": "Sedang berlangsung",
-  "screening.lastActivityContinue": "Aktivitas terakhir {date} · ketuk untuk melanjutkan",
-  "screening.resultsHeading": "Hasil Anda",
-  "screening.noResults": "Belum ada hasil — selesaikan pra-skrining untuk melihatnya di sini.",
-  "screening.tapToView": "{date} · ketuk untuk melihat percakapan",
-  "screening.analyzing": "Menganalisis jawaban Anda…",
-  "screening.resultReady": "Hasil siap — {severity}",
-  "screening.score": "Skor: {total}",
-  "screening.scoringFailed": "Gagal menilai jawaban Anda.",
-
-  "textPad.title": "Papan Teks",
-  "action.send": "Kirim pesan",
-  "chat.yourMessage": "Pesan Anda",
-  "chat.assistantComplete": "Asisten, skrining selesai",
-  "chat.assistantMessage": "Pesan asisten",
-  "chat.screeningComplete": "Skrining Selesai",
-  "chat.hint": "Ketik jawaban Anda…",
-
-  "scan.title": "Pindai dengan Kamera",
-  "scan.readingText": "Membaca teks...",
-  "scan.extracting": "Mohon tunggu saat kami mengekstrak teks."
+  "settings.presets": "PRESET",
+  "history.empty": "Belum ada riwayat"
 }

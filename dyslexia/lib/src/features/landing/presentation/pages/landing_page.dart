@@ -1,4 +1,3 @@
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -11,49 +10,44 @@ import '../../../../routes/app_route_path.dart';
 class LandingPage extends StatelessWidget {
   const LandingPage({super.key});
 
-  static const _headerColorStart = Color(0xFFC9B8F0);
-  static const _headerColorEnd = Color(0xFFB596E5);
+  static const _headerColorStart = Color(0xFFC9B8F0); 
+  static const _headerColorEnd = Color(0xFFB596E5); 
   static const _headerBottomLayer = Color(0xFFD7C8FC);
 
+  // ============================================================
+  // 🎨 FEATURE PALETTE (Sinkron dengan FeaturePage)
+  // ============================================================
   static const Map<String, _FeaturePalette> _palettes = {
     'summarize': _FeaturePalette(
-      color: Color(0xFFFFE0B2),
-      tint: Color(0xFFFFF3E0),
+      tint: Color(0xFFFFE9D1),
+      strong: Color(0xFFFFD4A0),
       onTint: Color(0xFF6B4423),
     ),
     'professionalize': _FeaturePalette(
-      color: Color(0xFF90CAF9),
-      tint: Color(0xFFE3F2FD),
+      tint: Color(0xFFCAE8FF),
+      strong: Color(0xFF6CB6FF),
       onTint: Color(0xFF1E3A5F),
     ),
     'define': _FeaturePalette(
-      color: Color(0xFFFFAB91),
-      tint: Color(0xFFFBE9E7),
+      tint: Color(0xFFFBE5E0),
+      strong: Color(0xFFEC8E7D),
       onTint: Color(0xFF5F2A1F),
     ),
-    'screening': _FeaturePalette(
-      color: Color(0xFFA5D6A7),
-      tint: Color(0xFFE8F5E9),
-      onTint: Color(0xFF1B5E20),
+    'reader': _FeaturePalette(
+      tint: Color(0xFFC9B8F0),
+      strong: Color(0xFFB596E5),
+      onTint: Color(0xFF4A2E7A),
     ),
-    'lens': _FeaturePalette(
-      color: Color(0xFFFFE082),
-      tint: Color(0xFFFFF8E1),
-      onTint: Color(0xFF5D4037),
-    ),
-    'camera': _FeaturePalette(
-      color: Color(0xFFB39DDB),
-      tint: Color(0xFFEDE7F6),
-      onTint: Color(0xFF4A148C),
-    ),
+    // Fallback default untuk fitur yang belum didefinisikan
     'default': _FeaturePalette(
-      color: Color(0xFFB39DDB),
-      tint: Color(0xFFEDE7F6),
+      tint: Color(0xFFE8E6FF),
+      strong: Color(0xFFA29BFE),
       onTint: Color(0xFF3E3A7A),
     ),
   };
 
-  _FeaturePalette _getPaletteForKey(String key) {
+  _FeaturePalette _getPaletteForLabel(String label) {
+    final key = label.toLowerCase();
     return _palettes[key] ?? _palettes['default']!;
   }
 
@@ -62,7 +56,7 @@ class LandingPage extends StatelessWidget {
     final text = data?.text?.trim() ?? '';
     if (!context.mounted) return;
     if (text.isEmpty) {
-      showAdaptiveFeedback(context, 'feedback.clipboardEmpty'.tr());
+      showAdaptiveFeedback(context, 'Nothing found in clipboard');
       return;
     }
     context.pushNamed(
@@ -71,27 +65,27 @@ class LandingPage extends StatelessWidget {
     );
   }
 
-  Widget _getIconForKey(String key, Color iconColor) {
+  Widget _getIconForAction(String label, Color iconColor) {
     const double iconSize = 35.0;
 
-    switch (key) {
-      case 'summarize':
+    switch (label) {
+      case 'Summarize':
         return Image.asset('assets/images/summarize.png', width: iconSize, height: iconSize);
-      case 'define':
+      case 'Define':
         return Image.asset('assets/images/define.png', width: iconSize, height: iconSize);
-      case 'professionalize':
+      case 'Professionalize':
         return Image.asset('assets/images/profesionalize.png', width: iconSize, height: iconSize);
-      case 'lens':
+      case 'Lens':
         return Image.asset('assets/images/lens.png', width: iconSize, height: iconSize);
-      case 'camera':
+      case 'Camera': 
         return Image.asset('assets/images/scanner.png', width: iconSize, height: iconSize);
-      case 'reader':
+      case 'Reader': 
         return Image.asset('assets/images/reader.png', width: iconSize, height: iconSize);
-      case 'screening':
+      case 'Pre-Screening':
         return Icon(
           _isCupertino ? CupertinoIcons.checkmark_seal : Icons.fact_check_rounded,
           size: iconSize,
-          color: const Color(0xFFA5D6A7),
+          color: iconColor,
         );
       default:
         return Icon(Icons.help_outline, size: iconSize, color: iconColor);
@@ -99,28 +93,17 @@ class LandingPage extends StatelessWidget {
   }
 
   Widget _buildActionCard({
-    required String key,
     required String label,
     required VoidCallback onTap,
   }) {
-    final palette = _getPaletteForKey(key);
+    final palette = _getPaletteForLabel(label);
     
     return Semantics(
       label: label,
       button: true,
       child: Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
-            colors: [
-              Colors.white,
-              Colors.white,
-              palette.tint,
-              palette.color,
-            ],
-            stops: const [0.0, 0.3, 0.65, 1.0],
-          ),
+          color: Colors.white,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
@@ -139,40 +122,32 @@ class LandingPage extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
+                  // ✅ Icon container dengan background sesuai palette
                   Container(
                     width: 43,
                     height: 43,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: palette.tint,
                       borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
                     ),
                     child: Center(
-                      child: _getIconForKey(key, palette.color),
+                      child: _getIconForAction(label, palette.strong),
                     ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
                     child: Text(
                       label,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
-                        color: palette.onTint,
+                        color: Colors.black87,
                       ),
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
                     ),
                   ),
                   Icon(
                     _isCupertino ? CupertinoIcons.chevron_right : Icons.chevron_right,
-                    color: palette.onTint.withOpacity(0.6),
+                    color: Colors.grey.shade400,
                     size: 20,
                   ),
                 ],
@@ -186,21 +161,17 @@ class LandingPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // ✅ PERBAIKAN UTAMA: 
-    // Membaca context.locale memaksa widget ini untuk segera di-rebuild 
-    // ketika bahasa diganti, mengatasi masalah delay atau label yang tidak berubah.
-    final currentLocale = context.locale;
-
     final screenWidth = MediaQuery.of(context).size.width;
     final isDesktop = screenWidth >= 800;
 
-    final List<Map<String, String>> actions = [
-      {'key': 'summarize', 'route': AppRoute.summarize.name},
-      {'key': 'define', 'route': AppRoute.define.name},
-      {'key': 'professionalize', 'route': AppRoute.professionalize.name},
-      {'key': 'screening', 'route': AppRoute.screening.name},
-      {'key': 'lens', 'route': AppRoute.lens.name},
-      {'key': 'camera', 'route': AppRoute.scanPaste.name},
+    final List<Map<String, dynamic>> actions = [
+      {'label': 'Reader', 'onTap': () => context.pushNamed(AppRoute.upload.name)},
+      {'label': 'Summarize', 'onTap': () => context.pushNamed(AppRoute.summarize.name)},
+      {'label': 'Define', 'onTap': () => context.pushNamed(AppRoute.define.name)},
+      {'label': 'Professionalize', 'onTap': () => context.pushNamed(AppRoute.professionalize.name)},
+      {'label': 'Pre-Screening', 'onTap': () => context.pushNamed(AppRoute.screening.name)},
+      {'label': 'Lens', 'onTap': () => context.pushNamed(AppRoute.lens.name)},
+      {'label': 'Camera', 'onTap': () => context.pushNamed(AppRoute.scanPaste.name)},
     ];
 
     return Scaffold(
@@ -209,13 +180,14 @@ class LandingPage extends StatelessWidget {
         child: Column(
           children: [
             if (!isDesktop) ...[
+              // HEADER MOBILE (Ungu)
               SizedBox(
                 width: double.infinity,
                 child: Stack(
                   children: [
                     Container(
                       width: double.infinity,
-                      height: 110,
+                      height: 110, 
                       decoration: const BoxDecoration(
                         color: _headerBottomLayer,
                         borderRadius: BorderRadius.only(
@@ -280,6 +252,7 @@ class LandingPage extends StatelessWidget {
                 ),
               ),
             ] else ...[
+              // HEADER DESKTOP (Putih Bersih)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                 child: Row(
@@ -297,7 +270,7 @@ class LandingPage extends StatelessWidget {
                     IconButton(
                       onPressed: () => context.pushNamed(AppRoute.displaySettings.name),
                       icon: const Icon(Icons.settings_rounded, color: Colors.black87, size: 28),
-                      tooltip: 'action.settings'.tr(),
+                      tooltip: 'Settings',
                     ),
                   ],
                 ),
@@ -317,7 +290,7 @@ class LandingPage extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'landing.exploreTools'.tr(),
+                          'Explore our tools:',
                           style: TextStyle(
                             fontSize: isDesktop ? 20 : 16,
                             fontWeight: FontWeight.w600,
@@ -325,17 +298,13 @@ class LandingPage extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        ...actions.map((action) {
-                          final key = action['key']!;
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 16),
-                            child: _buildActionCard(
-                              key: key,
-                              label: 'feature.$key'.tr(),
-                              onTap: () => context.pushNamed(action['route']!),
-                            ),
-                          );
-                        }),
+                        ...actions.map((action) => Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: _buildActionCard(
+                            label: action['label'] as String,
+                            onTap: action['onTap'] as VoidCallback,
+                          ),
+                        )),
                       ],
                     ),
                   ),
@@ -350,13 +319,13 @@ class LandingPage extends StatelessWidget {
 }
 
 class _FeaturePalette {
-  final Color color;
   final Color tint;
+  final Color strong;
   final Color onTint;
 
   const _FeaturePalette({
-    required this.color,
     required this.tint,
+    required this.strong,
     required this.onTint,
   });
 }

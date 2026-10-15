@@ -41,23 +41,20 @@ class DisplaySettingsPage extends StatelessWidget {
     DisplayPreset.peachTheme: 'Sassoon Primary - Peach - 18pt',
   };
 
+  // Palette Ungu
   static const _purplePrimary = Color(0xFFB596E5);
   static const _purpleLight = Color(0xFFE0D5F7);
   static const _purpleText = Color(0xFF8B6FB8);
 
   @override
   Widget build(BuildContext context) {
-    // ✅ PERBAIKAN UTAMA: 
-    // Membaca context.locale memaksa widget ini untuk segera di-rebuild 
-    // ketika bahasa diganti, mengatasi masalah caching pada router.
-    final currentLocale = context.locale;
-
     final screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
       backgroundColor: Colors.white,
       body: Stack(
         children: [
+          // === BACKGROUND 2 LAPIS UNGU ===
           Positioned(
             top: 0,
             left: 0,
@@ -93,6 +90,7 @@ class DisplaySettingsPage extends StatelessWidget {
             ),
           ),
 
+          // === KONTEN UTAMA ===
           Column(
             children: [
               _buildHeader(context),
@@ -109,6 +107,10 @@ class DisplaySettingsPage extends StatelessWidget {
                         const SizedBox(height: 24),
 
                         _buildSectionLabel('settings.font'.tr()),
+                        // Compact chips: this full-page card is wide, so the
+                        // 3-column grid cells balloon past 100px tall. The
+                        // compact Wrap flows small chips (shell-panel density)
+                        // to fill the available width instead.
                         _buildSettingCard(const FontSelector(compact: true)),
                         const SizedBox(height: 24),
 
@@ -218,6 +220,8 @@ class DisplaySettingsPage extends StatelessWidget {
   }
 }
 
+/// Switches the whole app UI language. `easy_localization` persists the
+/// choice and rebuilds on `setLocale`, so no extra bloc/storage is needed.
 class _LanguageSelector extends StatelessWidget {
   const _LanguageSelector();
 
@@ -226,40 +230,26 @@ class _LanguageSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Compare on language code only — startLocale/country variants
+    // ('en'/'en-US') must still register as the same choice.
     final current = context.locale.languageCode;
-    
     return Row(
       children: [
         Expanded(
-          child: _langTile(
-            context, 
-            'English', 
-            'English', 
-            englishLocale, 
-            current == englishLocale.languageCode,
-          ),
+          child: _langTile(context, 'English', 'English', englishLocale,
+              current == englishLocale.languageCode),
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: _langTile(
-            context, 
-            'Bahasa Indonesia', 
-            'Indonesia', 
-            indonesiaLocale, 
-            current == indonesiaLocale.languageCode,
-          ),
+          child: _langTile(context, 'Bahasa Indonesia', 'Indonesia',
+              indonesiaLocale, current == indonesiaLocale.languageCode),
         ),
       ],
     );
   }
 
-  Widget _langTile(
-    BuildContext context, 
-    String label, 
-    String short,
-    Locale locale, 
-    bool selected,
-  ) {
+  Widget _langTile(BuildContext context, String label, String short,
+      Locale locale, bool selected) {
     return Semantics(
       label: 'Language $label',
       button: true,
@@ -267,8 +257,6 @@ class _LanguageSelector extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          // ✅ Memanggil setLocale akan memicu rebuild karena kita sudah 
-          // membaca context.locale di parent (DisplaySettingsPage)
           onTap: () => context.setLocale(locale),
           borderRadius: BorderRadius.circular(12),
           child: Container(
@@ -358,7 +346,7 @@ class _LogoutButton extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFEF5350).withOpacity(0.3), width: 1.5),
+                border: Border.all(color: const Color(0xFFEF5350).withValues(alpha: 0.3), width: 1.5),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.04),
@@ -372,10 +360,8 @@ class _LogoutButton extends StatelessWidget {
                 children: [
                   const Icon(Icons.logout_rounded, size: 20, color: Color(0xFFEF5350)),
                   const SizedBox(width: 12),
-                  Text(
-                    'logout.button'.tr(),
-                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: Color(0xFFEF5350)),
-                  ),
+                  Text('logout.button'.tr(),
+                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: Color(0xFFEF5350))),
                 ],
               ),
             ),
@@ -399,6 +385,7 @@ class _PresetTile extends StatelessWidget {
     required this.onTap,
   });
 
+ 
   static const Color _purplePrimary = Color(0xFFB596E5);
   static const Color _purpleLight = Color(0xFFE0D5F7);
 
@@ -434,39 +421,40 @@ class _PresetTile extends StatelessWidget {
                 ],
               ),
               child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          label,
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                            color: selected ? _purplePrimary : Colors.black87,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          subtitle,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: selected ? _purplePrimary.withOpacity(0.7) : Colors.black45,
-                          ),
-                        ),
-                      ],
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                      color: selected ? _purplePrimary : Colors.black87,
                     ),
                   ),
-                  if (selected)
-                    const Icon(
-                      Icons.check_circle_rounded, 
-                      color: Color(0xFFB596E5), 
-                      size: 22,
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: selected ? _purplePrimary.withOpacity(0.7) : Colors.black45,
                     ),
+                  ),
                 ],
               ),
             ),
+           
+            if (selected)
+              const Icon(
+                Icons.check_circle_rounded, 
+                color: Color(0xFFB596E5), 
+                size: 22,
+                ),
+            ],
+          ),
+          ),
           ),
         ),
       ),

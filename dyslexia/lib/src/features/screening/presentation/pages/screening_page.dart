@@ -1,4 +1,3 @@
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -185,13 +184,7 @@ class _ScreeningPageState extends State<ScreeningPage> {
             if (m.role == 'user') {
               return _UserBubble(text: m.content, settings: ds);
             }
-            return _AssistantCard(
-              text: m.content,
-              isSummary: false,
-              bg: bg,
-              fg: fg,
-              settings: ds,
-            );
+            return _AssistantCard(text: m.content, isSummary: false, bg: bg, fg: fg, settings: ds);
           },
         ),
       ),
@@ -214,6 +207,7 @@ class _ScreeningPageState extends State<ScreeningPage> {
     final bg = bgColor(s.colorTheme);
     final fg = fgColor(s.colorTheme);
     
+    // ✅ DETEKSI UKURAN LAYAR UNTUK DESKTOP
     final screenWidth = MediaQuery.of(context).size.width;
     final isDesktop = screenWidth >= 800;
 
@@ -221,7 +215,9 @@ class _ScreeningPageState extends State<ScreeningPage> {
       backgroundColor: Colors.white,
       body: Stack(
         children: [
+          // ✅ PERUBAHAN: Background ungu HANYA untuk mobile
           if (!isDesktop) ...[
+            // Lapisan bawah
             Positioned(
               top: 0,
               left: 0,
@@ -230,13 +226,14 @@ class _ScreeningPageState extends State<ScreeningPage> {
                 height: 120,
                 decoration: BoxDecoration(
                   color: _purpleLight,
-                  borderRadius: const BorderRadius.only(
+                  borderRadius: BorderRadius.only(
                     bottomLeft: Radius.circular(32),
                     bottomRight: Radius.circular(32),
                   ),
                 ),
               ),
             ),
+            // Lapisan atas (gradient)
             Positioned(
               top: 0,
               left: 0,
@@ -249,7 +246,7 @@ class _ScreeningPageState extends State<ScreeningPage> {
                     end: Alignment.bottomRight,
                     colors: [_purpleLight, _purplePrimary],
                   ),
-                  borderRadius: const BorderRadius.only(
+                  borderRadius: BorderRadius.only(
                     bottomLeft: Radius.circular(24),
                     bottomRight: Radius.circular(24),
                   ),
@@ -258,8 +255,10 @@ class _ScreeningPageState extends State<ScreeningPage> {
             ),
           ],
 
+          // === KONTEN UTAMA ===
           Column(
             children: [
+              // ✅ PERUBAHAN: Kirim isDesktop ke header
               _buildHeader(context, isDesktop),
               Expanded(
                 child: BlocConsumer<ScreeningBloc, ScreeningState>(
@@ -290,14 +289,14 @@ class _ScreeningPageState extends State<ScreeningPage> {
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.error_outline, size: 48, color: theme.colorScheme.onSurface.withOpacity(0.5)),
+                              Icon(Icons.error_outline, size: 48, color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
                               const SizedBox(height: 16),
                               Text('Failed to start: ${state.message}', style: TextStyle(color: theme.colorScheme.onSurface), textAlign: TextAlign.center),
                               const SizedBox(height: 16),
                               FilledButton.icon(
                                 onPressed: () => context.read<ScreeningBloc>().add(StartScreeningEvent()),
                                 icon: const Icon(Icons.refresh),
-                                label: Text('action.retry'.tr()),
+                                label: const Text('Retry'),
                                 style: FilledButton.styleFrom(backgroundColor: _purplePrimary),
                               ),
                             ],
@@ -331,13 +330,7 @@ class _ScreeningPageState extends State<ScreeningPage> {
                                     if (msg.isUser) {
                                       return _UserBubble(text: msg.text, settings: s);
                                     }
-                                    return _AssistantCard(
-                                      text: msg.text,
-                                      isSummary: msg.isSummary,
-                                      bg: bg,
-                                      fg: fg,
-                                      settings: s,
-                                    );
+                                    return _AssistantCard(text: msg.text, isSummary: msg.isSummary, bg: bg, fg: fg, settings: s);
                                   },
                                 ),
                         ),
@@ -354,7 +347,7 @@ class _ScreeningPageState extends State<ScreeningPage> {
                             child: FilledButton.icon(
                               onPressed: _reset,
                               icon: const Icon(Icons.refresh),
-                              label: Text('action.retry'.tr()),
+                              label: const Text('Done'),
                               style: FilledButton.styleFrom(backgroundColor: _purplePrimary),
                             ),
                           ),
@@ -379,20 +372,22 @@ class _ScreeningPageState extends State<ScreeningPage> {
     );
   }
 
+  // ✅ PERUBAHAN: Tambahkan parameter isDesktop untuk mengatur layout header
   Widget _buildHeader(BuildContext context, bool isDesktop) {
     return Container(
       padding: EdgeInsets.only(
         left: isDesktop ? 32 : 24, 
         right: isDesktop ? 32 : 24, 
-        top: isDesktop ? 24 : 48, 
+        top: isDesktop ? 24 : 48, // Padding atas lebih kecil di desktop karena tidak ada background ungu
         bottom: 16
       ),
       child: Row(
         children: [
+          // ✅ Tombol Back dan Judul HANYA untuk Mobile
           if (!isDesktop) ...[
             IconButton(
               icon: const Icon(Icons.arrow_back, color: Colors.black),
-              tooltip: 'action.back'.tr(),
+              tooltip: 'Back',
               onPressed: () => Navigator.of(context).pop(),
               style: IconButton.styleFrom(
                 backgroundColor: Colors.white,
@@ -400,10 +395,10 @@ class _ScreeningPageState extends State<ScreeningPage> {
               ),
             ),
             const SizedBox(width: 12),
-            Expanded(
+            const Expanded(
               child: Text(
-                'screening.title'.tr(),
-                style: const TextStyle(
+                'Pre-Screening',
+                style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
                   color: Colors.black,
@@ -414,11 +409,13 @@ class _ScreeningPageState extends State<ScreeningPage> {
             const SizedBox(width: 12),
           ],
           
+          // Spacer untuk mendorong tombol refresh ke kanan pada desktop
           if (isDesktop) const Spacer(),
 
+          // Tombol Refresh (tetap ada di kedua versi, tapi dengan elevation di desktop agar terlihat di background putih)
           IconButton(
             icon: const Icon(Icons.refresh_rounded, color: Colors.black),
-            tooltip: 'action.refresh'.tr(),
+            tooltip: 'Refresh',
             onPressed: _reset,
             style: IconButton.styleFrom(
               backgroundColor: Colors.white,
@@ -431,6 +428,8 @@ class _ScreeningPageState extends State<ScreeningPage> {
     );
   }
 }
+
+// === WIDGET-WIDGET LAINNYA TETAP SAMA (TIDAK DIUBAH) ===
 
 class _IntroView extends StatelessWidget {
   final Color fg;
@@ -461,18 +460,18 @@ class _IntroView extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
       children: [
-        Icon(Icons.fact_check_rounded, size: 48, color: fg.withOpacity(0.8)),
+        Icon(Icons.fact_check_rounded, size: 48, color: fg.withValues(alpha: 0.8)),
         const SizedBox(height: 16),
         Text(
-          'screening.introDescription'.tr(),
-          style: TextStyle(fontSize: 14, color: fg.withOpacity(0.7), height: 1.4),
+          'A short set of questions about your reading habits. This is an informal check-in, not a diagnosis.',
+          style: TextStyle(fontSize: 14, color: fg.withValues(alpha: 0.7), height: 1.4),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 20),
         FilledButton.icon(
           onPressed: onStart,
           icon: const Icon(Icons.play_arrow_rounded),
-          label: Text('screening.startButton'.tr()),
+          label: const Text('Start pre-screening'),
           style: FilledButton.styleFrom(backgroundColor: _purplePrimary),
         ),
         if (loading) ...[
@@ -486,13 +485,13 @@ class _IntroView extends StatelessWidget {
         ] else ...[
           if (incomplete.isNotEmpty) ...[
             const SizedBox(height: 28),
-            _heading('screening.continueHeading'.tr()),
+            _heading('Continue where you left off'),
             ...incomplete.map((s) => _ContinueCard(session: s, fg: fg, onTap: () => onContinue(s))),
           ],
           const SizedBox(height: 28),
-          _heading('screening.resultsHeading'.tr()),
+          _heading('Your results'),
           if (completed.isEmpty)
-            Text('screening.noResults'.tr(), style: TextStyle(fontSize: 13, color: fg.withOpacity(0.5)))
+            Text('No results yet — complete a pre-screening to see it here.', style: TextStyle(fontSize: 13, color: fg.withValues(alpha: 0.5)))
           else
             ...completed.map((s) => _ResultCard(session: s, fg: fg, onTap: () => onView(s))),
         ],
@@ -516,7 +515,7 @@ class _ContinueCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: _purpleLight,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: _purplePrimary.withOpacity(0.3)),
+        border: Border.all(color: _purplePrimary.withValues(alpha: 0.3)),
       ),
       child: Material(
         color: Colors.transparent,
@@ -533,18 +532,12 @@ class _ContinueCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        '${'screening.inProgress'.tr()} — ${session.answeredCount}/${session.totalTopics}', 
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: fg)
-                      ),
-                      Text(
-                        'screening.lastActivityContinue'.tr(namedArgs: {'date': date}), 
-                        style: TextStyle(fontSize: 12, color: fg.withOpacity(0.5))
-                      ),
+                      Text('In progress — ${session.answeredCount}/${session.totalTopics} answered', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: fg)),
+                      Text('Last activity $date · tap to continue', style: TextStyle(fontSize: 12, color: fg.withValues(alpha: 0.5))),
                     ],
                   ),
                 ),
-                Icon(Icons.chevron_right_rounded, color: fg.withOpacity(0.4)),
+                Icon(Icons.chevron_right_rounded, color: fg.withValues(alpha: 0.4)),
               ],
             ),
           ),
@@ -579,9 +572,9 @@ class _ResultCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
+        color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Material(
         color: Colors.transparent,
@@ -605,12 +598,12 @@ class _ResultCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      if (total != null) Text('screening.score'.tr(namedArgs: {'total': total.toString()}), style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: fg)),
-                      Text('screening.tapToView'.tr(namedArgs: {'date': date}), style: TextStyle(fontSize: 12, color: fg.withOpacity(0.5))),
+                      if (total != null) Text('Score: $total', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: fg)),
+                      Text('$date · tap to view conversation', style: TextStyle(fontSize: 12, color: fg.withValues(alpha: 0.5))),
                     ],
                   ),
                 ),
-                Icon(Icons.chevron_right_rounded, color: fg.withOpacity(0.4)),
+                Icon(Icons.chevron_right_rounded, color: fg.withValues(alpha: 0.4)),
               ],
             ),
           ),
@@ -643,7 +636,7 @@ class _PostProcessBanner extends StatelessWidget {
           Row(children: [
             SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(_purplePrimary))),
             const SizedBox(width: 12),
-            Expanded(child: Text('screening.analyzing'.tr(), style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: fg))),
+            Expanded(child: Text('Analyzing your responses…', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: fg))),
           ]),
         ),
       _PpPhase.success => () {
@@ -658,8 +651,8 @@ class _PostProcessBanner extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('screening.resultReady'.tr(namedArgs: {'severity': sev.toUpperCase()}), style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: fg)),
-                    if (total != null) Text('screening.score'.tr(namedArgs: {'total': total.toString()}), style: TextStyle(fontSize: 12, color: fg.withOpacity(0.6))),
+                    Text('Result ready — ${sev.toUpperCase()}', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: fg)),
+                    if (total != null) Text('Score: $total', style: TextStyle(fontSize: 12, color: fg.withValues(alpha: 0.6))),
                   ],
                 ),
               ),
@@ -671,8 +664,8 @@ class _PostProcessBanner extends StatelessWidget {
           Row(children: [
             const Icon(Icons.error_outline_rounded, color: Color(0xFFC62828), size: 20),
             const SizedBox(width: 12),
-            Expanded(child: Text('screening.scoringFailed'.tr(), style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: fg))),
-            TextButton(onPressed: onRetry, child: Text('action.retry'.tr())),
+            Expanded(child: Text("Couldn't score your responses.", style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: fg))),
+            TextButton(onPressed: onRetry, child: const Text('Retry')),
           ]),
         ),
     };
@@ -681,9 +674,9 @@ class _PostProcessBanner extends StatelessWidget {
       margin: const EdgeInsets.fromLTRB(16, 4, 16, 8),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
+        color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: child,
     );
@@ -697,8 +690,10 @@ class _UserBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Role-only label: the message text itself is read from the child
+    // widgets, so embedding it here too would announce it twice.
     return Semantics(
-      label: 'chat.yourMessage'.tr(),
+      label: 'Your message',
       container: true,
       child: Align(
         alignment: Alignment.centerRight,
@@ -724,18 +719,14 @@ class _AssistantCard extends StatelessWidget {
   final Color fg;
   final DisplaySettingsEntity settings;
 
-  const _AssistantCard({
-    required this.text,
-    required this.isSummary,
-    required this.bg,
-    required this.fg,
-    required this.settings,
-  });
+  const _AssistantCard({required this.text, required this.isSummary, required this.bg, required this.fg, required this.settings});
 
   @override
   Widget build(BuildContext context) {
+    // Role-only label: the message text is read from the child widgets,
+    // so embedding it here too would announce it twice.
     return Semantics(
-      label: isSummary ? 'chat.assistantComplete'.tr() : 'chat.assistantMessage'.tr(),
+      label: isSummary ? 'Assistant, screening complete' : 'Assistant message',
       container: true,
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
@@ -752,31 +743,24 @@ class _AssistantCard extends StatelessWidget {
                 if (isSummary) ...[
                   Icon(Icons.check_circle, size: 18, color: Colors.green.shade400),
                   const SizedBox(width: 6),
-                  Text('chat.screeningComplete'.tr(), style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.green.shade400)),
+                  Text('Screening Complete', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.green.shade400)),
                 ],
                 const Spacer(),
                 IconButton(
-                  tooltip: 'action.copyMessage'.tr(),
+                  tooltip: 'Copy message',
                   visualDensity: VisualDensity.compact,
                   iconSize: 16,
                   padding: const EdgeInsets.all(4),
                   constraints: const BoxConstraints(),
-                  icon: Icon(Icons.copy_rounded, color: fg.withOpacity(0.6)),
+                  icon: Icon(Icons.copy_rounded, color: fg.withValues(alpha: 0.6)),
                   onPressed: () {
                     Clipboard.setData(ClipboardData(text: text));
-                    showAdaptiveFeedback(context, 'feedback.copied'.tr());
+                    showAdaptiveFeedback(context, 'Copied to clipboard');
                   },
                 ),
               ],
             ),
-            ReaderTextDisplay(
-              text: text,
-              settings: settings,
-              fgColor: fg,
-              bgColor: bg,
-              scrollable: false,
-              // Parameter scrollController dihapus karena tidak didukung oleh definisi widget ReaderTextDisplay Anda.
-            ),
+            ReaderTextDisplay(text: text, settings: settings, fgColor: fg, bgColor: bg, scrollable: false),
           ],
         ),
       ),
@@ -803,6 +787,8 @@ class _InputBarState extends State<_InputBar> {
   @override
   void initState() {
     super.initState();
+    // Intercept bare Enter before the multiline TextField inserts a newline;
+    // Shift+Enter (isShiftPressed) falls through to the normal newline.
     HardwareKeyboard.instance.addHandler(_handleKeyEvent);
   }
 
@@ -832,7 +818,7 @@ class _InputBarState extends State<_InputBar> {
       padding: const EdgeInsets.fromLTRB(12, 8, 8, 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border(top: BorderSide(color: fg.withOpacity(0.1))),
+        border: Border(top: BorderSide(color: fg.withValues(alpha: 0.1))),
       ),
       child: SafeArea(
         top: false,
@@ -848,14 +834,14 @@ class _InputBarState extends State<_InputBar> {
                 textCapitalization: TextCapitalization.sentences,
                 style: widget.textStyle,
                 decoration: InputDecoration(
-                  hintText: 'chat.hint'.tr(),
-                  hintStyle: TextStyle(color: fg.withOpacity(0.4)),
-                  fillColor: fg.withOpacity(0.06),
+                  hintText: 'Type your answer…',
+                  hintStyle: TextStyle(color: fg.withValues(alpha: 0.4)),
+                  fillColor: fg.withValues(alpha: 0.06),
                   filled: true,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(24),
-                    borderSide: BorderSide(color: fg.withOpacity(0.2)),
+                    borderSide: BorderSide(color: fg.withValues(alpha: 0.2)),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(24),
@@ -870,9 +856,9 @@ class _InputBarState extends State<_InputBar> {
             IconButton(
               icon: Icon(
                 Icons.send_rounded,
-                color: widget.enabled ? _purplePrimary : fg.withOpacity(0.3), 
+                color: widget.enabled ? _purplePrimary : fg.withValues(alpha: 0.3), 
               ),
-              tooltip: 'action.send'.tr(),
+              tooltip: 'Send message',
               onPressed: widget.enabled ? widget.onSend : null,
             ),
           ],

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:easy_localization/easy_localization.dart';
-
 import '../../../../core/widgets/feature_page.dart';
 import '../../../sidebar/domain/entities/sidebar_section.dart';
 import '../../domain/entities/define_level.dart';
@@ -15,12 +13,7 @@ final _levels = [
   DefineLevel.pct50,
   DefineLevel.pct90,
 ];
-
-const List<String> _levelPctKeys = [
-  'levelPct.simple',
-  'levelPct.mid',
-  'levelPct.perhaps',
-];
+const _levelPct = ['10%', '50%', '90%'];
 
 class DefinePage extends StatefulWidget {
   final String? initialText;
@@ -56,12 +49,69 @@ class _DefinePageState extends State<DefinePage> {
     await Clipboard.setData(ClipboardData(text: text));
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('feedback.copied'.tr()),
-          duration: const Duration(seconds: 2),
+        const SnackBar(
+          content: Text('Definition copied to clipboard'),
+          duration: Duration(seconds: 2),
         ),
       );
     }
+  }
+
+  void _showSelectAllDialog(String text) {
+    final dialogController = TextEditingController(text: text);
+    final dialogFocusNode = FocusNode();
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Full Definition'),
+        content: SizedBox(
+          width: double.maxFinite,
+          height: 400,
+          child: TextField(
+            controller: dialogController,
+            focusNode: dialogFocusNode,
+            readOnly: true,
+            maxLines: null,
+            expands: true,
+            textAlignVertical: TextAlignVertical.top,
+            style: Theme.of(dialogContext).textTheme.bodyMedium?.copyWith(
+                  height: 1.6,
+                ),
+            decoration: const InputDecoration(
+              border: OutlineInputBorder(),
+              contentPadding: EdgeInsets.all(12),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Close'),
+          ),
+          TextButton(
+            onPressed: () {
+              // ✅ Auto-select all text di dialog
+              dialogController.selection = TextSelection(
+                baseOffset: 0,
+                extentOffset: dialogController.text.length,
+              );
+              dialogFocusNode.requestFocus();
+            },
+            child: const Text('Select All'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              await _copyAll(text);
+              if (dialogContext.mounted) {
+                Navigator.pop(dialogContext);
+              }
+            },
+            child: const Text('Copy'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -70,29 +120,30 @@ class _DefinePageState extends State<DefinePage> {
       builder: (ctx, state) {
         final hasResult = state is DefineResultState;
         final isLoading = state is DefineLoading;
+        // True while SSE chunks are still arriving (result present but the
+        // stream is not finished yet). The controller is only synced once the
+        // stream completes.
         final isStreaming = hasResult && !isLoading && !state.streamComplete;
         final resultText = hasResult ? state.result : '';
 
+        // ✅ Full screen layout dengan Stack
         return Stack(
           children: [
+            // FeaturePage full screen (tanpa wrapper ListView/SizedBox)
             FeaturePage(
               controller: _controller,
-              // ✅ PENTING: Tetap 'Define' agar palet warna benar DAN 
-              // logika otomatis di FeaturePage bisa menyembunyikan judul besarnya.
-              title: 'Define', 
+              title: 'Define',
               resultTitle: 'Definition',
               heroTag: 'define',
               feature: SidebarSection.define,
-              
-              // ✅ Terapkan translasi dengan benar menggunakan .map()
-              levelLabels: _levelPctKeys.map((key) => key.tr()).toList(),
+              levelLabels: _levelPct,
               initialLevel: _levels.indexOf(_level),
               onLevelChanged: (index) {
                 setState(() {
                   _level = _levels[index];
                 });
               },
-              resultText: resultText,
+              resultText: resultText, // ✅ Tampilkan hasil di area default
               viewResultText: _viewResultText,
               viewResultTitle: _viewResultTitle,
               hasResult: hasResult || isLoading || _viewResultText != null,
@@ -126,18 +177,24 @@ class _DefinePageState extends State<DefinePage> {
               replaceInputWithResult: true,
             ),
 
-            // ✅ Hanya menyisakan tombol "Copy All"
+            // ✅ Floating action buttons di pojok kanan atas
             if (hasResult)
               Positioned(
-                top: 100,
+                top: 100, // cukup rendah untuk menghindari AppBar FeaturePage
                 right: 16,
                 child: SafeArea(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       _FloatingActionButton(
-                        icon: Icons.copy_all,
-                        label: 'action.copyText'.tr(),
+                        icon: Icons.select_all,
+                        label: 'Select All',
+                        onPressed: () => _showSelectAllDialog(resultText),
+                      ),
+                      const SizedBox(height: 8),
+                      _FloatingActionButton(
+                        icon: Icons.copy,
+                        label: 'Copy All',
                         onPressed: () => _copyAll(resultText),
                       ),
                     ],
@@ -183,18 +240,12 @@ class _FloatingActionButton extends StatelessWidget {
                 color: Theme.of(context).colorScheme.onPrimaryContainer,
               ),
               const SizedBox(width: 6),
-              // ✅ PERBAIKAN OVERFLOW: Bungkus Text dengan Flexible dan aktifkan softWrap
-              Flexible(
-                child: Text(
-                  label,
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onPrimaryContainer,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  softWrap: true,      // Mengizinkan teks turun ke baris baru jika layar sempit
-                  maxLines: 2,         // Batasi maksimal 2 baris
-                  overflow: TextOverflow.ellipsis, // Tambahkan ... jika tetap kepanjangan
+              Text(
+                label,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onPrimaryContainer,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ],

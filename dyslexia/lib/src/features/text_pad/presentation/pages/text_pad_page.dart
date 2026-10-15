@@ -1,4 +1,3 @@
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -32,7 +31,7 @@ class TextPadPage extends StatelessWidget {
 
         return AdaptiveScaffold(
           backgroundColor: bg,
-          title: sourceName ?? 'textPad.title'.tr(), // ✅ TRANSLASI
+          title: sourceName ?? 'Text Pad',
           titleColor: fg,
           iconColor: fg,
           actions: [
@@ -41,7 +40,7 @@ class TextPadPage extends StatelessWidget {
                 _isCupertino ? CupertinoIcons.settings : Icons.settings_rounded,
                 color: fg,
               ),
-              tooltip: 'action.settings'.tr(), // ✅ TRANSLASI (menggunakan key yang sudah ada)
+              tooltip: 'Display settings',
               onPressed: () => context.pushNamed(AppRoute.displaySettings.name),
             ),
             AdaptiveIconButton(
@@ -49,10 +48,10 @@ class TextPadPage extends StatelessWidget {
                 _isCupertino ? CupertinoIcons.doc_on_doc : Icons.copy_rounded,
                 color: fg,
               ),
-              tooltip: 'action.copyText'.tr(), // ✅ TRANSLASI (menggunakan key yang sudah ada)
+              tooltip: 'Copy all',
               onPressed: () {
                 Clipboard.setData(ClipboardData(text: text));
-                showAdaptiveFeedback(context, 'feedback.copied'.tr()); // ✅ TRANSLASI
+                showAdaptiveFeedback(context, 'Copied to clipboard');
               },
             ),
           ],
@@ -92,7 +91,7 @@ class _SendToBar extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: bg,
-        border: Border(top: BorderSide(color: fg.withOpacity(0.12))),
+        border: Border(top: BorderSide(color: fg.withValues(alpha: 0.12))),
       ),
       child: SafeArea(
         top: false,
@@ -103,21 +102,21 @@ class _SendToBar extends StatelessWidget {
               Expanded(
                 child: _SendButton(
                     icon: Icons.summarize_rounded,
-                    label: 'feature.summarize'.tr(), // ✅ TRANSLASI
+                    label: 'Summarize',
                     onTap: () => _send(context, AppRoute.summarize)),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: _SendButton(
                     icon: Icons.menu_book_rounded,
-                    label: 'feature.define'.tr(), // ✅ TRANSLASI
+                    label: 'Define',
                     onTap: () => _send(context, AppRoute.define)),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: _SendButton(
                     icon: Icons.business_center_rounded,
-                    label: 'feature.professionalize'.tr(), // ✅ TRANSLASI
+                    label: 'Formalize',
                     onTap: () => _send(context, AppRoute.professionalize)),
               ),
             ],
@@ -137,6 +136,7 @@ class _SendButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
+      // DIUBAH: Menggunakan warna ungu tema aplikasi
       color: const Color(0xFFB596E5),
       borderRadius: BorderRadius.circular(12),
       child: InkWell(

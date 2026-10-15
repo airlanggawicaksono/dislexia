@@ -50,7 +50,6 @@ class DisplaySettingsEntity extends Equatable {
   final DisplayPreset preset;
   final bool rulerEnabled;
   final bool syllablesEnabled;
-  final bool isDarkMode; // ✅ PERBAIKAN: Tipe data bool yang benar
 
   const DisplaySettingsEntity({
     required this.fontSize,
@@ -62,7 +61,6 @@ class DisplaySettingsEntity extends Equatable {
     required this.preset,
     required this.rulerEnabled,
     required this.syllablesEnabled,
-    required this.isDarkMode, // ✅ PERBAIKAN: Required parameter yang benar
   });
 
   DisplaySettingsEntity copyWith({
@@ -75,7 +73,6 @@ class DisplaySettingsEntity extends Equatable {
     DisplayPreset? preset,
     bool? rulerEnabled,
     bool? syllablesEnabled,
-    bool? isDarkMode, // ✅ PERBAIKAN: Tipe data bool yang benar
   }) =>
       DisplaySettingsEntity(
         fontSize: fontSize ?? this.fontSize,
@@ -87,7 +84,6 @@ class DisplaySettingsEntity extends Equatable {
         preset: preset ?? this.preset,
         rulerEnabled: rulerEnabled ?? this.rulerEnabled,
         syllablesEnabled: syllablesEnabled ?? this.syllablesEnabled,
-        isDarkMode: isDarkMode ?? this.isDarkMode, // ✅ PERBAIKAN: Diteruskan ke constructor
       );
 
   @override
@@ -101,6 +97,5 @@ class DisplaySettingsEntity extends Equatable {
         preset,
         rulerEnabled,
         syllablesEnabled,
-        isDarkMode, // ✅ PERBAIKAN: Ditambahkan ke props agar Equatable bekerja dengan benar
       ];
 }

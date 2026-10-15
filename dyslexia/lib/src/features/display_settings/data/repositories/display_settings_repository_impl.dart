@@ -29,7 +29,6 @@ class DisplaySettingsRepositoryImpl implements DisplaySettingsRepository {
             preset: settings.preset,
             rulerEnabled: settings.rulerEnabled,
             syllablesEnabled: settings.syllablesEnabled,
-            isDarkMode: settings.isDarkMode, // ✅ TAMBAHAN: Wajib disertakan
           );
     await _datasource.save(model.toMap());
   }

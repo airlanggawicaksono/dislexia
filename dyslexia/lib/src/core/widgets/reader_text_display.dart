@@ -19,7 +19,7 @@ class ReaderTextDisplay extends StatefulWidget {
     required this.settings,
     required this.fgColor,
     this.bgColor,
-    this.scrollable = true, ScrollController? scrollController,
+    this.scrollable = true,
   });
 
   @override
