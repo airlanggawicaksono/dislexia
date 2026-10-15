@@ -25,7 +25,7 @@ import '../widgets/adaptive/adaptive.dart';
 import '../widgets/feature_result_card.dart';
 import '../widgets/history_panel.dart';
 
-// ✅ PERBAIKAN 1: Path import disesuaikan agar menemukan getOcrService()
+// ✅ Path import disesuaikan agar menemukan getOcrService()
 import 'package:dyslexia/services/ocr_service_locator.dart';
 
 class FeaturePage extends StatefulWidget {
@@ -200,16 +200,27 @@ class _FeaturePageState extends State<FeaturePage> {
     }
   }
 
+  // ✅ Method untuk mengambil gambar dari Galeri dan melakukan OCR
   Future<void> _pickImageAndExtractText(ImageSource source) async {
     if (mounted) Navigator.pop(context);
 
     final picker = ImagePicker();
-    final XFile? image = await picker.pickImage(
-      source: source,
-      imageQuality: 85,
-    );
+    XFile? image;
 
-    if (image == null || !mounted) return;
+    try {
+      image = await picker.pickImage(
+        source: source, // Akan dipanggil dengan ImageSource.gallery
+        imageQuality: 85, 
+      );
+    } catch (e) {
+      if (mounted) {
+        showAdaptiveFeedback(context, 'feedback.imagePickFailed'.tr());
+      }
+      print('Image Picker Error: $e');
+      return;
+    }
+
+    if (image == null || !mounted) return; 
 
     setState(() => _isProcessingImage = true);
 
@@ -753,6 +764,7 @@ class _FeaturePageState extends State<FeaturePage> {
     );
   }
 
+  // ✅ PERBAIKAN: Opsi Kamera DIHAPUS. Hanya tersisa Gambar, Paste, dan PDF.
   void _showAddSourceDialog(BuildContext context) {
     final palette = _getPalette();
     showModalBottomSheet(
@@ -785,6 +797,7 @@ class _FeaturePageState extends State<FeaturePage> {
             ),
             const SizedBox(height: 16),
             
+            // 1. Opsi Tambah Gambar / Galeri
             ListTile(
               leading: Container(
                 padding: const EdgeInsets.all(8),
@@ -792,29 +805,18 @@ class _FeaturePageState extends State<FeaturePage> {
                   color: palette.tint,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(Icons.camera_alt_rounded, color: palette.strong),
-              ),
-              title: Text('addSource.camera'.tr()),
-              subtitle: Text('addSource.cameraSubtitle'.tr(), style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
-              onTap: () => _pickImageAndExtractText(ImageSource.camera),
-            ),
-            const Divider(height: 1),
-
-            ListTile(
-              leading: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: palette.tint,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(Icons.image_rounded, color: palette.strong),
+                child: Icon(Icons.image, color: palette.strong),
               ),
               title: Text('addSource.image'.tr()),
               subtitle: Text('addSource.imageSubtitle'.tr(), style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
-              onTap: () => _pickImageAndExtractText(ImageSource.gallery),
+              onTap: () {
+                Navigator.pop(ctx);
+                _pickImageAndExtractText(ImageSource.gallery);
+              },
             ),
             const Divider(height: 1),
 
+            // 2. Opsi Paste
             ListTile(
               leading: Container(
                 padding: const EdgeInsets.all(8),
@@ -832,6 +834,7 @@ class _FeaturePageState extends State<FeaturePage> {
             ),
             const Divider(height: 1),
 
+            // 3. Opsi Upload PDF
             ListTile(
               leading: Container(
                 padding: const EdgeInsets.all(8),
@@ -889,7 +892,6 @@ class _FeatureBadge extends StatelessWidget {
     return Semantics(
       label: label,
       image: true,
-      // ✅ PERBAIKAN 2: Menghapus excludeSemantics: true untuk menghilangkan warning semantic node
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
