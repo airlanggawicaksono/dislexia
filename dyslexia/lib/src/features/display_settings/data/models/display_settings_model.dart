@@ -11,6 +11,7 @@ class DisplaySettingsModel extends DisplaySettingsEntity {
     required super.preset,
     required super.rulerEnabled,
     required super.syllablesEnabled,
+    required super.isDarkMode, // ✅ TAMBAHAN: Wajib ada karena ada di Entity
   });
 
   factory DisplaySettingsModel.defaults() => const DisplaySettingsModel(
@@ -23,6 +24,7 @@ class DisplaySettingsModel extends DisplaySettingsEntity {
         preset: DisplayPreset.defaultPreset,
         rulerEnabled: true,
         syllablesEnabled: true,
+        isDarkMode: false, // ✅ TAMBAHAN: Default ke mode terang
       );
 
   Map<String, dynamic> toMap() => {
@@ -35,6 +37,7 @@ class DisplaySettingsModel extends DisplaySettingsEntity {
         'preset': preset.name,
         'rulerEnabled': rulerEnabled,
         'syllablesEnabled': syllablesEnabled,
+        'isDarkMode': isDarkMode, // ✅ TAMBAHAN: Agar tersimpan ke storage
       };
 
   factory DisplaySettingsModel.fromMap(Map<String, dynamic> map) =>
@@ -49,6 +52,7 @@ class DisplaySettingsModel extends DisplaySettingsEntity {
         preset: _safePreset(map['preset']),
         rulerEnabled: map['rulerEnabled'] as bool? ?? true,
         syllablesEnabled: map['syllablesEnabled'] as bool? ?? true,
+        isDarkMode: map['isDarkMode'] as bool? ?? false, // ✅ TAMBAHAN: Fallback aman untuk data lama
       );
 
   /// Parses the persisted color-theme value. New writes store the enum name so
@@ -99,6 +103,7 @@ class DisplaySettingsModel extends DisplaySettingsEntity {
     DisplayPreset? preset,
     bool? rulerEnabled,
     bool? syllablesEnabled,
+    bool? isDarkMode, // ✅ TAMBAHAN
   }) =>
       DisplaySettingsModel(
         fontSize: fontSize ?? this.fontSize,
@@ -110,5 +115,6 @@ class DisplaySettingsModel extends DisplaySettingsEntity {
         preset: preset ?? this.preset,
         rulerEnabled: rulerEnabled ?? this.rulerEnabled,
         syllablesEnabled: syllablesEnabled ?? this.syllablesEnabled,
+        isDarkMode: isDarkMode ?? this.isDarkMode, // ✅ TAMBAHAN
       );
 }

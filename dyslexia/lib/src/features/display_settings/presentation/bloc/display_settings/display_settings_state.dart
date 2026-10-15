@@ -5,8 +5,13 @@ class DisplaySettingsState extends Equatable {
 
   const DisplaySettingsState({required this.settings});
 
-  DisplaySettingsState copyWith({DisplaySettingsEntity? settings}) =>
-      DisplaySettingsState(settings: settings ?? this.settings);
+  DisplaySettingsState copyWith({
+    DisplaySettingsEntity? settings,
+  }) {
+    return DisplaySettingsState(
+      settings: settings ?? this.settings,
+    );
+  }
 
   @override
   List<Object?> get props => [settings];

@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -44,13 +45,13 @@ class _ScanPastePageState extends State<ScanPastePage> {
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-          // === BACKGROUND 2 LAPIS UNGU (Disamakan dengan Pre-Screening) ===
+          // === BACKGROUND 2 LAPIS UNGU ===
           Positioned(
             top: 0,
             left: 0,
             right: 0,
             child: Container(
-              height: 140, // Tinggi tetap agar konsisten
+              height: 140,
               decoration: const BoxDecoration(
                 color: Color(0xFFE0D5F7),
                 borderRadius: BorderRadius.only(
@@ -65,7 +66,7 @@ class _ScanPastePageState extends State<ScanPastePage> {
             left: 0,
             right: 0,
             child: Container(
-              height: 120, // Tinggi tetap agar konsisten
+              height: 120,
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
@@ -119,10 +120,10 @@ class _ScanPastePageState extends State<ScanPastePage> {
                                 ),
                               ],
                             ),
-                            child: const Column(
+                            child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                SizedBox(
+                                const SizedBox(
                                   width: 48,
                                   height: 48,
                                   child: CircularProgressIndicator(
@@ -130,19 +131,19 @@ class _ScanPastePageState extends State<ScanPastePage> {
                                     strokeWidth: 3,
                                   ),
                                 ),
-                                SizedBox(height: 20),
+                                const SizedBox(height: 20),
                                 Text(
-                                  'Reading text...',
-                                  style: TextStyle(
+                                  'scan.readingText'.tr(), // ✅ TRANSLASI
+                                  style: const TextStyle(
                                     color: Colors.black87,
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
-                                SizedBox(height: 8),
+                                const SizedBox(height: 8),
                                 Text(
-                                  'Please wait while we extract the text.',
-                                  style: TextStyle(
+                                  'scan.extracting'.tr(), // ✅ TRANSLASI
+                                  style: const TextStyle(
                                     color: Colors.black54,
                                     fontSize: 14,
                                   ),
@@ -190,10 +191,10 @@ class _ScanPastePageState extends State<ScanPastePage> {
             ),
           ),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Text(
-              'Scan with Camera',
-              style: TextStyle(
+              'scan.title'.tr(), // ✅ TRANSLASI
+              style: const TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
                 color: Colors.black,

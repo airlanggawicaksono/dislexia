@@ -1,8 +1,10 @@
+import 'dart:typed_data';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../utils/feature_l10n.dart';
 
@@ -23,15 +25,14 @@ import '../widgets/adaptive/adaptive.dart';
 import '../widgets/feature_result_card.dart';
 import '../widgets/history_panel.dart';
 
+// ✅ PERBAIKAN 1: Path import disesuaikan agar menemukan getOcrService()
+import 'package:dyslexia/services/ocr_service_locator.dart';
+
 class FeaturePage extends StatefulWidget {
   final String title;
   final String resultTitle;
   final String heroTag;
-
-  /// Identifies which feature this page belongs to so its accent colour
-  /// (always paired with icon + text label) can be applied consistently.
   final SidebarSection? feature;
-
   final TextEditingController controller;
   final String resultText;
   final String? viewResultText;
@@ -48,15 +49,7 @@ class FeaturePage extends StatefulWidget {
   final List<String>? levelLabels;
   final int initialLevel;
   final ValueChanged<int>? onLevelChanged;
-
-  /// Untuk mengganti isi text box langsung tanpa result card
   final bool replaceInputWithResult;
-
-  /// True while an SSE stream is still delivering result chunks. During
-  /// streaming the input controller must NOT be touched on every chunk
-  /// (writing it per chunk fires listeners -> rebuilds -> didUpdateWidget
-  /// -> write -> infinite loop / stack overflow). The controller is synced
-  /// exactly once, when the stream finishes (isStreaming flips back to false).
   final bool isStreaming;
 
   const FeaturePage({
@@ -90,9 +83,8 @@ class FeaturePage extends StatefulWidget {
 }
 
 class _FeaturePageState extends State<FeaturePage> {
-  // Focus for the input field so "Select all" can highlight the text
-  // visibly (a selection only paints on the focused field).
   final FocusNode _inputFocus = FocusNode();
+  bool _isProcessingImage = false;
 
   @override
   void dispose() {
@@ -100,25 +92,18 @@ class _FeaturePageState extends State<FeaturePage> {
     super.dispose();
   }
 
-  // Localized feature name for display. `widget.title` stays the English
-  // logic key (palette switch, level-label check); only the shown text is
-  // translated.
   String _displayTitle() =>
       widget.feature != null ? featureLabel(widget.feature!) : widget.title;
 
-  // Highlight the entire input so the user can copy/replace without
-  // dragging across a long passage.
-  void _selectAll() {
-    final len = widget.controller.text.length;
-    if (len == 0) return;
-    _inputFocus.requestFocus();
-    widget.controller.selection =
-        TextSelection(baseOffset: 0, extentOffset: len);
+  Future<void> _copyAll() async {
+    final text = widget.controller.text;
+    if (text.isEmpty) return;
+    await Clipboard.setData(ClipboardData(text: text));
+    if (mounted) {
+      showAdaptiveFeedback(context, 'feedback.copied'.tr());
+    }
   }
 
-  // ============================================================
-  // 🎨 Helper: Dapatkan palette warna berdasarkan judul fitur
-  // ============================================================
   _FeaturePalette _getPalette() {
     switch (widget.title.toLowerCase()) {
       case 'summarize':
@@ -164,20 +149,16 @@ class _FeaturePageState extends State<FeaturePage> {
   @override
   void didUpdateWidget(covariant FeaturePage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Saat hasil selesai diproses, langsung replace isi text box.
-    // Hanya sinkronkan controller saat stream SELESAI (isStreaming false),
-    // bukan per chunk: menulis controller per chunk memicu listener ->
-    // rebuild -> didUpdateWidget -> tulis lagi (stack overflow).
     if (widget.replaceInputWithResult &&
         widget.hasResult &&
         !widget.isLoading &&
         !widget.isStreaming) {
       if (widget.resultText.isNotEmpty && widget.controller.text != widget.resultText) {
         widget.controller.text = widget.resultText;
-        // Pindahkan kursor ke akhir teks agar user bisa langsung melanjutkan edit
         widget.controller.selection = TextSelection.fromPosition(
           TextPosition(offset: widget.controller.text.length),
         );
+        _inputFocus.unfocus();
       }
     }
   }
@@ -216,6 +197,61 @@ class _FeaturePageState extends State<FeaturePage> {
     } catch (e) {
       if (!context.mounted) return;
       showAdaptiveFeedback(context, 'Failed to read PDF: $e');
+    }
+  }
+
+  Future<void> _pickImageAndExtractText(ImageSource source) async {
+    if (mounted) Navigator.pop(context);
+
+    final picker = ImagePicker();
+    final XFile? image = await picker.pickImage(
+      source: source,
+      imageQuality: 85,
+    );
+
+    if (image == null || !mounted) return;
+
+    setState(() => _isProcessingImage = true);
+
+    try {
+      final Uint8List imageBytes = await image.readAsBytes();
+      final String extractedText = await _performOCR(imageBytes);
+
+      if (!mounted) return;
+
+      if (extractedText.trim().isEmpty) {
+        showAdaptiveFeedback(context, 'feedback.noTextFoundInImage'.tr());
+      } else {
+        final currentText = widget.controller.text;
+        widget.controller.text = currentText.isEmpty 
+            ? extractedText 
+            : '$currentText\n\n$extractedText';
+            
+        widget.controller.selection = TextSelection.fromPosition(
+          TextPosition(offset: widget.controller.text.length),
+        );
+        
+        showAdaptiveFeedback(context, 'feedback.imageProcessedSuccess'.tr());
+      }
+    } catch (e) {
+      if (mounted) {
+        showAdaptiveFeedback(context, 'feedback.imageProcessingFailed'.tr());
+      }
+      print('OCR Error: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _isProcessingImage = false);
+      }
+    }
+  }
+
+  Future<String> _performOCR(Uint8List imageBytes) async {
+    try {
+      final ocrService = getOcrService();
+      return await ocrService.recognizeText(imageBytes);
+    } catch (e) {
+      print('OCR Service Error: $e');
+      rethrow;
     }
   }
 
@@ -259,16 +295,12 @@ class _FeaturePageState extends State<FeaturePage> {
     final screenHeight = MediaQuery.of(context).size.height;
     final palette = _getPalette();
 
-    // Jika replaceInputWithResult aktif, paksa tetap di input view
     final showResultView = widget.hasResult && !widget.replaceInputWithResult;
 
     return Scaffold(
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-          // ============================================================
-          // 🎨 Background Gradient (Mobile only) - DINAMIS per fitur
-          // ============================================================
           if (isMobile) ...[
             Positioned(
               top: 0, left: 0, right: 0,
@@ -313,9 +345,6 @@ class _FeaturePageState extends State<FeaturePage> {
             ],
           ),
 
-          // ============================================================
-          // ⏳ Loading Overlay (warna dinamis)
-          // ============================================================
           if (widget.isLoading)
             Container(
               color: Colors.black.withOpacity(0.3),
@@ -353,12 +382,52 @@ class _FeaturePageState extends State<FeaturePage> {
                 ),
               ),
             ),
+
+          if (_isProcessingImage)
+            Container(
+              color: Colors.black.withOpacity(0.4),
+              child: Center(
+                child: Card(
+                  color: Colors.white,
+                  elevation: 8,
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(16)),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          width: 40, height: 40,
+                          child: CircularProgressIndicator(
+                            color: palette.strong,
+                            strokeWidth: 3,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'status.extractingText'.tr(),
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
   }
 
   Widget _buildHeader(BuildContext context, bool isMobile, _FeaturePalette palette) {
+    final hideBigTitle = widget.title.toLowerCase() == 'define' || widget.title.toLowerCase() == 'summarize';
+
     return Container(
       padding: EdgeInsets.only(
         left: 24,
@@ -370,6 +439,7 @@ class _FeaturePageState extends State<FeaturePage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               if (isMobile) ...[
                 IconButton(
@@ -382,7 +452,7 @@ class _FeaturePageState extends State<FeaturePage> {
                     elevation: 0,
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 8),
               ],
               if (widget.feature != null) ...[
                 _FeatureBadge(
@@ -390,23 +460,27 @@ class _FeaturePageState extends State<FeaturePage> {
                   icon: widget.feature!.materialIcon,
                   label: _displayTitle(),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 8),
               ],
 
-              Expanded(
-                child: Text(
-                  _displayTitle(),
-                  textAlign: isMobile ? TextAlign.start : TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
+              if (!hideBigTitle)
+                Expanded(
+                  child: Text(
+                    _displayTitle(),
+                    maxLines: 1,
+                    textAlign: isMobile ? TextAlign.start : TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
+                )
+              else
+                const Spacer(),
 
-              const SizedBox(width: 12),
+              const SizedBox(width: 8),
               if (widget.onReset != null)
                 IconButton(
                   icon: const Icon(Icons.restart_alt, color: Colors.black),
@@ -418,7 +492,7 @@ class _FeaturePageState extends State<FeaturePage> {
                     elevation: isMobile ? 0 : 2,
                   ),
                 ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 8),
               if (widget.onViewResult != null)
                 IconButton(
                   icon: const Icon(Icons.history_rounded, color: Colors.black),
@@ -434,16 +508,19 @@ class _FeaturePageState extends State<FeaturePage> {
           ),
           if (widget.levelLabels != null && widget.levelLabels!.isNotEmpty) ...[
             const SizedBox(height: 16),
-            LevelSlider(
-              label: widget.title == 'Summarize' ? 'Summary Length' : 'Detail Level',
-              accentColor: palette.strong,
-              valueLabels: widget.levelLabels!,
-              initialIndex: widget.initialLevel,
-              onChanged: (index) {
-                if (widget.onLevelChanged != null) {
-                  widget.onLevelChanged!(index);
-                }
-              },
+            SizedBox(
+              width: double.infinity,
+              child: LevelSlider(
+                label: widget.title.toLowerCase() == 'summarize' ? 'summarize.length'.tr() : 'define.level'.tr(),
+                accentColor: palette.strong,
+                valueLabels: widget.levelLabels!,
+                initialIndex: widget.initialLevel,
+                onChanged: (index) {
+                  if (widget.onLevelChanged != null) {
+                    widget.onLevelChanged!(index);
+                  }
+                },
+              ),
             ),
           ],
         ],
@@ -529,6 +606,7 @@ class _FeaturePageState extends State<FeaturePage> {
               minLines: 6,
               maxLines: null,
               textAlignVertical: TextAlignVertical.top,
+              scrollPadding: EdgeInsets.zero,
               style: dyslexiaTextStyle(settings, Colors.black87),
               decoration: InputDecoration(
                 hintText: 'input.hint'.tr(),
@@ -547,50 +625,55 @@ class _FeaturePageState extends State<FeaturePage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              ValueListenableBuilder<TextEditingValue>(
-                valueListenable: widget.controller,
-                builder: (context, value, child) {
-                  final palette = _getPalette();
-                  return Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        '${value.text.length}/5000',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey.shade600,
-                          fontWeight: FontWeight.w500,
+              Flexible(
+                child: ValueListenableBuilder<TextEditingValue>(
+                  valueListenable: widget.controller,
+                  builder: (context, value, child) {
+                    final palette = _getPalette();
+                    return Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          '${value.text.length}/15000',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey.shade600,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
-                      ),
-                      if (value.text.isNotEmpty) ...[
-                        const SizedBox(width: 12),
-                        TextButton.icon(
-                          onPressed: _selectAll,
-                          icon: Icon(Icons.select_all_rounded,
-                              size: 18, color: palette.strong),
-                          label: Text(
-                            'action.selectAll'.tr(),
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: palette.strong,
+                        if (value.text.isNotEmpty) ...[
+                          const SizedBox(width: 12),
+                          Flexible(
+                            child: TextButton.icon(
+                              onPressed: _copyAll,
+                              icon: Icon(Icons.copy_all_rounded,
+                                  size: 18, color: palette.strong),
+                              label: Text(
+                                'action.copyText'.tr(),
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: palette.strong,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              style: TextButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                                minimumSize: const Size(0, 32),
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
                             ),
                           ),
-                          style: TextButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                            minimumSize: const Size(0, 32),
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          ),
-                        ),
+                        ],
                       ],
-                    ],
-                  );
-                },
+                    );
+                  },
+                ),
               ),
-              // ✅ FAB mini dengan warna dinamis sesuai fitur
+              const SizedBox(width: 8),
               FloatingActionButton(
                 mini: true,
-                heroTag: null, // hindari hero conflict jika multiple FAB di tree
+                heroTag: null,
                 tooltip: 'addSource.tooltip'.tr(),
                 onPressed: () => _showAddSourceDialog(context),
                 backgroundColor: palette.tint,
@@ -657,9 +740,9 @@ class _FeaturePageState extends State<FeaturePage> {
                 borderRadius: BorderRadius.circular(28),
               ),
             ),
-            child: const Text(
-              'Submit',
-              style: TextStyle(
+            child: Text(
+              'action.submit'.tr(),
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
               ),
@@ -683,7 +766,6 @@ class _FeaturePageState extends State<FeaturePage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Handle bar (mobile UX pattern)
             Container(
               width: 40,
               height: 4,
@@ -702,6 +784,37 @@ class _FeaturePageState extends State<FeaturePage> {
               ),
             ),
             const SizedBox(height: 16),
+            
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: palette.tint,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(Icons.camera_alt_rounded, color: palette.strong),
+              ),
+              title: Text('addSource.camera'.tr()),
+              subtitle: Text('addSource.cameraSubtitle'.tr(), style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+              onTap: () => _pickImageAndExtractText(ImageSource.camera),
+            ),
+            const Divider(height: 1),
+
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: palette.tint,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(Icons.image_rounded, color: palette.strong),
+              ),
+              title: Text('addSource.image'.tr()),
+              subtitle: Text('addSource.imageSubtitle'.tr(), style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+              onTap: () => _pickImageAndExtractText(ImageSource.gallery),
+            ),
+            const Divider(height: 1),
+
             ListTile(
               leading: Container(
                 padding: const EdgeInsets.all(8),
@@ -717,6 +830,8 @@ class _FeaturePageState extends State<FeaturePage> {
                 _onPaste(context);
               },
             ),
+            const Divider(height: 1),
+
             ListTile(
               leading: Container(
                 padding: const EdgeInsets.all(8),
@@ -740,9 +855,6 @@ class _FeaturePageState extends State<FeaturePage> {
   }
 }
 
-// ============================================================
-// 🎨 Feature Palette - Warna per fitur
-// ============================================================
 class _FeaturePalette {
   final Color tint;
   final Color strong;
@@ -761,8 +873,6 @@ class _FeaturePalette {
   });
 }
 
-/// Small icon + label chip that colour-codes a feature header. The icon and
-/// text carry the meaning; the tint is a secondary (never the only) signal.
 class _FeatureBadge extends StatelessWidget {
   final _FeaturePalette palette;
   final IconData icon;
@@ -779,7 +889,7 @@ class _FeatureBadge extends StatelessWidget {
     return Semantics(
       label: label,
       image: true,
-      excludeSemantics: true,
+      // ✅ PERBAIKAN 2: Menghapus excludeSemantics: true untuk menghilangkan warning semantic node
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
@@ -791,12 +901,16 @@ class _FeatureBadge extends StatelessWidget {
           children: [
             Icon(icon, size: 16, color: palette.strong),
             const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: palette.onTint,
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: palette.onTint,
+                ),
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],
