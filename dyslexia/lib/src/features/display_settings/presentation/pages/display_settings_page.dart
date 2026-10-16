@@ -15,7 +15,14 @@ import '../bloc/display_settings/display_settings_bloc.dart';
 class DisplaySettingsPage extends StatelessWidget {
   const DisplaySettingsPage({super.key});
 
-  static const _presetLabels = {
+  // ✅ PERBAIKAN: Batasi hanya 3 preset yang diizinkan (Sesuai Reviewer)
+  static const List<DisplayPreset> _allowedPresets = [
+    DisplayPreset.defaultPreset,
+    DisplayPreset.dyslexiaFriendly,
+    DisplayPreset.highContrast,
+  ];
+
+  static const Map<DisplayPreset, String> _presetLabels = {
     DisplayPreset.defaultPreset: 'Default',
     DisplayPreset.dyslexiaFriendly: 'Dyslexia Friendly',
     DisplayPreset.highContrast: 'High Contrast',
@@ -28,7 +35,7 @@ class DisplaySettingsPage extends StatelessWidget {
     DisplayPreset.peachTheme: 'Peach',
   };
 
-  static const _presetSubtitles = {
+  static const Map<DisplayPreset, String> _presetSubtitles = {
     DisplayPreset.defaultPreset: 'OpenDyslexic - Cream - 18pt',
     DisplayPreset.dyslexiaFriendly: 'OpenDyslexic - Cream - 20pt - 2.0x',
     DisplayPreset.highContrast: 'Plus Jakarta Sans - White - 22pt',
@@ -47,11 +54,7 @@ class DisplaySettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // ✅ PERBAIKAN UTAMA: 
-    // Membaca context.locale memaksa widget ini untuk segera di-rebuild 
-    // ketika bahasa diganti, mengatasi masalah caching pada router.
     final currentLocale = context.locale;
-
     final screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
@@ -101,6 +104,7 @@ class DisplaySettingsPage extends StatelessWidget {
                   builder: (context, state) {
                     final s = state.settings;
                     final bloc = context.read<DisplaySettingsBloc>();
+                    
                     return ListView(
                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
                       children: [
@@ -128,8 +132,9 @@ class DisplaySettingsPage extends StatelessWidget {
                         _buildSettingCard(const _LanguageSelector()),
                         const SizedBox(height: 24),
 
+                        // ✅ PERBAIKAN: Hanya render 3 preset yang diizinkan
                         _buildSectionLabel('settings.quickPresets'.tr()),
-                        ...DisplayPreset.values.map((p) => _PresetTile(
+                        ..._allowedPresets.map((p) => _PresetTile(
                               label: _presetLabels[p] ?? '',
                               subtitle: _presetSubtitles[p] ?? '',
                               selected: s.preset == p,
@@ -267,8 +272,6 @@ class _LanguageSelector extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          // ✅ Memanggil setLocale akan memicu rebuild karena kita sudah 
-          // membaca context.locale di parent (DisplaySettingsPage)
           onTap: () => context.setLocale(locale),
           borderRadius: BorderRadius.circular(12),
           child: Container(
